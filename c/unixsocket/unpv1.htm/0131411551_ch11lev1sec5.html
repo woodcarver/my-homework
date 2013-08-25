@@ -1,0 +1,204 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.5 'getservbyname' and 'getservbyport' Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec5"></A>
+<H3 class="docSection1Title">11.5 <TT>getservbyname</TT> and <TT>getservbyport</TT> Functions</H3>
+<P class="docText">Services, like hosts, are often known by names, too. If we refer to a service by its name in our code, instead of by its port number, and if the mapping from the name to port number is contained in a file (normally <TT>/etc/services</TT>), then if the port number changes, all we need to modify is one line in the <TT>/etc/services</TT> file instead of having to recompile the applications. The next function, <TT>getservbyname</TT>, looks up a service given its name.</P>
+<BLOCKQUOTE><P><P class="docList">The canonical list of port numbers assigned to services is maintained by the IANA at <A class="docLink" target="_blank" HREF="http://www.iana.orgassignments/port-numbers">http://www.iana.org/assignments/port-numbers</A> (<A class="docLink" HREF="0131411551_ch02lev1sec9.html#ch02lev1sec9">Section 2.9</A>). A given <TT>/etc/services</TT> file is likely to contain a subset of the IANA assignments.</P></P></BLOCKQUOTE>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netdb.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct servent *getservbyname (const char *</TT><span class="docEmphasis">servname</span>, <TT>const char *</TT><span class="docEmphasis">protoname</span>);</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-null pointer if OK, <TT>NULL</TT> on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">This function returns a pointer to the following structure:</P>
+<pre>
+
+</pre><pre>
+struct servent {
+  char   *s_name;      /* official service name */
+  char  **s_aliases;   /* alias list */
+  int     s-port;      /* port number, network-byte order */
+  char   *s_proto;     /* protocol to use */
+};
+</pre><pre>
+</pre>
+<P class="docText">The service name <span class="docEmphasis">servname</span> must be specified. If a protocol is also specified (<span class="docEmphasis">protoname</span> is a non-null pointer), then the entry must also have a matching protocol. Some Internet services are provided using either TCP or UDP (for example, the DNS and all the services in <A class="docLink" HREF="0131411551_ch02lev1sec12.html#ch02fig18">Figure 2.18</A>), while others support only a single protocol (e.g., FTP requires TCP). If <span class="docEmphasis">protoname</span> is not specified and the service supports multiple protocols, it is implementation-dependent as to which port number is returned. Normally this does not matter, because services that support multiple protocols often use the same TCP and UDP port number, but this is not guaranteed.</P>
+<P class="docText">The main field of interest in the <TT>servent</TT> structure is the port number. Since the port number is returned in network byte order, we must not call <TT>htons</TT> when storing this into a socket address structure.</P>
+<P class="docText">Typical calls to this function could be as follows:</P>
+<pre>
+
+</pre><pre>
+struct servent *sptr;
+
+sptr = getservbyname("domain", "udp"); /* DNS using UDP */
+sptr = getservbyname("ftp", "tcp");    /* FTP using TCP */
+sptr = getservbyname("ftp", NULL);     /* FTP using TCP */
+sptr = getservbyname("ftp", "udp");    /* this call will fail */
+</pre><pre>
+</pre>
+<P class="docText">Since FTP supports only TCP, the second and third calls are the same, and the fourth call will fail. Typical lines from the <TT>/etc/services</TT> file are</P>
+<pre>
+
+</pre><pre>
+freebsd <span class="docEmphStrong">% grep -e ^ftp -e ^domain /etc/services</span>
+ftp-data         20/tcp    #File Transfer [Default Data]
+ftp              21/tcp    #File Transfer [Control]
+domain           53/tcp    #Domain Name Server
+domain           53/udp    #Domain Name Server
+ftp-agent       574/tcp    #FTP Software Agent System
+ftp-agent       574/udp    #FTP Software Agent System
+ftps-data       989/tcp                 # ftp protocol, data, over TLS/SSL
+ftps            990/tcp                 # ftp protocol, control, over TLS/SSL
+</pre><pre>
+</pre>
+<P class="docText">The next function, <TT>getservbyport</TT>, looks up a service given its port number and an optional protocol.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netdb.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct servent *getservbyport (int</TT> <span class="docEmphasis">port</span>, <TT>const char</TT> *<span class="docEmphasis">protoname</span>);</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-null pointer if OK, <TT>NULL</TT> on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The <span class="docEmphasis">port</span> value must be network byte ordered. Typical calls to this function could be as follows:</P>
+<pre>
+
+</pre><pre>
+struct servent *sptr;
+
+sptr = getservbyport (htons (53), "udp"); /* DNS using UDP */
+sptr = getservbyport (htons (21), "tcp"); /* FTP using TCP */
+sptr = getservbyport (htons (21), NULL);  /* FTP using TCP */
+sptr = getservbyport (htons (21), "udp"); /* this call will fail */
+</pre><pre>
+</pre>
+<P class="docText">The last call fails because there is no service that uses port 21 with UDP.</P>
+<P class="docText">Be aware that a few port numbers are used with TCP for one service, but the same port number is used with UDP for a totally different service. For example, the following:</P>
+<pre>
+
+</pre><pre>
+freebsd <span class="docEmphStrong">% grep 514 /etc/services</span>
+shell           514/tcp    cmd          #like exec, but automatic
+syslog          514/udp
+</pre><pre>
+</pre>
+<P class="docText">shows that port 514 is used by the <TT>rsh</TT> command with TCP, but with the <TT>syslog</TT> daemon with UDP. Ports 512–514 have this property.</P>
+<A NAME="ch11lev2sec5"></A>
+<H4 class="docSection2Title"> Example: Using <TT>gethostbyname</TT> and <TT>getservbyname</TT></H4>
+<P class="docText">We can now modify our TCP daytime client from <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A> to use <TT>gethostbyname</TT> and <TT>getservbyname</TT> and take two command-line arguments: a hostname and a service name. <A class="docLink" HREF="#ch11fig04">Figure 11.4</A> shows our program. This program also shows the desired behavior of attempting to connect to all the IP addresses for a multihomed server, until one succeeds or all the addresses have been tried.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch11fig04"></A>Figure 11.4 Our daytime client that uses <TT>gethostbyname</TT> and <TT>getservbyname</TT>.</H5>
+<P class="docText"><span class="docEmphasis">names/daytimetcpcli1.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main (int argc, char **argv)
+ 4 {
+ 5     int     sockfd, n;
+ 6     char     recvline [MAXLINE + 1];
+ 7     struct sockaddr_in servaddr;
+ 8     struct in_addr **pptr;
+ 9     struct in_addr *inetaddrp [2];
+10     struct in_addr inetaddr;
+11     struct hostent *hp;
+12     struct servent *sp;
+
+13     if (argc ! = 3)
+14         err_quit ("usage: daytimetcpclil &lt;hostname&gt; &lt;service&gt;");
+
+15     if ( (hp = gethostbyname (argv [1]) ) == NULL) {
+16         if (inet_aton (argv [1], &amp;inetaddr) == 0) {
+17            err_quit ("hostname error for %s: %s", argv [1],
+18                     hstrerror (h_errno) );
+19         } else {
+20             inetaddrp [0] = &amp;inetaddr;
+21             inetaddrp [1] = NULL;
+22             pptr = inetaddrp;
+23         }
+24     } else {
+25         pptr = (struct in_addr **) hp-&gt;h_addr_list;
+26     }
+
+27     if ( (sp = getservbyname (argv [2], "tcp") ) == NULL)
+28         err_quit ("getservbyname error for %s", argv [2] );
+
+29     for ( ; *pptr != NULL; pptr++) {
+30         sockfd = Socket (AF_INET, SOCK_STREAM, 0) ;
+
+31         bzero (&amp;servaddr, sizeof (servaddr) ) ;
+32         servaddr.sin_family = AF_INET;
+33         servaddr.sin_port = sp-&gt;s_port;
+34         memcpy (&amp;servaddr.sin_addr, *pptr, sizeof (struct in_addr) ) ;
+35         printf ("trying %s\n", Sock_ntop ( (SA *) &amp;servaddr, sizeof (servaddr) ) ) ;
+
+36         if (connect (sockfd, (SA *) &amp;servaddr, sizeof (servaddr) ) == 0)
+37             break;               /* success */
+38         err_ret ("connect error");
+39         close (sockfd) ;
+40      }
+41     if (*pptr == NULL)
+42          err_quit ("unable to connect");
+
+43      while ( (n = Read (sockfd, recvline, MAXLINE) ) &gt; 0) {
+44          recvline [n] = 0;               /* null terminate */
+45          Fputs (recvline, stdout);
+46      }
+47      exit (0);
+48 }
+</PRE>
+
+<A NAME="ch11lev3sec1"></A>
+<H5 class="docSection3Title"> Call <TT>gethostbyname</TT> and <TT>getservbyname</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>13–28</TT></span> The first command-line argument is a hostname, which we pass as an argument to <TT>gethostbyname</TT>, and the second is a service name, which we pass as an argument to <TT>getservbyname</TT>. Our code assumes TCP, and that is what we use as the second argument to <TT>getservbyname</TT>. If <TT>gethostbyname</TT> fails to look up the name, we try using the <TT>inet_aton</TT> function (<A class="docLink" HREF="0131411551_ch03lev1sec6.html#ch03lev1sec6">Section 3.6</A>) to see if the argument was an ASCII-format address. If it was, we construct a single-element list consisting of the corresponding address.</p>
+
+<A NAME="ch11lev3sec2"></A>
+<H5 class="docSection3Title"> Try each server address</H5>
+<p class="docText"><span class="docEmphasis"><TT>29–35</TT></span> We now code the calls to <TT>socket</TT> and <TT>connect</TT> in a loop that is executed for every server address until a <TT>connect</TT> succeeds or the list of IP addresses is exhausted. After calling <TT>socket</TT>, we fill in an Internet socket address structure with the IP address and port of the server. While we could move the call to <TT>bzero</TT> and the subsequent two assignments out of the loop, for efficiency, the code is easier to read as shown. Establishing the connection with the server is rarely a performance bottleneck for a network client.</p>
+
+<A NAME="ch11lev3sec3"></A>
+<H5 class="docSection3Title"> Call <TT>connect</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>36–39</TT></span> <TT>connect</TT> is called, and if it succeeds, <TT>break</TT> terminates the loop. If the connection establishment fails, we print an error and close the socket. Recall that a descriptor that fails a call to <TT>connect</TT> must be closed and is no longer usable.</p>
+
+<A NAME="ch11lev3sec4"></A>
+<H5 class="docSection3Title"> Check for failure</H5>
+<p class="docText"><span class="docEmphasis"><TT>41–42</TT></span> If the loop terminates because no call to <TT>connect</TT> succeeded, the program terminates.</p>
+
+<A NAME="ch11lev3sec5"></A>
+<H5 class="docSection3Title"> Read server's reply</H5>
+<p class="docText"><span class="docEmphasis"><TT>43–47</TT></span> Otherwise, we read the server's response, terminating when the server closes the connection.</p>
+<P class="docText">If we run this program specifying one of our hosts that is running the daytime server, we get the expected output.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimetcpcli1 aix daytime</span>
+trying 192.168.42.2:13
+Sun Jul 27 22:44:19 2003
+</pre><pre>
+</pre>
+<P class="docText">What is more interesting is to run the program to a multihomed system that is not running the daytime server.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimetcpcli1 gateway.tuc.noao.edu daytime</span>
+trying 140.252.108.1:13
+connect error: Operation timed out
+trying 140.252.1.4:13
+connect error: Operation timed out
+trying 140.252.104.1:13
+connect error: Connection refused
+unable to connect
+</pre><pre>
+</pre>
+
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,233 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="23.4 Notifications"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch23lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch23lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch23lev1sec4"></A>
+<H3 class="docSection1Title">23.4 Notifications</H3>
+<P class="docText">As we discussed in <A class="docLink" HREF="0131411551_ch09lev1sec14.html#ch09lev1sec14">Section 9.14</A>, an application can subscribe to seven notifications. Up to now, our application has ignored all events that may occur other than the receipt of new data. The examples in this section give an overview of how to receive and interpret SCTP's notifications of additional transport-layer events. <A class="docLink" HREF="#ch23fig04">Figure 23.4</A> shows a function that will display any notification that arrives from the transport. We will also modify our server to enable all events and call this new function when a notification is received. Note that our server is not really using the notification for any specific purpose.</P>
+<A NAME="ch23lev3sec12"></A>
+<H4 class="docSection2Title"> Cast and switch</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–15</TT></span> The function casts the incoming buffer to the overall union type. It dereferences the generic <TT>sn_header</TT> structure and the generic type <TT>sn_type</TT>, and switches on this value.</p>
+
+<A NAME="ch23lev3sec13"></A>
+<H4 class="docSection2Title"> Process association change</H4>
+<p class="docText"><span class="docEmphasis"><TT>16–40</TT></span> If the function finds an association change notification in the buffer, it prints the type of association change that occurred.</p>
+
+<A NAME="ch23lev3sec14"></A>
+<H4 class="docSection2Title"> Peer address change</H4>
+<p class="docText"><span class="docEmphasis"><TT>41–66</TT></span> If it was a peer address notification, the function prints the address event (after decoding) and the address.</p>
+
+<A NAME="ch23lev3sec15"></A>
+<H4 class="docSection2Title"> Remote error</H4>
+<p class="docText"><span class="docEmphasis"><TT>67–71</TT></span> If the function finds a remote error, it displays this fact and the association ID on which it occurred. The function does not bother to decode and display the actual error reported by the remote peer. The information is available in the <TT>sre_data</TT> field of the <TT>sctp_remote_error</TT> structure.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch23fig04"></A>Figure 23.4 A notifications display utility.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctp_displayevents.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 void
+ 3 print_notification(char *notify_buf)
+ 4 {
+ 5     union sctp_notification *snp;
+ 6     struct sctp_assoc_change *sac;
+ 7     struct sctp_paddr_change *spc;
+ 8     struct sctp_remote_error *sre;
+ 9     struct sctp_send_failed *ssf;
+10     struct sctp_shutdown_event *sse;
+11     struct sctp_adaption_event *ae;
+12     struct sctp_pdapi_event *pdapi;
+13     const char *str;
+
+14     snp = (union sctp_notification *) notify_buf;
+15     switch (snp-&gt;sn_header.sn_type) {
+16     case SCTP_ASSOC_CHANGE:
+17        sac = &amp;snp-&gt;sn_assoc_change;
+18        switch (sac-&gt;sac_state) {
+19        case SCTP_COMM_UP:
+20            str = "COMMUNICATION UP";
+21            break;
+22        case SCTP_COMM_LOST:
+23            str = "COMMUNICATION LOST";
+24            break;
+25        case SCTP_RESTART:
+26            str = "RESTART";
+27            break;
+28        case SCTP_SHUTDOWN_COMP:
+29            str = "SHUTDOWN COMPLETE";
+30            break;
+31        case SCTP_CANT_STR_ASSOC:
+32            str = "CAN'T START ASSOC";
+33            break;
+34        default:
+35            str = "UNKNOWN";
+36            break;
+37        }                       /* end switch(sac-&gt;sac_state) */
+38        printf("SCTP_ASSOC_CHANGE: %s, assoc=0x%x\n", str,
+39               (uint32_t) sac-&gt;sac_assoc_id);
+40        break;
+41    case SCTP_PEER_ADDR_CHANGE:
+42        spc = &amp;snp-&gt;sn_paddr_change;
+43        switch (spc-&gt;spc_state) {
+44        case SCTP_ADDR_AVAILABLE:
+45            str = "ADDRESS AVAILABLE";
+46            break;
+47        case SCTP_ADDR_UNREACHABLE:
+48            str = "ADDRESS UNREACHABLE";
+49            break;
+50        case SCTP_ADDR_REMOVED:
+51            str = "ADDRESS REMOVED";
+52            break;
+53        case SCTP_ADDR_ADDED:
+54            str = "ADDRESS ADDED";
+55            break;
+56        case SCTP_ADDR_MADE_PRIM:
+57            str = "ADDRESS MADE PRIMARY";
+58            break;
+59        default:
+60            str = "UNKNOWN";
+61            break;
+62        }                       /* end switch(spc-&gt;spc_state) */
+63        printf("SCTP_PEER_ADDR_CHANGE: %s, addr=%s, assoc=0x%x\n", str,
+64               Sock_ntop((SA *) &amp;spc-&gt;spc_aaddr, sizeof(spc-&gt;spc_aaddr)),
+65               (uint32_t) spc-&gt;spc_assoc_id);
+66        break;
+67    case SCTP_REMOTE_ERROR:
+68        sre = &amp;snp-&gt;sn_remote_error;
+69        printf("SCTP_REMOTE_ERROR: assoc=0x%x error=%d\n",
+70               (uint32_t) sre-&gt;sre_assoc_id, sre-&gt;sre_error);
+71        break;
+72    case SCTP_SEND_FAILED:
+73        ssf = &amp;snp-&gt;sn_send_failed;
+74        printf("SCTP_SEND_FAILED: assoc=0x%x error=%d\n",
+75               (uint32_t) ssf-&gt;ssf_assoc_id, ssf-&gt;ssf_error);
+76        break;
+77    case SCTP_ADAPTION_INDICATION:
+78        ae = &amp;snp-&gt;sn_adaption_event;
+79        printf("SCTP_ADAPTION_INDICATION: 0x%x\n",
+80               (u_int) ae-&gt;sai_adaption_ind);
+81        break;
+82    case SCTP_PARTIAL_DELIVERY_EVENT:
+83        pdapi = &amp;snp-&gt;sn_pdapi_event;
+84        if (pdapi-&gt;pdapi_indication == SCTP_PARTIAL_DELIVERY_ABORTED)
+85            printf("SCTP_PARTIAL_DELIEVERY_ABORTED\n");
+86        else
+87            printf("Unknown SCTP_PARTIAL_DELIVERY_EVENT 0x%x\n",
+88                   pdapi-&gt;pdapi_indication);
+89        break;
+90    case SCTP_SHUTDOWN_EVENT:
+91        sse = &amp;snp-&gt;sn_shutdown_event;
+92        printf("SCTP_SHUTDOWN_EVENT: assoc=0x%x\n",
+93               (uint32_t) sse-&gt;sse_assoc_id);
+94        break;
+95    default:
+96        printf("Unknown notification event type=0x%x\n",
+97               snp-&gt;sn_header.sn_type);
+98    }
+99 }
+</PRE>
+
+
+<A NAME="ch23lev3sec16"></A>
+<H4 class="docSection2Title"> Failed message</H4>
+<p class="docText"><span class="docEmphasis"><TT>72–76</TT></span> If the function decodes a send failed notification, it knows that a message was not sent to the peer. This means that either: (i) the association is coming down, and an association notification will soon follow (if it has not already arrived), or (ii) the server is using the partial reliability extension and a message was not successfully sent (due to constraints placed on the transfer). The data actually sent is available to the function in the <TT>ssf_data</TT> field (which our function does not examine).</p>
+
+<A NAME="ch23lev3sec17"></A>
+<H4 class="docSection2Title"> Adaption layer indication</H4>
+<p class="docText"><span class="docEmphasis"><TT>77–81</TT></span> If the function decodes an adaption layer indicator, it displays the 32-bit value passed in the setup message (INIT or INIT-ACK).</p>
+
+<A NAME="ch23lev3sec18"></A>
+<H4 class="docSection2Title"> Partial delivery notification</H4>
+<p class="docText"><span class="docEmphasis"><TT>82–89</TT></span> If a partial delivery notification arrives, the function announces it. The only event defined as of this writing is that the partial delivery is aborted.</p>
+
+<A NAME="ch23lev3sec19"></A>
+<H4 class="docSection2Title"> Shutdown notification</H4>
+<p class="docText"><span class="docEmphasis"><TT>90–94</TT></span> If the function decodes this notification, it knows that the peer has issued a graceful shutdown. This notification is usually soon followed by an association change notification when the shutdown sequence completes.</p>
+<P class="docText">The modification to the server to use our new function can be seen in <A class="docLink" HREF="#ch23fig05">Figure 23.5</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch23fig05"></A>Figure 23.5 A modified server that uses notifications.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctpserv06.c</span></P>
+
+<PRE>
+21     bzero(&amp;evnts, sizeof(evnts));
+22     evnts.sctp_data_io_event = 1;
+23     evnts.sctp_association_event = 1;
+24     evnts.sctp_address_event = 1;
+25     evnts.sctp_send_failure_event = 1;
+26     evnts.sctp_peer_error_event = 1;
+27     evnts.sctp_shutdown_event = 1;
+28     evnts.sctp_partial_delivery_event = 1;
+29     evnts.sctp_adaption_layer_event = 1;
+30     Setsockopt(sock_fd, IPPROTO_SCTP, SCTP_EVENTS, &amp;evnts, sizeof(evnts));
+
+31     Listen(sock_fd, LISTENQ);
+32     for ( ; ; ) {
+33         len = sizeof(struct sockaddr_in);
+34         rd_sz = Sctp_recvmsg(sock_fd, readbuf, sizeof(readbuf),
+35                              (SA *) &amp;cliaddr, &amp;len, &amp;sri, &amp;msg_flags);
+36         if (msg_flags &amp; MSG_NOTIFICATION) {
+37             print_notification(readbuf);
+38             continue;
+39         }
+</PRE>
+
+
+<A NAME="ch23lev3sec20"></A>
+<H4 class="docSection2Title"> Set up to receive notifications</H4>
+<p class="docText"><span class="docEmphasis"><TT>21–30</TT></span> Here the server changes the event settings so that it will receive all notifications.</p>
+
+<A NAME="ch23lev3sec21"></A>
+<H4 class="docSection2Title"> Normal receive code</H4>
+<p class="docText"><span class="docEmphasis"><TT>31–35</TT></span> This section of server code is unchanged.</p>
+
+<A NAME="ch23lev3sec22"></A>
+<H4 class="docSection2Title"> Handle notification</H4>
+<p class="docText"><span class="docEmphasis"><TT>36–39</TT></span> Here the server checks the <TT>msg_flags</TT> field. If the server finds that the data is a notification, it calls our display function <TT>sctp_print_notification</TT> and loops around to read the next message.</p>
+
+<A NAME="ch23lev2sec1"></A>
+<H4 class="docSection2Title"> Running the Code</H4>
+<P class="docText">We start the client and send one message as follows:</P>
+<pre>
+
+</pre><pre>
+     FreeBSD-lap: <span class="docEmphStrong">./sctpclient01 10.1.1.5</span>
+     <span class="docEmphStrong">[0] Hello</span>
+     From str:1 seq:0 (assoc:c99e15a0) : [0] Hello
+     <span class="docEmphStrong">Control-D</span>
+     FreeBSD-lap:
+</pre><pre>
+</pre>
+<P class="docText">When receiving the connection, message, and connection termination, our modified server displays each event as it occurs.</P>
+<pre>
+
+</pre><pre>
+     FreeBSD-lap: <span class="docEmphStrong">./sctpserv06</span>
+     SCTP_ADAPTION_INDICATION: 0x504c5253
+     SCTP_ASSOC_CHANGE: COMMUNICATION UP, assoc=c99e2680h
+     SCTP_SHUTDOWN_EVENT: assoc=c99e2680h
+     SCTP_ASSOC_CHANGE: SHUTDOWN COMPLETE, assoc=c99e2680h
+     <span class="docEmphStrong">Control-C</span>
+</pre><pre>
+</pre>
+<P class="docText">As you can see, the server now announces the events as they occur on the transport.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch23lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch23lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

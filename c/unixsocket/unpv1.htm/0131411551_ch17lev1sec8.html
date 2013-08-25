@@ -1,0 +1,115 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="17.8 ARP Cache Operations"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch17lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch17lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch17lev1sec8"></A>
+<H3 class="docSection1Title">17.8 ARP Cache Operations</H3>
+<P class="docText">On some systems, the ARP cache is also manipulated with the <TT>ioctl</TT> function. Systems that use routing sockets (<A class="docLink" HREF="0131411551_ch18.html#ch18">Chapter 18</A>) usually use routing sockets instead of <TT>ioctl</TT> to access the ARP cache. These requests use an <TT>arpreq</TT> structure, shown in <A class="docLink" HREF="#ch17fig12">Figure 17.12</A> and defined by including the <TT>&lt;net/if_arp.h&gt;</TT> header.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig12"></A>Figure 17.12 <TT>arpreq</TT> structure used with <TT>ioctl</TT> requests for ARP cache.</H5>
+<P class="docText"><span class="docEmphasis">&lt;net/if_arp.h&gt;</span></P>
+
+<PRE>
+struct arpreq {
+    struct sockaddr arp_pa;     /* protocol address */
+    struct sockaddr arp_ha;     /* hardware address */
+    int             arp_flags;  /* flags */
+};
+
+#define ATF_INUSE     0x01 /* entry in use */
+#define ATF_COM       0x02 /* completed entry (hardware addr valid) */
+#define ATF_PERM      0x04 /* permanent entry */
+#define ATF_PUBL      0x08 /* published entry (respond for other host) */
+</PRE>
+
+<P class="docText">The third argument to <TT>ioctl</TT> must point to one of these structures. The following three <span class="docEmphasis">requests</span> are supported:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SIOCSARP</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">Add a new entry to the ARP cache or modify an existing entry. <TT>arp_pa</TT> is an Internet socket address structure containing the IP address, and <TT>arp_ha</TT> is a generic socket address structure with <TT>sa_family</TT> set to <TT>AF_UNSPEC</TT> and <TT>sa_data</TT> containing the hardware address (e.g., the 6-byte Ethernet address). The two flags, <TT>ATF_PERM</TT> and <TT>ATF_PUBL</TT>, can be specified by the application. The other two flags, <TT>ATF_INUSE</TT> and <TT>ATF_COM</TT>, are set by the kernel.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SIOCDARP</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">Delete an entry from the ARP cache. The caller specifies the Internet address for the entry to be deleted.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SIOCGARP</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">Get an entry from the ARP cache. The caller specifies the Internet address, and the corresponding Ethernet address is returned along with the flags.</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Only the superuser can add or delete an entry. These three requests are normally issued by the <TT>arp</TT> program.</P>
+<BLOCKQUOTE><P><P class="docList">These ARP-related <TT>ioctl</TT> requests are not supported on some newer systems, which use routing sockets for these ARP operations.</P></P></BLOCKQUOTE>
+<P class="docText">Notice that there is no way with <TT>ioctl</TT> to list all the entries in the ARP cache. On many systems, the <TT>arp</TT> command, when invoked with the <TT>-a</TT> flag (list all entries in the ARP cache), reads the kernel's memory (<TT>/dev/kmem</TT>) to obtain the current contents of the ARP cache. We will see an easier (and better) way to do this using <TT>sysctl</TT>, which only works on some systems (<A class="docLink" HREF="0131411551_ch18lev1sec4.html#ch18lev1sec4">Section 18.4</A>).</P>
+<A NAME="ch17lev2sec1"></A>
+<H4 class="docSection2Title"> Example: Print Hardware Addresses of Host</H4>
+<P class="docText">We now use our <TT>get_ifi_info</TT> function to return all of a host's IP addresses, followed by an <TT>ioctl</TT> of <TT>SIOCGARP</TT> for each IP address to obtain and print the hardware addresses. We show our program in <A class="docLink" HREF="#ch17fig13">Figure 17.13</A>.</P>
+<A NAME="ch17lev3sec9"></A>
+<H5 class="docSection3Title"> Get List of Addresses and Loop Through Each One</H5>
+<p class="docText"><span class="docEmphasis"><TT>12</TT></span> We call <TT>get_ifi_info</TT> to obtain the host's IP addresses and then loop through each address.</p>
+
+<A NAME="ch17lev3sec10"></A>
+<H5 class="docSection3Title"> Print IP Address</H5>
+<p class="docText"><span class="docEmphasis"><TT>13</TT></span> We print the IP address using <TT>sock_ntop</TT>. We asked <TT>get_ifi_info</TT> to only return IPv4 addresses, since ARP is not used with IPv6.</p>
+
+<A NAME="ch17lev3sec11"></A>
+<H5 class="docSection3Title"> Issue <TT>ioctl</TT> and Check for Error</H5>
+<p class="docText"><span class="docEmphasis"><TT>14–19</TT></span> We fill in the <TT>arp_pa</TT> structure as an IPv4 socket address structure containing the IPv4 address. <TT>ioctl</TT> is called, and if it returns an error (e.g., because the address supplied isn't on an interface that supports ARP), we print the error and loop to the next address.</p>
+
+<A NAME="ch17lev3sec12"></A>
+<H5 class="docSection3Title"> Print Hardware Address</H5>
+<p class="docText"><span class="docEmphasis"><TT>20–22</TT></span> The hardware address returned from the <TT>ioctl</TT> is printed.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig13"></A>Figure 17.13 Print a host's hardware addresses.</H5>
+<P class="docText"><span class="docEmphasis">ioctl/prmac.c</span></P>
+
+<PRE>
+ 1 #include     "unpifi.h"
+ 2 #include     &lt;net/if_arp.h&gt;
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     sockfd;
+ 7     struct ifi_info *ifi;
+ 8     unsigned char *ptr;
+ 9     struct arpreq arpreq;
+10     struct sockaddr_in *sin;
+
+11     sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+12     for (ifi = get_ifi_info(AF_INET, 0); ifi != NULL; ifi = ifi-&gt;ifi_next) {
+13         printf("%s: ", Sock_ntop(ifi-&gt;ifi_addr, sizeof(struct sockaddr_in)));
+
+14         sin = (struct sockaddr_in *) &amp;arpreq.arp_pa;
+15         memcpy(sin, ifi-&gt;ifi_addr, sizeof(struct sockaddr_in));
+
+16         if (ioctl(sockfd, SIOCGARP, &amp;arpreq) &lt; 0) {
+17             err_ret("ioctl SIOCGARP");
+18             continue;
+19         }
+
+20         ptr = &amp;arpreq.arp_ha.sa_data[0];
+21         printf("%x:%x:%x:%x:%x:%x\n", *ptr, *(ptr + 1),
+22                *(ptr + 2), *(ptr + 3), *(ptr + 4), *(ptr + 5));
+23     }
+24     exit(0);
+25 }
+</PRE>
+
+<P class="docText">Running this program on our <TT>hpux</TT> host gives</P>
+<pre>
+
+</pre><pre>
+hpux % <span class="docEmphStrong">prmac</span>
+192.6.38.100: 0:60:b0:c2:68:9b
+192.168.1.1: 0:60:b0:b2:28:2b
+127.0.0.1: ioctl SIOCGARP: Invalid argument
+</pre><pre>
+</pre>
+
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch17lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch17lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

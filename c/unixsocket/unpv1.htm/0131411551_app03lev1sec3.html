@@ -1,0 +1,102 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="C.3 'sock' Program"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app03lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app03lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app03lev1sec3"></A>
+<H3 class="docSection1Title">C.3 <TT>sock</TT> Program</H3>
+<P class="docText">Stevens' <TT>sock</TT> program first appeared in TCPv1, where it was frequently used to generate special case conditions, most of which were then examined in the text using <TT>tcpdump</TT>. The handy thing about the program is that it generates so many different scenarios, saving us from having to write special test programs.</P>
+<P class="docText">We do not show the source code for the program in this text (it is over 2,000 lines of C), but the source code is freely available (see the Preface).</P>
+<P class="docText">The program operates in one of four modes, and each mode can use either TCP or UDP:</P>
+<UL><LI><P class="docList">Standard input, standard output client (<A class="docLink" HREF="#app03fig01">Figure C.1</A>):</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="app03fig01"></A>Figure C.1. <TT>sock</TT> client, standard input, standard output.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="429" HEIGHT="100" src="FILES/xcfig01.gif" ALT="graphics/xcfig01.gif"></p>
+
+</CENTER><P class="docList">In the client mode, everything read from standard input is written to the network, and everything received from the network is written to standard output. The server's IP address and port must be specified, and in the case of TCP, an active open is performed.</P></LI><LI><P class="docList">Standard input, standard output server—This mode is similar to the previous mode, except the program binds a well-known port to its socket, and in the case of TCP, performs a passive open.</P></LI><LI><P class="docList">Source client (<A class="docLink" HREF="#app03fig02">Figure C.2</A>):</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="app03fig02"></A>Figure C.2. <TT>sock</TT> program as source client.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="347" HEIGHT="99" src="FILES/xcfig02.gif" ALT="graphics/xcfig02.gif"></p>
+
+</CENTER><P class="docList">The program performs a fixed number of writes to a network of some specified size.</P></LI><LI><P class="docList">Sink server (<A class="docLink" HREF="#app03fig03">Figure C.3</A>):</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="app03fig03"></A>Figure C.3. <TT>sock</TT> program as sink server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="341" HEIGHT="100" src="FILES/xcfig03.gif" ALT="graphics/xcfig03.gif"></p>
+
+</CENTER><P class="docList">The program performs a fixed number of reads from a network.</P></LI></UL>
+<P class="docText">These four operating modes correspond to the following four commands:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>sock</TT> <span class="docEmphasis">[options] hostname service</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>sock</TT> <span class="docEmphasis">[options]</span> <TT>-s</TT> <span class="docEmphasis">[hostname] service</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>sock</TT> <span class="docEmphasis">[options]</span> <TT>-i</TT> <span class="docEmphasis">hostname service</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>sock</TT> <span class="docEmphasis">[options]</span> <TT>-is</TT> <span class="docEmphasis">[hostname] service</span></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">where <span class="docEmphasis">hostname</span> is a hostname or IP address and <span class="docEmphasis">service</span> is a service name or port number. In the two server modes, the wildcard address is bound, unless the optional <span class="docEmphasis">hostname</span> is specified.</P>
+<P class="docText">About 40 command-line options can also be specified, and these drive the optional features of the program. We will not detail these options here, but many of the socket options described in <A class="docLink" HREF="0131411551_ch07.html#ch07">Chapter 7</A> can be set. Executing the program without any arguments prints a summary of the options.</P>
+<pre>
+
+</pre><pre>
+-b n  bind n as client's local port number
+-c    convert newline to CR/LF &amp; vice versa
+-f a.b.c.d.p foreign IP address = a.b.c.d, foreign port # = p
+-g a.b.c.d loose source route
+-h    issue TCP half-close on standard input EOF
+-i    "source" data to socket, "sink" data from socket (w/-s)
+-j a.b.c.d join multicast group
+-k    write or writev in chunks
+-l a.b.c.d.p  client's local IP address = a.b.c.d, local port # = p
+-n n  # buffers to write for "source" client (default 1024)
+-o    do NOT connect UDP client
+-p n  # ms to pause before each read or write (source/sink)
+-q n  size of listen queue for TCP server (default 5)
+-r n  # bytes per read() for "sink" server (default 1024)
+-s    operate as server instead of client
+-t n  set multicast ttl
+-u    use UDP instead of TCP
+-v    verbose
+-w n  # bytes per write() for "source" client (default 1024)
+-x n  # ms for SO_RCVTIMEO (receive timeout)
+-y n  # ms for SO_SNDTIMEO (send timeout)
+-A    SO_REUSEADDR option
+-B    SO_BROADCAST option
+-C    set terminal to cbreak mode
+-D    SO_DEBUG option
+-E    IP_RECVDSTADDR option
+-F    fork after connection accepted (TCP concurrent server)
+-G a.b.c.d strict source route
+-H n  IP_TOS option (16=min del, 8=max thru, 4=max rel, 2=min cost)
+-I    SIGIO signal
+-J n  IP_TTL option
+-K    SO_KEEPALIVE option
+-L n  SO_LINGER option, n = linger time
+-N    TCP_NODELAY option
+-O n  # ms to pause after listen, but before first accept
+-P n  # ms to pause before first read or write (source/sink)
+-Q n  # ms to pause after receiving FIN, but before close
+-R n  SO_RCVBUF option
+-S n  SO_SNDBUF option
+-T    SO_REUSEPORT option
+-U n  enter urgent mode before write number n (source only)
+-V    use writev() instead of write(); enables -k too
+-W    ignore write errors for sink client
+-X n  TCP_MAXSEG option (set MSS)
+-Y    SO_DONTROUTE option
+-Z    MSG_PEEK
+</pre><pre>
+</pre>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app03lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app03lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

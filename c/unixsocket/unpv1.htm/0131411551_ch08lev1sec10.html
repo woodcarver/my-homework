@@ -1,0 +1,52 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="8.10 Summary of UDP Example"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch08lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch08lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch08lev1sec10"></A>
+<H3 class="docSection1Title">8.10 Summary of UDP Example</H3>
+<P class="docText"><A class="docLink" HREF="#ch08fig11">Figure 8.11</A> shows as bullets the four values that must be specified or chosen when the client sends a UDP datagram.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch08fig11"></A>Figure 8.11. Summary of UDP client/server from client's perspective.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="331" src="FILES/08fig11.gif" ALT="graphics/08fig11.gif"></p>
+
+</CENTER>
+<P class="docText">The client must specify the server's IP address and port number for the call to <TT>sendto</TT>. Normally, the client's IP address and port are chosen automatically by the kernel, although we mentioned that the client can call <TT>bind</TT> if it so chooses. If these two values for the client are chosen by the kernel, we also mentioned that the client's ephemeral port is chosen once, on the first <TT>sendto</TT>, and then it never changes. The client's IP address, however, can change for every UDP datagram that the client sends, assuming the client does not <TT>bind</TT> a specific IP address to the socket. The reason is shown in <A class="docLink" HREF="#ch08fig11">Figure 8.11</A>: If the client host is multihomed, the client could alternate between two destinations, one going out the datalink on the left, and the other going out the datalink on the right. In this worst-case scenario, the client's IP address, as chosen by the kernel based on the outgoing datalink, would change for every datagram.</P>
+<P class="docText">What happens if the client <TT>binds</TT> an IP address to its socket, but the kernel decides that an outgoing datagram must be sent out some other datalink? In this case the IP datagram will contain a source IP address that is different from the IP address of the outgoing datalink (see <A class="docLink" HREF="0131411551_ch08lev1sec17.html#ch08lev1sec17">Exercise 8.6</A>).</P>
+<P class="docText"><A class="docLink" HREF="#ch08fig12">Figure 8.12</A> shows the same four values, but from the server's perspective.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch08fig12"></A>Figure 8.12. Summary of UDP client/server from server's perspective.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="329" src="FILES/08fig12.gif" ALT="graphics/08fig12.gif"></p>
+
+</CENTER>
+<P class="docText">There are at least four pieces of information that a server might want to know from an arriving IP datagram: the source IP address, destination IP address, source port number, and destination port number. <A class="docLink" HREF="#ch08fig13">Figure 8.13</A> shows the function calls that return this information for a TCP server and a UDP server.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch08fig13"></A>Figure 8.13. Information available to server from arriving IP datagram.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="327" HEIGHT="85" src="FILES/08fig13.gif" ALT="graphics/08fig13.gif"></p>
+
+</CENTER>
+<P class="docText">A TCP server always has easy access to all four pieces of information for a connected socket, and these four values remain constant for the lifetime of a connection. With a UDP socket, however, the destination IP address can only be obtained by setting the <TT>IP_RECVDSTADDR</TT> socket option for IPv4 or the <TT>IPV6_PKTINFO</TT> socket option for IPv6 and then calling <TT>recvmsg</TT> instead of <TT>recvfrom</TT>. Since UDP is connectionless, the destination IP address can change for each datagram that is sent to the server. A UDP server can also receive datagrams destined for one of the host's broadcast addresses or for a multicast address, as we will discuss in <A class="docLink" HREF="0131411551_ch20.html#ch20">Chapters 20</A> and <A class="docLink" HREF="0131411551_ch21.html#ch21">21</A>. We will show how to determine the destination address of a UDP datagram in <A class="docLink" HREF="0131411551_ch22lev1sec2.html#ch22lev1sec2">Section 22.2</A>, after we cover the <TT>recvmsg</TT> function.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch08lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch08lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

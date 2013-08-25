@@ -1,0 +1,100 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="1.4 Error Handling: Wrapper Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch01lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch01lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch01lev1sec4"></A>
+<H3 class="docSection1Title">1.4 Error Handling: Wrapper Functions</H3>
+<P class="docText">In any real-world program, it is essential to check <span class="docEmphasis">every</span> function call for an error return. In <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A>, we check for errors from <TT>socket</TT>, <TT>inet_pton</TT>, <TT>connect</TT>, <TT>read</TT>, and <TT>fputs</TT>, and when one occurs, we call our own functions, <TT>err_quit</TT> and <TT>err_sys</TT>, to print an error message and terminate the program. We find that most of the time, this is what we want to do. Occasionally, we want to do something other than terminate when one of these functions returns an error, as in <A class="docLink" HREF="0131411551_ch05lev1sec10.html#ch05fig12">Figure 5.12</A>, when we must check for an interrupted system call.</P>
+<P class="docText">Since terminating on an error is the common case, we can shorten our programs by defining a <span class="docEmphasis">wrapper function</span> that performs the actual function call, tests the return value, and terminates on an error. The convention we use is to capitalize the name of the function, as in</P>
+<pre>
+
+</pre><pre>
+sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+</pre><pre>
+</pre>
+<P class="docText">Our wrapper function is shown in <A class="docLink" HREF="#ch01fig07">Figure 1.7</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch01fig07"></A>Figure 1.7 Our wrapper function for the <TT>socket</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">lib/wrapsock.c</span></P>
+
+<PRE>
+236 int
+237 Socket(int family, int type, int protocol)
+238 {
+239     int     n;
+
+240     if ( (n = socket(family, type, protocol)) &lt; 0)
+241         err_sys("socket error");
+242     return (n);
+243 }
+</PRE>
+
+<blockquote>
+<p class="docText"><span class="docEmphasis">Whenever you encounter a function name in the text that begins with an uppercase letter, that is one of our wrapper functions. It calls a function whose name is the same but begins with the lowercase letter</span>.</p>
+</blockquote>
+<blockquote>
+<p class="docText"><span class="docEmphasis">When describing the source code that is presented in the text, we always refer to the lowest level function being called (e.g.,</span> <TT>socket</TT>), <span class="docEmphasis">not the wrapper function (e.g.,</span> <TT>Socket</TT>).</p>
+</blockquote>
+<P class="docText">While these wrapper functions might not seem like a big savings, when we discuss threads in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>, we will find that thread functions do not set the standard Unix <TT>errno</TT> variable when an error occurs; instead, the <TT>errno</TT> value is the return value of the function. This means that every time we call one of the <TT>pthread_</TT> functions, we must allocate a variable, save the return value in that variable, and then set <TT>errno</TT> to this value before calling <TT>err_sys</TT>. To avoid cluttering the code with braces, we can use C's comma operator to combine the assignment into <TT>errno</TT> and the call of <TT>err_sys</TT> into a single statement, as in the following:</P>
+<pre>
+
+</pre><pre>
+int    n;
+
+if ( (n = pthread_mutex_lock(&amp;ndone_mutex)) != 0)
+    errno = n, err_sys("pthread_mutex_lock error");
+</pre><pre>
+</pre>
+<P class="docText">Alternately, we could define a new error function that takes the system's error number as an argument. But, we can make this piece of code much easier to read as just</P>
+<pre>
+
+</pre><pre>
+Pthread_mutex_lock(&amp;ndone_mutex);
+</pre><pre>
+</pre>
+<P class="docText">by defining our own wrapper function, as shown in <A class="docLink" HREF="#ch01fig08">Figure 1.8</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch01fig08"></A>Figure 1.8 Our wrapper function for <TT>pthread_mutex_lock</TT>.</H5>
+<P class="docText"><span class="docEmphasis">lib/wrappthread.c</span></P>
+
+<PRE>
+72 void
+73 Pthread_mutex_lock(pthread_mutex_t *mptr)
+74 {
+75     int     n;
+
+76     if ( (n = pthread_mutex_lock(mptr)) == 0)
+77         return;
+78     errno = n;
+79     err_sys("pthread_mutex_lock error");
+80 }
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList">With careful C coding, we could use macros instead of functions, providing a little run-time efficiency, but these wrapper functions are rarely the performance bottleneck of a program.</P></P><P><P class="docList">Our choice of capitalizing the first character of a function name is a compromise. Many other styles were considered: prefixing the function name with an "<TT>e</TT>" (as done on p. 182 of [Kernighan and Pike 1984]), appending "<TT>_e</TT>" to the function name, and so on. Our style seems the least distracting while still providing a visual indication that some other function is really being called.</P></P><P><P class="docList">This technique has the side benefit of checking for errors from functions whose error returns are often ignored: <TT>close</TT> and <TT>listen</TT>, for example.</P></P></BLOCKQUOTE>
+<P class="docText">Throughout the rest of this book, we will use these wrapper functions unless we need to check for an explicit error and handle it in some way other than terminating the process. We do not show the source code for all our wrapper functions, but the code is freely available (see the Preface).</P>
+<A NAME="ch01lev2sec1"></A>
+<H4 class="docSection2Title"> Unix <TT>errno</TT> Value</H4>
+<P class="docText">When an error occurs in a Unix function (such as one of the socket functions), the global variable <TT>errno</TT> is set to a positive value indicating the type of error and the function normally returns –1. Our <TT>err_sys</TT> function looks at the value of <TT>errno</TT> and prints the corresponding error message string (e.g., "Connection timed out" if <TT>errno</TT> equals <TT>ETIMEDOUT</TT>).</P>
+<P class="docText">The value of <TT>errno</TT> is set by a function only if an error occurs. Its value is undefined if the function does not return an error. All of the positive error values are constants with all-uppercase names beginning with "<TT>E</TT>," and are normally defined in the <TT>&lt;sys/errno.h&gt;</TT> header. No error has a value of 0.</P>
+<P class="docText">Storing <TT>errno</TT> in a global variable does not work with multiple threads that share all global variables. We will talk about solutions to this problem in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>.</P>
+<P class="docText">Throughout the text, we will use phrases such as "the <TT>connect</TT> function returns <TT>ECONNREFUSED</TT>" as shorthand to mean that the function returns an error (typically with a return value of –1), with <TT>errno</TT> set to the specified constant.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch01lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch01lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

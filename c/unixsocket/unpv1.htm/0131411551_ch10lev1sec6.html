@@ -1,0 +1,48 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="10.6 Controlling the Number of Streams"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch10lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch10lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch10lev1sec6"></A>
+<H3 class="docSection1Title" id="162666-820">10.6 Controlling the Number of Streams</H3>
+<P class="docText">We have seen how SCTP streams can be used, but how can we control the number of streams an endpoint requests at association initialization? Our previous examples used the system default for the number of outbound streams. For the FreeBSD KAME implementation of SCTP, this default is set to 10 streams. What if our application and server would like to use more than 10 streams? In <A class="docLink" HREF="#ch10fig10">Figure 10.10</A>, we show a modification that allows a server to increase the number of streams the endpoint requests on association startup. Note that this change must be made on the socket before an association is created.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch10fig10"></A>Figure 10.10 Requesting more streams in our server.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctpserv02.c</span></P>
+
+<PRE>
+14      if (argc == 2)
+15          stream_increment = atoi (argv[1]);
+16      sock_fd = Socket (AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+17      bzero (&amp;initm, sizeof (initm));
+18      initm.sinit_num_ostreams = SERV_MORE_STRMS_SCTP;
+19      Setsockopt (sock_fd, IPPROTO_SCTP, SCTP_INITMSG, &amp;initm, sizeof (initm));
+</PRE>
+
+<A NAME="ch10lev3sec27"></A>
+<H4 class="docSection2Title"> Initial setup</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–16</TT></span> As before, the server sets up the flags based on additional arguments and opens the socket.</p>
+
+<A NAME="ch10lev3sec28"></A>
+<H4 class="docSection2Title"> Modifying the streams request</H4>
+<p class="docText"><span class="docEmphasis"><TT>17–19</TT></span> These lines contain the new code we have added to our server. The server first zeros out the <TT>sctp_initmsg</TT> structure. This change assures that the <TT>setsockopt</TT> call will not unintentionally change any other values. The server then sets the <TT>sinit_max_ostreams</TT> field to the number of streams it would like to request. Next, it sets the socket option with the initial message parameters.</p>
+<P class="docText">An alternative to setting a socket option would be to use the <TT>sendmsg</TT> function and provide ancillary data to request different stream parameters from the default. This type of ancillary data is only effective on the one-to-many-style socket interface.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch10lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch10lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,58 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="21.4 Multicasting on a WAN"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch21lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch21lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch21lev1sec4"></A>
+<H3 class="docSection1Title">21.4 Multicasting on a WAN</H3>
+<P class="docText">Multicasting on a single LAN, as discussed in the previous section, is simple. One host sends a multicast packet and any interested host receives the packet. The benefit of multicasting over broadcasting is reducing the load on all the hosts not interested in the multicast packets.</P>
+<P class="docText">Multicasting is also beneficial on WANs. Consider the WAN shown in <A class="docLink" HREF="#ch21fig05">Figure 21.5</A>, which shows five LANs connected with five multicast routers.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch21fig05"></A>Figure 21.5. Five LANs connected with five multicast routers.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="232" src="FILES/21fig05.gif" ALT="graphics/21fig05.gif"></p>
+
+</CENTER>
+<P class="docText">Next, assume that some program is started on five of the hosts (say a program that listens to a multicast audio session) and those five programs join a given multicast group. Each of the five hosts then joins that multicast group. We also assume that the multicast routers are all communicating with their neighbor multicast router using a <span class="docEmphasis">multicast routing protocol</span>, which we designate as just <span class="docEmphasis">MRP</span>. We show this in <A class="docLink" HREF="#ch21fig06">Figure 21.6</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch21fig06"></A>Figure 21.6. Five hosts join a multicast group on a WAN.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="276" src="FILES/21fig06.gif" ALT="graphics/21fig06.gif"></p>
+
+</CENTER>
+<P class="docText">When a process on a host joins a multicast group, that host sends an IGMP message to any attached multicast routers telling them that the host has just joined that group. The multicast routers then exchange this information using the MRP so that each multicast router knows what to do if it receives a packet destined to the multicast address.</P>
+<blockquote>
+<p class="docText">Multicast routing is still a research topic and could easily consume a book on its own.</p>
+</blockquote>
+<P class="docText">We now assume that a process on the host at the top left starts sending packets destined to the multicast address. Say this process is sending the audio packets that the multicast receivers are waiting to receive. We show these packets in <A class="docLink" HREF="#ch21fig07">Figure 21.7</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch21fig07"></A>Figure 21.7. Sending multicast packets on a WAN.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="272" src="FILES/21fig07.gif" ALT="graphics/21fig07.gif"></p>
+
+</CENTER>
+<P class="docText">We can follow the steps taken as the multicast packets go from the sender to all the receivers:</P>
+<UL><LI><P class="docList">The packets are multicast on the top left LAN by the sender. Receiver H1 receives these (since it has joined the group) as does MR1 (since a multicast router must receive all multicast packets).</P></LI><LI><P class="docList">MR1 forwards the multicast packet to MR2, because the MRP has informed MR1 that MR2 needs to receive packets destined to this group.</P></LI><LI><P class="docList">MR2 multicasts the packet on to its attached LAN, since hosts H2 and H3 belong to the group. It also makes a copy of the packet and sends it to MR3.</P><P class="docList">Making a copy of the packet, as MR2 does here, is something unique to multicast forwarding. A unicast packet is never duplicated as it is forwarded by routers.</P></LI><LI><P class="docList">MR3 sends the multicast packet to MR4, but MR3 does not multicast a copy on its attached LAN because we assume no host on the LAN has joined the group.</P></LI><LI><P class="docList">MR4 multicasts the packet onto its attached LAN, since hosts H4 and H5 belong to the group. It does not make a copy and send it to MR5 because none of the hosts on MR5's attached LAN belong to the group and MR4 knows this based on the multicast routing information it has exchanged with MR5.</P></LI></UL>
+<P class="docText">Two less desirable alternatives to multicasting on a WAN are <span class="docEmphasis">broadcast flooding</span> and sending individual copies to each receiver. In the first case, the packets would be broadcast by the sender, and each router would broadcast the packets out each of its interfaces, except the arriving interface. It should be obvious that this increases the number of uninterested hosts and routers that must deal with the packet.</P>
+<P class="docText">In the second case, the sender must know the IP address of all the receivers and send each one a copy. With the five receivers we show in <A class="docLink" HREF="#ch21fig07">Figure 21.7</A>, this would require five packets on the sender's LAN, four packets going from MR1 to MR2, and two packets going from MR2 to MR3 to MR4. Now just imagine the situation with a million receivers!</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch21lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch21lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,45 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="23.11 Controlling Timing"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch23lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch23lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch23lev1sec11"></A>
+<H3 class="docSection1Title" id="162666-963">23.11 Controlling Timing</H3>
+<P class="docText">SCTP has many controls that are user-tunable. All of these advanced controls are accessed via socket options we discussed in <A class="docLink" HREF="0131411551_ch07lev1sec10.html#ch07lev1sec10">Section 7.10</A>. In this section, we will highlight some of the specific controls that influence how long an SCTP endpoint will take to declare either an association or destination failure.</P>
+<P class="docText">There are seven specific controls that dictate failure detection time in SCTP (<A class="docLink" HREF="#ch23fig16">Figure 23.16</A>).</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch23fig16"></A>Figure 23.16. Fields that control timing in SCTP.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="119" src="FILES/23fig16.gif" ALT="graphics/23fig16.gif"></p>
+
+</CENTER>
+<P class="docText">Each of these parameters influences how quickly SCTP will detect failure or attempt retransmission. We can think of these as control knobs that either shorten or lengthen the time it takes for an endpoint to detect failure. We first examine two scenarios:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">An SCTP endpoint tries to open an association to a peer that has been disconnected from the network.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Two multihomed SCTP endpoints are exchanging data, and one of them is powered down during the middle of the communication. No ICMP messages are being received due to filtering by a firewall.</P></span></LI></OL></span>
+<P class="docText">In Scenario 1, the system trying to open the connection would first set its RTO timer to the <TT>srto_initial</TT> value of 3,000 ms. After a timeout, it would retransmit the INIT message and double the RTO timer to 6,000 ms. This behavior would continue until it had sent <TT>sinit_max_attempts</TT>, or eight INIT messages, and had subsequently timed out on each of the transmissions. The doubling of the RTO timer would be capped at <TT>sinit_max_init_timeo</TT>, or 60,000 ms. Therefore, it would take 3+6+12+24+48+60+60+60, or 273 seconds, to reach the point where the SCTP implementation would declare the potential peer unreachable.</P>
+<P class="docText">There are a number of knobs and combinations of knobs we can tune to shorten or lengthen this time. First, let's focus on the influence of two specific parameters we can use to shorten the time from 270 seconds. One change we can make is to decrease the number of retransmissions by changing <TT>sinit_max_attempts</TT>. An alternative change that can also be made is to reduce the maximum RTO value for the INIT by changing <TT>srto_max_init_timeo</TT>. If we lower the number of attempts to 4, our detection time to failure drops drastically to 45 seconds, one-sixth of what the default value gives us. But this method has a drawback: We may experience a case where our peer is available, but due to loss in the network, or perhaps overload at the peer, we declare the peer to be unreachable.</P>
+<P class="docText">Another approach is to lower the <TT>srto_max_init_timeo</TT> to 20 seconds. This decreases our failure detection time to 121 seconds, less than one-half of the original value, but this change also carries with it a tradeoff. If we pick a value that is too low, it is possible that excessive delay in the network would cause us to send many more INIT messages than needed.</P>
+<P class="docText">Now let's turn our attention to Scenario 2, in which there are two multihomed peers communicating with each other. One endpoint has the addresses IP-A and IP-B, the other IP-X and IP-Y. If one of them becomes unreachable (assuming data was being sent by the peer that was not powered down), the sending endpoint sees successive timeouts to each destination starting at a value of <TT>srto_min</TT> (default 1 second) and doubling until both destinations reach <TT>srto_max</TT> (default 60 seconds). The endpoint would retransmit until it reached the association maximum <TT>sasoc_asocmaxrxt</TT> (default 10 retransmissions).</P>
+<P class="docText">Now in our scenario, the sending endpoint would see timeouts at 1(IP-A) + 1(IP-B)+ 2(IP-A) + 2(IP-B) + 4(IP-A) + 4(IP-B) + 8(IP-A) + 8(IP-B) + 16(IP-A) + 16(IP-B), for a total of 62 seconds. The <TT>srto_max</TT> parameter does not influence a multihomed peer when left to its default value since we reach the default value of <TT>sasoc_asocmaxrxt</TT> before we reach <TT>srto_max</TT>. We again focus on two parameters we can use to affect these timeouts and the resulting failure detection. We can decrease the number of attempts by changing the <TT>sasoc_asocmaxrxt</TT> value (default 10), or we can decrease the maximum RTO by changing <TT>srto_max</TT> (default 60 seconds). If we set our <TT>srto_max</TT> time to 10 seconds, we can decrease the detection time by 12 seconds, reducing it to 50 seconds. An alternative, decreasing the maximum retransmissions to 8, would drop our detection time to 30 seconds. The same concerns we mentioned before apply to this scenario as well: A brief, survivable network problem or remote system overload could cause a working connection to be torn down.</P>
+<P class="docText">Among the many alternatives, we do not recommend lowering the minimum RTO (<TT>srto_min</TT>). When communicating across the Internet, lowering this value could have dire consequences in that we would retransmit much more rapidly, straining the Internet's infrastructure. In a private network, it may be acceptable to tune this value lower, but for most applications, this value should not be decreased.</P>
+<P class="docText">Each application, when turning these timing knobs, must take into consideration several factors before making adjustments:</P>
+<UL><LI><P class="docList">How quickly does your application need to detect failure?</P></LI><LI><P class="docList">Will the application be run in private networks where the conditions on the overall end-to-end path are well-known and less varying than the Internet?</P></LI><LI><P class="docList">What are the consequences of false failure detection?</P></LI></UL>
+<P class="docText">Only after carefully answering these questions will an application be able to properly tune the timing parameters of SCTP.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch23lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch23lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,31 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="27.7 IPv6 Sticky Options"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch27lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch27lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch27lev1sec7"></A>
+<H3 class="docSection1Title">27.7 IPv6 Sticky Options</H3>
+<P class="docText">We have described the use of ancillary data with <TT>sendmsg</TT> and <TT>recvmsg</TT> to send and receive seven different ancillary data objects:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">IPv6 packet information: the <TT>in6_pktinfo</TT> structure containing either the destination address and outgoing interface index, or the source address and the arriving interface index (<A class="docLink" HREF="0131411551_ch22lev1sec8.html#ch22fig21">Figure 22.21</A>)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">The outgoing hop limit or received hop limit (<A class="docLink" HREF="0131411551_ch22lev1sec8.html#ch22fig21">Figure 22.21</A>)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">The next-hop address (<A class="docLink" HREF="0131411551_ch22lev1sec8.html#ch22fig21">Figure 22.21</A>)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">The outgoing or received traffic class (<A class="docLink" HREF="0131411551_ch22lev1sec8.html#ch22fig21">Figure 22.21</A>)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Hop-by-hop options (<A class="docLink" HREF="0131411551_ch27lev1sec5.html#ch27fig10">Figure 27.10</A>)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Destination options (<A class="docLink" HREF="0131411551_ch27lev1sec5.html#ch27fig10">Figure 27.10</A>)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Routing header (<A class="docLink" HREF="0131411551_ch27lev1sec6.html#ch27fig12">Figure 27.12</A>)</P></span></LI></OL></span>
+<P class="docText">We summarized the <TT>cmsg_level</TT> and <TT>cmsg_type</TT> values for these objects, along with the values for the other ancillary data object in <A class="docLink" HREF="0131411551_ch14lev1sec6.html#ch14fig11">Figure 14.11</A>.</P>
+<P class="docText">When the same value will be used for all packets sent on a socket, instead of sending these options in every call to <TT>sendmsg</TT>, we can set the corresponding socket options instead. The socket options use the same constants as the ancillary data, that is, the option level is always <TT>IPPROTO_IPV6</TT> and the option name is <TT>IPV6_DSTOPTS</TT>, <TT>IPV6_HOPLIMIT</TT>, <TT>IPV6_HOPOPTS</TT>, <TT>IPV6_NEXTHOP</TT>, <TT>IPV6_PKTINFO</TT>, <TT>IPV6_RTHDR</TT>, or <TT>IPV6_TCLASS</TT>. But, these sticky options can be overridden on a per-packet basis for a UDP socket or for a raw IPv6 socket by specifying ancillary data in a call to <TT>sendmsg</TT>. If any ancillary data is specified in a call to <TT>sendmsg</TT>, the corresponding sticky options are not sent with that datagram.</P>
+<P class="docText">The concept of sticky options can also be used with TCP because ancillary data is never sent or received by <TT>sendmsg</TT> or <TT>recvmsg</TT> on a TCP socket. Instead, a TCP application can set the corresponding socket option and specify any of the seven option types mentioned at the beginning of this section. These objects then affect all packets sent on this socket. However, retransmission of packets that were originally sent when other (or no) sticky options were set may use either the original or the new sticky options.</P>
+<P class="docText">There is no way to retrieve options received via TCP since there is no relationship between received packets and user receive operations.</P>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch27lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch27lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

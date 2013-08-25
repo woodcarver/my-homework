@@ -1,0 +1,125 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="A.5 IPv6 Addresses"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app01lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app01lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app01lev1sec5"></A>
+<H3 class="docSection1Title">A.5 IPv6 Addresses</H3>
+<P class="docText">IPv6 addresses are 128 bits long and are usually written as eight 16-bit hexadecimal numbers. The high-order bits of the 128-bit address imply the type of address (RFC 3513 [Hinden and Deering 2003]). <A class="docLink" HREF="#app01fig07">Figure A.7</A> shows the different values of the high-order bits and what type of address these bits imply.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig07"></A>Figure A.7. Meaning of high-order bits of IPv6 addresses.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="164" src="FILES/xafig07.gif" ALT="graphics/xafig07.gif"></p>
+
+</CENTER>
+<P class="docText">These high-order bits are called the <span class="docEmphasis">format prefix</span>. For example, if the high-order 3 bits are <TT>001</TT>, the address is called a <span class="docEmphasis">global unicast address</span>. If the high-order 8 bits are <TT>11111111</TT> (<TT>0xff</TT>), it is a multicast address.</P>
+<A NAME="app01lev2sec6"></A>
+<H4 class="docSection2Title"> Global Unicast Addresses</H4>
+<P class="docText">The IPv6 addressing architecture has evolved based on lessons learned from deployment and from IPv4. The original definition of aggregatable global unicast addresses, which in <A class="docLink" HREF="#app01fig07">Figure A.7</A> begin with a 3-bit prefix of <TT>001</TT>, had a fixed structure built into the address. This structure was removed by RFC 3587 [Hinden, Deering, and Nordmark 2003], and while the addresses beginning with the <TT>001</TT> prefix will be the first ones assigned, there is no difference between them and any other global address. These addresses will be used where IPv4 unicast addresses are used today.</P>
+<P class="docText">The format of aggregation-based unicast addresses is defined in RFC 3513 [Hinden and Deering 2003] and RFC 3587 [Hinden, Deering, and Nordmark 2003] and contains the following fields, starting at the leftmost bit and going right:</P>
+<UL><LI><P class="docList">Global routing prefix (<span class="docEmphasis">n</span> bits)</P></LI><LI><P class="docList">Subnet ID (64–<span class="docEmphasis">n</span> bits)</P></LI><LI><P class="docList">Interface identifier (64 bits)</P></LI></UL>
+<P class="docText"><A class="docLink" HREF="#app01fig08">Figure A.8</A> illustrates the format of a global unicast address.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig08"></A>Figure A.8. IPv6 aggregatable global unicast addresses.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="133" src="FILES/xafig08.gif" ALT="graphics/xafig08.gif"></p>
+
+</CENTER>
+<P class="docText">The interface ID must be constructed in modified <span class="docEmphasis">EUI-64</span> format. This is a variation of IEEE <span class="docEmphasis">EUI-64</span> format [IEEE 1997], which is a superset of the 48-bit IEEE 802 MAC addresses that are assigned to most LAN interface cards. This identifier should be automatically assigned for an interface based on its hardware MAC address when possible. Details for constructing modified EUI-64-based interface identifiers are in Appendix A of RFC 3513 [Hinden and Deering 2003].</P>
+<P class="docText">Since a modified EUI-64 can be a globally unique identifier for a given interface, and an interface can identify a user, the modified EUI-64 format raises certain privacy concerns. It may be possible to track the actions and movements of a given user, for example, where they bring their roaming laptop, just from the modified EUI-64 value in their IPv6 address. RFC 3041 [Narten and Draves 2001] describes privacy extensions to generate interface identifiers that change several times per day to avoid this privacy concern.</P>
+
+<A NAME="app01lev2sec7"></A>
+<H4 class="docSection2Title"> 6 bone Test Addresses</H4>
+<P class="docText">The 6bone is a virtual network used for early testing of the IPv6 protocols (<A class="docLink" HREF="0131411551_app02lev1sec3.html#app02lev1sec3">Section B.3</A>). Although aggregatable global unicast addresses are being assigned, sites that do not qualify for address space based on the rules used by regional registries can use a special format of these addresses on the 6bone (RFC 2471 [Hinden, Fink, and Postel 1998]), as shown in <A class="docLink" HREF="#app01fig09">Figure A.9</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig09"></A>Figure A.9. IPv6 test addresses for 6bone.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="43" src="FILES/xafig09.gif" ALT="graphics/xafig09.gif"></p>
+
+</CENTER>
+<P class="docText">These addresses are considered temporary, and nodes using these addresses will have to renumber when aggregatable global unicast addresses are assigned.</P>
+<P class="docText">The high-order two bytes are <TT>0x3ffe</TT>. The <span class="docEmphasis">6bone site ID</span> is assigned by the chair of the 6bone activity. These assignments are meant to reflect how IPv6 addresses would be assigned in real-world environments. 6bone activity is winding down [Fink and Hinden 2003] now that IPv6 production deployment is well underway (in 2002, more production address allocations were made than the 6bone had allocated in eight years). The <span class="docEmphasis">subnet ID</span> and <span class="docEmphasis">interface ID</span> are used as above for subnet and node identification.</P>
+<P class="docText">In <A class="docLink" HREF="0131411551_ch11lev1sec2.html#ch11lev1sec2">Section 11.2</A>, we showed the IPv6 address for the host <TT>freebsd</TT> in <A class="docLink" HREF="0131411551_ch01lev1sec9.html#ch01fig16">Figure 1.16</A> as <TT>3ffe:b80:1f8d:1:a00:20ff:fea7:686b</TT>. The 6bone site ID is <TT>0x0b801f8d</TT> and the subnet ID is <TT>0x1</TT>. The low-order 64 bits are the modified EUI-64 constructed from the MAC address of the host's Ethernet card.</P>
+
+<A NAME="app01lev2sec8"></A>
+<H4 class="docSection2Title"> IPv4-Mapped IPv6 Addresses</H4>
+<P class="docText">IPv4-mapped IPv6 addresses allow IPv6 applications on hosts supporting both IPv4 and IPv6 to communicate with IPv4-only hosts during the transition of the Internet to IPv6. These addresses are automatically created by DNS resolvers (<A class="docLink" HREF="0131411551_ch11lev1sec9.html#ch11fig08">Figure 11.8</A>) when a query is made by an IPv6 application for the IPv6 addresses of a host that has only IPv4 addresses.</P>
+<P class="docText">We saw in <A class="docLink" HREF="0131411551_ch12lev1sec3.html#ch12fig04">Figure 12.4</A> that using this type of address with an IPv6 socket causes an IPv4 datagram to be sent to the IPv4 host. These addresses are not stored in any DNS data files; they are created when needed by a resolver.</P>
+<P class="docText"><A class="docLink" HREF="#app01fig10">Figure A.10</A> shows the format of these addresses The low-order 32 bits contain an IPv4 address.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig10"></A>Figure A.10. IPv4-mapped IPv6 address.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="40" src="FILES/xafig10.gif" ALT="graphics/xafig10.gif"></p>
+
+</CENTER>
+<P class="docText">When writing an IPv6 address, a consecutive string of zeros can be abbreviated with two colons. Also, the embedded IPv4 address is written using dotted-decimal notation. For example, we can abbreviate the IPv4-mapped IPv6 address <TT>0:0:0:0:0:FFFF:12.106.32.254</TT> as <TT>::FFFF:12.106.32.254</TT>.</P>
+
+<A NAME="app01lev2sec9"></A>
+<H4 class="docSection2Title"> IPv4-Compatible IPv6 Addresses</H4>
+<P class="docText">IPv4-compatible IPv6 addresses were also planned to be used during the transition from IPv4 to IPv6 (RFC 2893 [Gilligan and Nordmark 2000]). The administrator for a host supporting both IPv4 and IPv6 that does not have a neighbor IPv6 router should create a DNS AAAA record containing an IPv4-compatible IPv6 address. Any other IPv6 host with an IPv6 datagram to send to an IPv4-compatible IPv6 address will then <span class="docEmphasis">encapsulate</span> the IPv6 datagram with an IPv4 header; this is called an <span class="docEmphasis">automatic tunnel</span>. However, deployment concerns have reduced the usage of this feature. We will talk more about tunneling in Section B.3 and show an example of this type of IPv6 datagram encapsulated within an IPv4 header in <A class="docLink" HREF="0131411551_app02lev1sec3.html#app02fig02">Figure B.2</A>.</P>
+<P class="docText"><A class="docLink" HREF="#app01fig11">Figure A.11</A> shows the format of an IPv4-compatible IPv6 address.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig11"></A>Figure A.11. IPv4-compatible IPv6 address.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="42" src="FILES/xafig11.gif" ALT="graphics/xafig11.gif"></p>
+
+</CENTER>
+<P class="docText">An example of this type of address is <TT>::12.106.32.254</TT>.</P>
+<P class="docText">IPv4-compatible IPv6 addresses can also appear in the source or destination of nontunnelled IPv6 packets when using the SIIT IPv4/IPv6 transition mechanism (RFC 2765 [Nordmark 2000]).</P>
+
+<A NAME="app01lev2sec10"></A>
+<H4 class="docSection2Title"> Loopback Address</H4>
+<P class="docText">An IPv6 address consisting of 127 zero bits and a single one bit, written as <TT>::1</TT>, is the IPv6 loopback address. In the sockets API, it is referenced as <TT>in6addr_loopback</TT> or <TT>IN6ADDR_LOOPBACK_INIT</TT>.</P>
+
+<A NAME="app01lev2sec11"></A>
+<H4 class="docSection2Title"> Unspecified Address</H4>
+<P class="docText">An IPv6 address consisting of 128 zero bits, written as <TT>0::0</TT>, or just <TT>::</TT>, is the IPv6 unspecified address. In an IPv6 packet, the unspecified address can appear only as the source address in packets sent by a node that is bootstrapping, before the node learns its IPv6 address.</P>
+<P class="docText">In the sockets API, this address is called the wildcard address. Specifying it, for example, to <TT>bind</TT> for a listening TCP socket, indicates that the socket will accept client connections destined to any of the node's addresses. It is referenced as <TT>in6addr_any</TT> or <TT>IN6ADDR_ANY_INIT</TT>.</P>
+
+<A NAME="app01lev2sec12"></A>
+<H4 class="docSection2Title"> Link-Local Address</H4>
+<P class="docText">A link-local address is used on a single link when it is known that the datagram will not be forwarded beyond the local network. Example uses are automatic address configuration at bootstrap time and neighbor discovery (similar to IPv4's ARP). <A class="docLink" HREF="#app01fig12">Figure A.12</A> shows the format of these addresses.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig12"></A>Figure A.12. IPv6 link-local address.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="42" src="FILES/xafig12.gif" ALT="graphics/xafig12.gif"></p>
+
+</CENTER>
+<P class="docText">These addresses always begin with <TT>0xfe80</TT>. An IPv6 router must not forward a datagram with a link-local source or destination address to another link. In <A class="docLink" HREF="0131411551_ch11lev1sec2.html#ch11lev1sec2">Section 11.2</A>, we show the link-local address associated with the name <TT>aix-6ll</TT>.</P>
+
+<A NAME="app01lev2sec13"></A>
+<H4 class="docSection2Title"> Site-Local Address</H4>
+<P class="docText">As of this writing, the IETF IPv6 working group has decided to deprecate site-local addresses in their current form. The forthcoming replacement may or may not finally use the same address range as was originally defined for site-local addresses (<TT>fec0/10</TT>). Site-local addresses were meant to be used for addressing within a site without the need for a global prefix. <A class="docLink" HREF="#app01fig13">Figure A.13</A> shows the originally defined format of these addresses.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app01fig13"></A>Figure A.13. IPv6 site-local address.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="43" src="FILES/xafig13.gif" ALT="graphics/xafig13.gif"></p>
+
+</CENTER>
+<P class="docText">An IPv6 router must not forward a datagram with a site-local source or destination address outside of that site.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app01lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app01lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

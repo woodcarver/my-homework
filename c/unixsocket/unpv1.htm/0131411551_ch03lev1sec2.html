@@ -1,0 +1,164 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="3.2 Socket Address Structures"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch03lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch03lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch03lev1sec2"></A>
+<H3 class="docSection1Title">3.2 Socket Address Structures</H3>
+<P class="docText">Most socket functions require a pointer to a socket address structure as an argument. Each supported protocol suite defines its own socket address structure. The names of these structures begin with <TT>sockaddr_</TT> and end with a unique suffix for each protocol suite.</P>
+<A NAME="ch03lev2sec1"></A>
+<H4 class="docSection2Title"> IPv4 Socket Address Structure</H4>
+<P class="docText">An IPv4 socket address structure, commonly called an "Internet socket address structure," is named <TT>sockaddr_in</TT> and is defined by including the <TT>&lt;netinet/in.h&gt;</TT> header. <A class="docLink" HREF="#ch03fig01">Figure 3.1</A> shows the POSIX definition.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch03fig01"></A>Figure 3.1 The Internet (IPv4) socket address structure: <TT>sockaddr_in</TT>.</H5>
+
+<PRE>
+struct in_addr {
+  in_addr_t   s_addr;           /* 32-bit IPv4 address */
+                                /* network byte ordered */
+};
+
+struct sockaddr_in {
+  uint8_t         sin_len;      /* length of structure (16) */
+  sa_family_t     sin_family;   /* AF_INET */
+  in_port_t       sin_port;     /* 16-bit TCP or UDP port number */
+                                /* network byte ordered */
+  struct in_addr  sin_addr;     /* 32-bit IPv4 address */
+                                /* network byte ordered */
+  char            sin_zero[8];  /* unused */
+};
+</PRE>
+
+<P class="docText">There are several points we need to make about socket address structures in general using this example:</P>
+<UL><LI><P class="docList">The length member, <TT>sin_len</TT>, was added with 4.3BSD-Reno, when support for the OSI protocols was added (<A class="docLink" HREF="0131411551_ch01lev1sec8.html#ch01fig15">Figure 1.15</A>). Before this release, the first member was <TT>sin_family</TT>, which was historically an <TT>unsigned short</TT>. Not all vendors support a length field for socket address structures and the POSIX specification does not require this member. The datatype that we show, <TT>uint8_t</TT>, is typical, and POSIX-compliant systems provide datatypes of this form (<A class="docLink" HREF="#ch03fig02">Figure 3.2</A>).</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch03fig02"></A>Figure 3.2. Datatypes required by the POSIX specification.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="172" src="FILES/03fig02.gif" ALT="graphics/03fig02.gif"></p>
+
+</CENTER><P class="docList">Having a length field simplifies the handling of variable-length socket address structures.</P></LI><LI><P class="docList">Even if the length field is present, we need never set it and need never examine it, unless we are dealing with routing sockets (<A class="docLink" HREF="0131411551_ch18.html#ch18">Chapter 18</A>). It is used within the kernel by the routines that deal with socket address structures from various protocol families (e.g., the routing table code).</P><BLOCKQUOTE><P><P class="docList">The four socket functions that pass a socket address structure from the process to the kernel, <TT>bind</TT>, <TT>connect</TT>, <TT>sendto</TT>, and <TT>sendmsg</TT>, all go through the <TT>sockargs</TT> function in a Berkeley-derived implementation (p. 452 of TCPv2). This function copies the socket address structure from the process and explicitly sets its <TT>sin_len</TT> member to the size of the structure that was passed as an argument to these four functions. The five socket functions that pass a socket address structure from the kernel to the process, <TT>accept</TT>, <TT>recvfrom</TT>, <TT>recvmsg</TT>, <TT>getpeername</TT>, and <TT>getsockname</TT>, all set the <TT>sin_len</TT> member before returning to the process.</P></P><P><P class="docList">Unfortunately, there is normally no simple compile-time test to determine whether an implementation defines a length field for its socket address structures. In our code, we test our own <TT>HAVE_SOCKADDR_SA_LEN</TT> constant (<A class="docLink" HREF="0131411551_app04lev1sec2.html#app04fig02">Figure D.2</A>), but whether to define this constant or not requires trying to compile a simple test program that uses this optional structure member and seeing if the compilation succeeds or not. We will see in <A class="docLink" HREF="#ch03fig04">Figure 3.4</A> that IPv6 implementations are required to define <TT>SIN6_LEN</TT> if socket address structures have a length field. Some IPv4 implementations provide the length field of the socket address structure to the application based on a compile-time option (e.g., <TT>_SOCKADDR_LEN</TT>). This feature provides compatibility for older programs.</P></P></BLOCKQUOTE></LI></UL>
+<UL><LI><P class="docList">The POSIX specification requires only three members in the structure: <TT>sin_family</TT>, <TT>sin_addr</TT>, and <TT>sin_port</TT>. It is acceptable for a POSIX-compliant implementation to define additional structure members, and this is normal for an Internet socket address structure. Almost all implementations add the <TT>sin_zero</TT> member so that all socket address structures are at least 16 bytes in size.</P></LI><LI><P class="docList">We show the POSIX datatypes for the <TT>s_addr</TT>, <TT>sin_family</TT>, and <TT>sin_port</TT> members. The <TT>in_addr_t</TT> datatype must be an unsigned integer type of at least 32 bits, <TT>in_port_t</TT> must be an unsigned integer type of at least 16 bits, and <TT>sa_family_t</TT> can be any unsigned integer type. The latter is normally an 8-bit unsigned integer if the implementation supports the length field, or an unsigned 16-bit integer if the length field is not supported. <A class="docLink" HREF="#ch03fig02">Figure 3.2</A> lists these three POSIX-defined datatypes, along with some other POSIX datatypes that we will encounter.</P></LI></UL>
+<UL><LI><P class="docList">You will also encounter the datatypes <TT>u_char</TT>, <TT>u_short</TT>, <TT>u_int</TT>, and <TT>u_long</TT>, which are all unsigned. The POSIX specification defines these with a note that they are obsolete. They are provided for backward compatibility.</P></LI><LI><P class="docList">Both the IPv4 address and the TCP or UDP port number are always stored in the structure in network byte order. We must be cognizant of this when using these members. We will say more about the difference between host byte order and network byte order in <A class="docLink" HREF="0131411551_ch03lev1sec4.html#ch03lev1sec4">Section 3.4</A>.</P></LI><LI><P class="docList">The 32-bit IPv4 address can be accessed in two different ways. For example, if <TT>serv</TT> is defined as an Internet socket address structure, then <TT>serv.sin_addr</TT> references the 32-bit IPv4 address as an <TT>in_addr</TT> structure, while <TT>serv.sin_addr.s_addr</TT> references the same 32-bit IPv4 address as an <TT>in_addr_t</TT> (typically an unsigned 32-bit integer). We must be certain that we are referencing the IPv4 address correctly, especially when it is used as an argument to a function, because compilers often pass structures differently from integers.</P><BLOCKQUOTE><P><P class="docList">The reason the <TT>sin_addr</TT> member is a structure, and not just an <TT>in_addr_t</TT>, is historical. Earlier releases (4.2BSD) defined the <TT>in_addr</TT> structure as a <TT>union</TT> of various structures, to allow access to each of the 4 bytes and to both of the 16-bit values contained within the 32-bit IPv4 address. This was used with class A, B, and C addresses to fetch the appropriate bytes of the address. But with the advent of subnetting and then the disappearance of the various address classes with classless addressing (<A class="docLink" HREF="0131411551_app01lev1sec4.html#app01lev1sec4">Section A.4</A>), the need for the <TT>union</TT> disappeared. Most systems today have done away with the <TT>union</TT> and just define <TT>in_addr</TT> as a structure with a single <TT>in_addr_t</TT> member.</P></P></BLOCKQUOTE></LI><LI><P class="docList">The <TT>sin_zero</TT> member is unused, but we <span class="docEmphasis">always</span> set it to 0 when filling in one of these structures. By convention, we always set the entire structure to 0 before filling it in, not just the <TT>sin_zero</TT> member.</P><BLOCKQUOTE><P><P class="docList">Although most uses of the structure do not require that this member be 0, when binding a non-wildcard IPv4 address, this member must be 0 (pp. 731–732 of TCPv2).</P></P></BLOCKQUOTE></LI><LI><P class="docList">Socket address structures are used only on a given host: The structure itself is not communicated between different hosts, although certain fields (e.g., the IP address and port) are used for communication.</P></LI></UL>
+
+<A NAME="ch03lev2sec2"></A>
+<H4 class="docSection2Title"> Generic Socket Address Structure</H4>
+<P class="docText">A socket address structures is <span class="docEmphasis">always</span> passed by reference when passed as an argument to any socket functions. But any socket function that takes one of these pointers as an argument must deal with socket address structures from <span class="docEmphasis">any</span> of the supported protocol families.</P>
+<P class="docText">A problem arises in how to declare the type of pointer that is passed. With ANSI C, the solution is simple: <TT>void *</TT> is the generic pointer type. But, the socket functions predate ANSI C and the solution chosen in 1982 was to define a <span class="docEmphasis">generic</span> socket address structure in the <TT>&lt;sys/socket.h&gt;</TT> header, which we show in <A class="docLink" HREF="#ch03fig03">Figure 3.3</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch03fig03"></A>Figure 3.3 The generic socket address structure: <TT>sockaddr</TT>.</H5>
+
+<PRE>
+struct sockaddr {
+  uint8_t      sa_len;
+  sa_family_t  sa_family;    /* address family: AF_xxx value */
+  char         sa_data[14];  /* protocol-specific address */
+};
+</PRE>
+
+<P class="docText">The socket functions are then defined as taking a pointer to the generic socket address structure, as shown here in the ANSI C function prototype for the <TT>bind</TT> function:</P>
+<pre>
+
+</pre><pre>
+int bind(int, struct sockaddr *, socklen_t);
+</pre><pre>
+</pre>
+<P class="docText">This requires that any calls to these functions must cast the pointer to the protocol-specific socket address structure to be a pointer to a generic socket address structure. For example,</P>
+<pre>
+
+</pre><pre>
+struct sockaddr_in  serv;      /* IPv4 socket address structure */
+
+/* fill in serv{} */
+
+bind(sockfd, (struct sockaddr *) &amp;serv, sizeof(serv));
+</pre><pre>
+</pre>
+<P class="docText">If we omit the cast "(<TT>struct sockaddr *</TT>)," the C compiler generates a warning of the form "warning: passing arg 2 of 'bind' from incompatible pointer type," assuming the system's headers have an ANSI C prototype for the <TT>bind</TT> function.</P>
+<P class="docText">From an application programmer's point of view, the <span class="docEmphasis">only</span> use of these generic socket address structures is to cast pointers to protocol-specific structures.</P>
+<BLOCKQUOTE><P><P class="docList">Recall in <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01lev1sec2">Section 1.2</A> that in our <TT>unp.h</TT> header, we define <TT>SA</TT> to be the string "<TT>struct sockaddr</TT>" just to shorten the code that we must write to cast these pointers.</P></P></BLOCKQUOTE>
+<BLOCKQUOTE><P><P class="docList">From the kernel's perspective, another reason for using pointers to generic socket address structures as arguments is that the kernel must take the caller's pointer, cast it to a <TT>struct sockaddr *</TT>, and then look at the value of <TT>sa_family</TT> to determine the type of the structure. But from an application programmer's perspective, it would be simpler if the pointer type was <TT>void *</TT>, omitting the need for the explicit cast.</P></P></BLOCKQUOTE>
+
+<A NAME="ch03lev2sec3"></A>
+<H4 class="docSection2Title"> IPv6 Socket Address Structure</H4>
+<P class="docText">The IPv6 socket address is defined by including the <TT>&lt;netinet/in.h&gt;</TT> header, and we show it in <A class="docLink" HREF="#ch03fig04">Figure 3.4</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch03fig04"></A>Figure 3.4 IPv6 socket address structure: <TT>sockaddr_in6</TT>.</H5>
+
+<PRE>
+struct in6_addr {
+  uint8_t  s6_addr[16];          /* 128-bit IPv6 address */
+                                 /* network byte ordered */
+};
+
+#define SIN6_LEN      /* required for compile-time tests */
+
+struct sockaddr_in6 {
+  uint8_t         sin6_len;      /* length of this struct (28) */
+  sa_family_t     sin6_family;   /* AF_INET6 */
+  in_port_t       sin6_port;     /* transport layer port# */
+                                 /* network byte ordered */
+  uint32_t        sin6_flowinfo; /* flow information, undefined */
+  struct in6_addr sin6_addr;     /* IPv6 address */
+                                 /* network byte ordered */
+  uint32_t        sin6_scope_id; /* set of interfaces for a scope */
+};
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList">The extensions to the sockets API for IPv6 are defined in RFC 3493 [Gilligan et al. 2003].</P></P></BLOCKQUOTE>
+<P class="docText">Note the following points about <A class="docLink" HREF="#ch03fig04">Figure 3.4</A>:</P>
+<UL><LI><P class="docList">The <TT>SIN6_LEN</TT> constant must be defined if the system supports the length member for socket address structures.</P></LI><LI><P class="docList">The IPv6 family is <TT>AF_INET6</TT>, whereas the IPv4 family is <TT>AF_INET</TT>.</P></LI><LI><P class="docList">The members in this structure are ordered so that if the <TT>sockaddr_in6</TT> structure is 64-bit aligned, so is the 128-bit <TT>sin6_addr</TT> member. On some 64-bit processors, data accesses of 64-bit values are optimized if stored on a 64-bit boundary.</P></LI><LI><P class="docList">The <TT>sin6_flowinfo</TT> member is divided into two fields:</P><UL><LI><P class="docList">The low-order 20 bits are the flow label</P></LI><LI><P class="docList">The high-order 12 bits are reserved</P></LI></UL><P class="docList">The flow label field is described with <A class="docLink" HREF="0131411551_app01lev1sec3.html#app01fig02">Figure A.2</A>. The use of the flow label field is still a research topic.</P></LI><LI><P class="docList">The <TT>sin6_scope_id</TT> identifies the scope zone in which a scoped address is meaningful, most commonly an interface index for a link-local address (<A class="docLink" HREF="0131411551_app01lev1sec5.html#app01lev1sec5">Section A.5</A>).</P></LI></UL>
+
+<A NAME="ch03lev2sec4"></A>
+<H4 class="docSection2Title"> New Generic Socket Address Structure</H4>
+<P class="docText">A new generic socket address structure was defined as part of the IPv6 sockets API, to overcome some of the shortcomings of the existing <TT>struct sockaddr</TT>. Unlike the <TT>struct sockaddr</TT>, the new <TT>struct sockaddr_storage</TT> is large enough to hold any socket address type supported by the system. The <TT>sockaddr_storage</TT> structure is defined by including the <TT>&lt;netinet/in.h&gt;</TT> header, which we show in <A class="docLink" HREF="#ch03fig05">Figure 3.5</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch03fig05"></A>Figure 3.5 The storage socket address structure: <TT>sockaddr_storage</TT>.</H5>
+
+<PRE>
+struct sockaddr_storage {
+  uint8_t      ss_len;       /* length of this struct (implementation dependent) */
+  sa_family_t  ss_family;    /* address family: AF_xxx value */
+  /* <span class="docEmphasis">implementation-dependent elements to provide:</span>
+   * <span class="docEmphasis">a) alignment sufficient to fulfill the alignment requirements of</span>
+   *    <span class="docEmphasis">all socket address types that the system supports</span>.
+   * <span class="docEmphasis">b) enough storage to hold any type of socket address that the</span>
+   *    <span class="docEmphasis">system supports</span>.
+   */
+};
+</PRE>
+
+<P class="docText">The <TT>sockaddr_storage</TT> type provides a generic socket address structure that is different from <TT>struct sockaddr</TT> in two ways:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="a"><LI><span style="font-weight:normal"><P class="docList">If any socket address structures that the system supports have alignment requirements, the <TT>sockaddr_storage</TT> provides the strictest alignment requirement.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">The <TT>sockaddr_storage</TT> is large enough to contain any socket address structure that the system supports.</P></span></LI></OL></span>
+<P class="docText">Note that the fields of the <TT>sockaddr_storage</TT> structure are opaque to the user, except for <TT>ss_family</TT> and <TT>ss_len</TT> (if present). The <TT>sockaddr_storage</TT> must be cast or copied to the appropriate socket address structure for the address given in <TT>ss_family</TT> to access any other fields.</P>
+
+<A NAME="ch03lev2sec5"></A>
+<H4 class="docSection2Title"> Comparison of Socket Address Structures</H4>
+<P class="docText"><A class="docLink" HREF="#ch03fig06">Figure 3.6</A> shows a comparison of the five socket address structures that we will encounter in this text: IPv4, IPv6, Unix domain (<A class="docLink" HREF="0131411551_ch15lev1sec2.html#ch15fig01">Figure 15.1</A>), datalink (<A class="docLink" HREF="0131411551_ch18lev1sec2.html#ch18fig01">Figure 18.1</A>), and storage. In this figure, we assume that the socket address structures all contain a one-byte length field, that the family field also occupies one byte, and that any field that must be at least some number of bits is exactly that number of bits.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch03fig06"></A>Figure 3.6. Comparison of various socket address structures.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="364" src="FILES/03fig06.gif" ALT="graphics/03fig06.gif"></p>
+
+</CENTER>
+<P class="docText">Two of the socket address structures are fixed-length, while the Unix domain structure and the datalink structure are variable-length. To handle variable-length structures, whenever we pass a pointer to a socket address structure as an argument to one of the socket functions, we pass its length as another argument. We show the size in bytes (for the 4.4BSD implementation) of the fixed-length structures beneath each structure.</P>
+<BLOCKQUOTE><P><P class="docList">The <TT>sockaddr_un</TT> structure itself is not variable-length (<A class="docLink" HREF="0131411551_ch15lev1sec2.html#ch15fig01">Figure 15.1</A>), but the amount of information—the pathname within the structure—is variable-length. When passing pointers to these structures, we must be careful how we handle the length field, both the length field in the socket address structure itself (if supported by the implementation) and the length to and from the kernel.</P></P><P><P class="docList">This figure shows the style that we follow throughout the text: structure names are always shown in a bolder font, followed by braces, as in <span class="docEmphStrong"><TT>sockaddr_in{}</TT></span>.</P></P><P><P class="docList">We noted earlier that the length field was added to all the socket address structures with the 4.3BSD Reno release. Had the length field been present with the original release of sockets, there would be no need for the length argument to all the socket functions: the third argument to <TT>bind</TT> and <TT>connect</TT>, for example. Instead, the size of the structure could be contained in the length field of the structure.</P></P></BLOCKQUOTE>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch03lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch03lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

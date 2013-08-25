@@ -1,0 +1,58 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Chapter 1"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app05.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app05lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app05lev1sec1"></A>
+<H3 class="docSection1Title"> Chapter 1</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch01a03"></A><B><A class="docLink" HREF="0131411551_ch01lev1sec13.html#ch01q03">1.3</A></B></TD><TD><P class="docText">Under Solaris, we get the following:</P><pre>
+</pre><pre>
+solaris % <span class="docEmphStrong">daytimetcpcli 127.0.0.1</span>
+socket error: Protocol not supported
+</pre><pre>
+</pre><P class="docText">To find more information on this error, we first use <TT>grep</TT> to search for the string <TT>Protocol not supported</TT> in the <TT>&lt;sys/errno.h&gt;</TT> header.</P><pre>
+</pre><pre>
+solaris % <span class="docEmphStrong">grep 'Protocol not supported' /usr/include/sys/errno.h</span>
+#define EPROTONOSUPPORT 120     /* Protocol not supported */
+</pre><pre>
+</pre><P class="docText">This is the <TT>errno</TT> returned by <TT>socket</TT>. We then look at the man page:</P><pre>
+</pre><pre>
+aix % <span class="docEmphStrong">man socket</span>
+</pre><pre>
+</pre><P class="docText">Most man pages give additional, albeit terse, information toward the end under a heading of the form "Errors."</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch01a04"></A><B><A class="docLink" HREF="0131411551_ch01lev1sec13.html#ch01q04">1.4</A></B></TD><TD><P class="docText">We change the first declaration to be the following:</P><pre>
+</pre><pre>
+int sockfd, n, counter = 0;
+</pre><pre>
+</pre><P class="docText">We add the statement</P><pre>
+</pre><pre>
+counter++;
+</pre><pre>
+</pre><P class="docText">as the first statement of the <TT>while</TT> loop. Finally, we execute</P><pre>
+</pre><pre>
+printf("counter = %d\n", counter);
+</pre><pre>
+</pre><P class="docText">before terminating. The value printed is always 1.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch01a05"></A><B><A class="docLink" HREF="0131411551_ch01lev1sec13.html#ch01q05">1.5</A></B></TD><TD><P class="docText">We declare an <TT>int</TT> named <TT>i</TT> and change the call to <TT>write</TT> to be the following:</P><pre>
+</pre><pre>
+for (i = 0; i &lt; strlen(buff); i++)
+    Write(connfd, &amp;buff[i], 1);
+</pre><pre>
+</pre><P class="docText">The results vary, depending on the client host and server host. If the client and server are on the same host, the counter is normally 1, which means even though the server does 26 <TT>writes</TT>, the data is returned by a single <TT>read</TT>. But, one combination of client and server may produce two packets, and another combination 26 packets. (Our discussion of the Nagle algorithm in <A class="docLink" HREF="0131411551_ch07lev1sec9.html#ch07lev1sec9">Section 7.9</A> explains one reason for this.)</P><P class="docText">The purpose of this example is to reiterate that different TCPs do different things with the data and our application must be prepared to read the data as a stream of bytes until the end of the data stream is encountered.</P></TD></TR></TABLE></P><br>
+<P class="docText"></P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app05.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app05lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

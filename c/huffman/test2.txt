@@ -1,0 +1,5 @@
+Suddenly, it feels like 2000 again. Back then, surveillance programs like Carnivore, Echelon, and Total Information Awareness helped spark a surge in electronic privacy awareness. Now a decade later, the recent discovery of programs like PRISM, Boundless Informant, and FISA orders are catalyzing renewed concern.
+
+The programs of the past can be characterized as “proximate” surveillance, in which the government attempted to use technology to directly monitor communication themselves. The programs of this decade mark the transition to “oblique” surveillance, in which the government more often just goes to the places where information has been accumulating on its own, such as email providers, search engines, social networks, and telecoms.
+
+Both then and now, privacy advocates have typically come into conflict with a persistent tension, in which many individuals don’t understand why they should be concerned about surveillance if they have nothing to hide. It’s even less clear in the world of “oblique” surveillance, given that apologists will always frame our use of information-gathering services like a mobile phone plan or GMail as a choice.

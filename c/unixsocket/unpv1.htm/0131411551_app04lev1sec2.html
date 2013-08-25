@@ -1,0 +1,340 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="D.2 'config.h' Header"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app04lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app04lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app04lev1sec2"></A>
+<H3 class="docSection1Title">D.2 <TT>config.h</TT> Header</H3>
+<P class="docText">The GNU <TT>autoconf</TT> tool was used to aid in the portability of all the source code in this text. It is available from <A class="docLink" target="_blank" HREF="ftp://ftp.gnu.org/gnu/autoconf">http://ftp.gnu.org/gnu/autoconf</A>. This tool generates a shell script named <TT>configure</TT> that you must run after downloading the software onto your system. This script determines the features provided by your Unix system: Do socket address structures have a length field? Is multicasting supported? Are datalink socket address structures supported? and so on, generating a header named <TT>config.h</TT>. This header is the first header included by our <TT>unp.h</TT> header in the previous section. <A class="docLink" HREF="#app04fig02">Figure D.2</A> shows the <TT>config.h</TT> header for FreeBSD 5.1.</P>
+<P class="docText">The lines beginning with <TT>#define</TT> in column 1 are for features that the system provides. The lines that are commented out and contain <TT>#undef</TT> are features that the system does not provide.</P>
+
+<H5 class="docExampleTitle"><A NAME="app04fig02"></A>Figure D.2 Our <TT>config.h</TT> header for FreeBSD 5.1.</H5>
+<P class="docText"><span class="docEmphasis">sparc64-unknown-freebsd5.1/config.h</span></P>
+
+<PRE>
+
+  1 /* config.h. Generated automatically by configure. */
+  2 /* config.h.in. Generated automatically from configure.in by autoheader. */
+
+  3 /* CPU, vendor, and operating system */
+  4 #define CPU_VENDOR_OS "sparc64-unknown-freebsd5.1"
+
+  5 /* Define if &lt;netdb.h&gt; defines struct addrinfo */
+  6 #define HAVE_ADDRINFO_STRUCT 1
+
+  7 /* Define if you have the &lt;arpa/inet.h&gt; header file. */
+  8 #define HAVE_ARPA_INET_H 1
+
+  9 /* Define if you have the bzero function. */
+ 10 #define HAVE_BZERO 1
+
+ 11 /* Define if the /dev/streams/xtiso/tcp device exists */
+ 12 /* #undef HAVE_DEV_STREAMS_XTISO_TCP */
+
+ 13 /* Define if the /dev/tcp device exists */
+ 14 /* #undef HAVE_DEV_TCP */
+
+ 15 /* Define if the /dev/xti/tcp device exists */
+ 16 /* #undef HAVE_DEV_XTI_TCP */
+
+ 17 /* Define if you have the &lt;errno.h&gt; header file. */
+ 18 #define HAVE_ERRNO_H 1
+
+ 19 /* Define if you have the &lt;fcntl.h&gt; header file. */
+ 20 #define HAVE_FCNTL_H 1
+
+ 21 /* Define if you have the getaddrinfo function. */
+ 22 #define HAVE_GETADDRINFO 1
+
+ 23 /* define if getaddrinfo prototype is in &lt;netdb.h&gt; */
+ 24 #define HAVE_GETADDRINFO_PROTO 1
+
+ 25 /* Define if you have the gethostbyname2 function. */
+ 26 #define HAVE_GETHOSTBYNAME2 1
+
+ 27 /* Define if you have the gethostbyname_r function. */
+ 28 /* #undef HAVE_GETHOSTBYNAME_R */
+
+ 29 /* Define if you have the gethostname function. */
+ 30 #define HAVE_GETHOSTNAME 1
+
+ 31 /* define if gethostname prototype is in &lt;unistd.h&gt; */
+ 32 #define HAVE_GETHOSTNAME_PROTO 1
+
+ 33 /* Define if you have the getnameinfo function. */
+ 34 #define HAVE_GETNAMEINFO 1
+
+ 35 /* define if getnameinfo prototype is in &lt;netdb.h&gt; */
+ 36 #define HAVE_GETNAMEINFO_PROTO 1
+
+ 37 /* define if getrusage prototype is in &lt;sys/resource.h&gt; */
+ 38 #define HAVE_GETRUSAGE_PROTO 1
+
+ 39 /* Define if you have the hstrerror function. */
+ 40 #define HAVE_HSTRERROR 1
+
+ 41 /* define if hstrerror prototype is in &lt;netdb.h&gt; */
+ 42 #define HAVE_HSTRERROR_PROTO 1
+
+ 43 /* Define if &lt;net/if.h&gt; defines struct if_nameindex */
+ 44 #define HAVE_IF_NAMEINDEX_STRUCT 1
+
+ 45 /* Define if you have the if_nametoindex function. */
+ 46 #define HAVE_IF_NAMETOINDEX 1
+
+ 47 /* define if if_nametoindex prototype is in &lt;net/if.h&gt; */
+ 48 #define HAVE_IF_NAMETOINDEX_PROTO 1
+
+ 49 /* Define if you have the inet_aton function. */
+ 50 #define HAVE_INET_ATON 1
+
+ 51 /* define if inet_aton prototype is in &lt;arpa/inet.h&gt; */
+ 52 #define HAVE_INET_ATON_PROTO 1
+
+ 53 /* Define if you have the inet_pton function. */
+ 54 #define HAVE_INET_PTON 1
+
+ 55 /* define if inet_pton prototype is in &lt;arpa/inet.h&gt; */
+ 56 #define HAVE_INET_PTON_PROTO 1
+
+ 57 /* Define if you have the kevent function. */
+ 58 #define HAVE_KEVENT 1
+
+ 59 /* Define if you have the kqueue function. */
+ 60 #define HAVE_KQUEUE 1
+
+ 61 /* Define if you have the nsl library (-lnsl). */
+ 62 /* #undef HAVE_LIBNSL */
+
+ 63 /* Define if you have the pthread library (-lpthread). */
+ 64 /* #undef HAVE_LIBPTHREAD */
+
+ 65 /* Define if you have the pthreads library (-lpthreads). */
+ 66 /* #undef HAVE_LIBPTHREADS */
+
+ 67 /* Define if you have the resolv library (-lresolv). */
+ 68 /* #undef HAVE_LIBRESOLV */
+
+ 69 /* Define if you have the xti library (-lxti). */
+ 70 /* #undef HAVE_LIBXTI */
+
+ 71 /* Define if you have the mkstemp function. */
+ 72 #define HAVE_MKSTEMP 1
+
+ 73 /* define if struct msghdr contains the msg_control element */
+ 74 #define HAVE_MSGHDR_MSG_CONTROL 1
+
+ 75 /* Define if you have the &lt;netconfig.h&gt; header file. */
+ 76 #define HAVE_NETCONFIG_H 1
+
+ 77 /* Define if you have the &lt;netdb.h&gt; header file. */
+ 78 #define HAVE_NETDB_H 1
+
+ 79 /* Define if you have the &lt;netdir.h&gt; header file. */
+ 80 /* #undef HAVE_NETDIR_H */
+
+ 81 /* Define if you have the &lt;netinet/in.h&gt; header file. */
+ 82 #define HAVE_NETINET_IN_H 1
+
+ 83 /* Define if you have the &lt;net/if_dl.h&gt; header file. */
+ 84 #define HAVE_NET_IF_DL_H 1
+
+ 85 /* Define if you have the poll function. */
+ 86 #define HAVE_POLL 1
+
+ 87 /* Define if you have the &lt;poll.h&gt; header file. */
+ 88 #define HAVE_POLL_H 1
+
+ 89 /* Define if you have the pselect function. */
+ 90 #define HAVE_PSELECT 1
+
+ 91 /* define if pselect prototype is in &lt;sys/stat.h&gt; */
+ 92 #define HAVE_PSELECT_PROTO 1
+
+ 93 /* Define if you have the &lt;pthread.h&gt; header file. */
+ 94 #define HAVE_PTHREAD_H 1
+
+ 95 /* Define if you have the &lt;signal.h&gt; header file. */
+ 96 #define HAVE_SIGNAL_H 1
+
+ 97 /* Define if you have the snprintf function. */
+ 98 #define HAVE_SNPRINTF 1
+
+ 99 /* define if snprintf prototype is in &lt;stdio.h&gt; */
+100 #define HAVE_SNPRINTF_PROTO 1
+
+101 /* Define if &lt;net/if_dl.h&gt; defines struct sockaddr_dl */
+102 #define HAVE_SOCKADDR_DL_STRUCT 1
+
+103 /* define if socket address structures have length fields */
+104 #define HAVE_SOCKADDR_SA_LEN 1
+
+105 /* Define if you have the sockatmark function. */
+106 #define HAVE_SOCKATMARK 1
+
+107 /* define if sockatmark prototype is in &lt;sys/socket.h&gt; */
+108 #define HAVE_SOCKATMARK_PROTO 1
+
+109 /* Define if you have the &lt;stdio.h&gt; header file. */
+110 #define HAVE_STDIO_H 1
+
+111 /* Define if you have the &lt;stdlib.h&gt; header file. */
+112 #define HAVE_STDLIB_H 1
+
+113 /* Define if you have the &lt;strings.h&gt; header file. */
+114 #define HAVE_STRINGS_H 1
+
+115 /* Define if you have the &lt;string.h&gt; header file. */
+116 #define HAVE_STRING_H 1
+
+117 /* Define if you have the &lt;stropts.h&gt; header file. */
+118 /* #undef HAVE_STROPTS_H */
+
+119 /* Define if ifr_mtu is member of struct ifreq. */
+120 #define HAVE_STRUCT_IFREQ_IFR_MTU 1
+
+121 /* Define if the system has the type struct sockaddr_storage. */
+122 #define HAVE_STRUCT_SOCKADDR_STORAGE 1
+
+123 /* Define if you have the &lt;sys/event.h&gt; header file. */
+124 #define HAVE_SYS_EVENT_H 1
+
+125 /* Define if you have the &lt;sys/filio.h&gt; header file. */
+126 #define HAVE_SYS_FILIO_H 1
+
+127 /* Define if you have the &lt;sys/ioctl.h&gt; header file. */
+128 #define HAVE_SYS_IOCTL_H 1
+
+129 /* Define if you have the &lt;sys/select.h&gt; header file. */
+130 #define HAVE_SYS_SELECT_H 1
+
+131 /* Define if you have the &lt;sys/socket.h&gt; header file. */
+132 #define HAVE_SYS_SOCKET_H 1
+
+133 /* Define if you have the &lt;sys/sockio.h&gt; header file. */
+134 #define HAVE_SYS_SOCKIO_H 1
+
+135 /* Define if you have the &lt;sys/stat.h&gt; header file. */
+136 #define HAVE_SYS_STAT_H 1
+
+137 /* Define if you have the &lt;sys/sysctl.h&gt; header file. */
+138 #define HAVE_SYS_SYSCTL_H 1
+
+139 /* Define if you have the &lt;sys/time.h&gt; header file. */
+140 #define HAVE_SYS_TIME_H 1
+
+141 /* Define if you have the &lt;sys/types.h&gt; header file. */
+142 #define HAVE_SYS_TYPES_H 1
+
+143 /* Define if you have the &lt;sys/uio.h&gt; header file. */
+144 #define HAVE_SYS_UIO_H 1
+
+145 /* Define if you have the &lt;sys/un.h&gt; header file. */
+146 #define HAVE_SYS_UN_H 1
+
+147 /* Define if you have the &lt;sys/wait.h&gt; header file. */
+148 #define HAVE_SYS_WAIT_H 1
+
+149 /* Define if &lt;time.h&gt; defines struct timespec */
+150 #define HAVE_TIMESPEC_STRUCT 1
+
+151 /* Define if you have the &lt;time.h&gt; header file. */
+152 #define HAVE_TIME_H 1
+
+153 /* Define if you have the &lt;unistd.h&gt; header file. */
+154 #define HAVE_UNISTD_H 1
+
+155 /* Define if you have the vsnprintf function. */
+156 #define HAVE_VSNPRINTF 1
+
+157 /* Define if you have the &lt;xti.h&gt; header file. */
+158 /* #undef HAVE_XTI_H */
+
+159 /* Define if you have the &lt;xti_inet.h&gt; header file. */
+160 /* #undef HAVE_XTI_INET_H */
+
+161 /* Define if the system supports IPv4 */
+162 #define IPV4 1
+
+163 /* Define if the system supports IPv6 */
+164 #define IPV6 1
+
+165 /* Define if the system supports IPv4 */
+166 #define IPv4 1
+
+167 /* Define if the system supports IPv6 */
+168 #define IPv6 1
+
+169 /* Define if the system supports IP Multicast */
+170 #define MCAST 1
+
+171 /* the size of the sa_family field in a socket address structure */
+172 /* #undef SA_FAMILY_T */
+
+173 /* Define if you have the ANSI C header files. */
+174 #define STDC_HEADERS 1
+
+175 /* Define if you can safely include both &lt;sys/time.h&gt; and &lt;time.h&gt;. */
+176 #define TIME_WITH_SYS_TIME 1
+
+177 /* Define if the system supports UNIX domain sockets */
+178 #define UNIXDOMAIN 1
+
+179 /* Define if the system supports UNIX domain sockets */
+180 #define UNIXdomain 1
+
+181 /* 16 bit signed type */
+182 /* #undef int16_t */
+
+183 /* 32 bit signed type */
+184 /* #undef int32_t */
+
+185 /* the type of the sa_family struct element */
+186 /* #undef sa_family_t */
+
+187 /* unsigned integer type of the result of the sizeof operator */
+188 /* #undef size_t */
+
+189 /* a type appropriate for address */
+190 /* #undef socklen_t */
+
+191 /* define to __ss_family if sockaddr_storage has that instead of ss_family */
+192 /* #undef ss_family */
+
+193 /* a signed type appropriate for a count of bytes or an error indication */
+194 /* #undef ssize_t */
+
+195 /* scalar type */
+196 #define t_scalar_t int32_t
+
+197 /* unsigned scalar type */
+198 #define t_uscalar_t uint32_t
+
+199 /* 16 bit unsigned type */
+200 /* #undef uint16_t */
+
+201 /* 32 bit unsigned type */
+202 /* #undef uint32_t */
+
+203         /* -bit unsigned type */
+204 /* #undef uint8_t */
+</PRE>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app04lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app04lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

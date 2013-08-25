@@ -1,0 +1,41 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.6 'shutdown' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec6"></A>
+<H3 class="docSection1Title">6.6 <TT>shutdown</TT> Function</H3>
+<P class="docText">The normal way to terminate a network connection is to call the <TT>close</TT> function. But, there are two limitations with <TT>close</TT> that can be avoided with <TT>shutdown:</TT></P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList"><TT>close</TT> decrements the descriptor's reference count and closes the socket only if the count reaches 0. We talked about this in <A class="docLink" HREF="0131411551_ch04lev1sec8.html#ch04lev1sec8">Section 4.8</A>. With <TT>shutdown</TT>, we can initiate TCP's normal connection termination sequence (the four segments beginning with a FIN in <A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02fig05">Figure 2.5</A>), regardless of the reference count.</P></span></LI><LI><span style="font-weight:normal"><P class="docList"><TT>close</TT> terminates both directions of data transfer, reading and writing. Since a TCP connection is full-duplex, there are times when we want to tell the other end that we have finished sending, even though that end might have more data to send us. This is the scenario we encountered in the previous section with batch input to our <TT>str_cli</TT> function. <A class="docLink" HREF="#ch06fig12">Figure 6.12</A> shows the typical function calls in this scenario.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig12"></A>Figure 6.12. Calling <TT>shutdown</TT> to close half of a TCP connection.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="468" HEIGHT="311" src="FILES/06fig12.gif" ALT="graphics/06fig12.gif"></p>
+
+</CENTER><P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="90%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int shutdown(int</TT> <span class="docEmphasis">sockfd</span>, <TT>int</TT> <span class="docEmphasis">howto</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 if OK, –1 on error</P></TD></TR></COLGROUP></TABLE></P></span></LI></OL></span>
+<P class="docText">The action of the function depends on the value of the <span class="docEmphasis">howto</span> argument.</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SHUT_RD</TT></P></TD><TD class="docTableCell" valign="top"><p class="docText"><span class="docEmphRoman">The read half of the connection is closed—</span> No more data can be received on the socket and any data currently in the socket receive buffer is discarded. The process can no longer issue any of the read functions on the socket. Any data received after this call for a TCP socket is acknowledged and then silently discarded.</p>
+<BLOCKQUOTE><P><P class="docList">By default, everything written to a routing socket (<A class="docLink" HREF="0131411551_ch18.html#ch18">Chapter 18</A>) loops back as possible input to all routing sockets on the host. Some programs call <TT>shutdown</TT> with a second argument of <TT>SHUT_RD</TT> to prevent the loopback copy. An alternative way to prevent this loopback copy is to clear the <TT>SO_USELOOPBACK</TT> socket option.</P></P></BLOCKQUOTE>
+</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SHUT_WR</TT></P></TD><TD class="docTableCell" valign="top"><p class="docText"><span class="docEmphRoman">The write half of the connection is closed—</span> In the case of TCP, this is called a <span class="docEmphasis">half-close</span> (Section 18.5 of TCPv1). Any data currently in the socket send buffer will be sent, followed by TCP's normal connection termination sequence. As we mentioned earlier, this closing of the write half is done regardless of whether or not the socket descriptor's reference count is currently greater than 0. The process can no longer issue any of the write functions on the socket.</p></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SHUT_RDWR</TT></P></TD><TD class="docTableCell" valign="top"><p class="docText"><span class="docEmphRoman">The read half and the write half of the connection are both closed—</span> This is equivalent to calling <TT>shutdown</TT> twice: first with <TT>SHUT_RD</TT> and then with <TT>SHUT_WR</TT>.
+</p>
+</TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><A class="docLink" HREF="0131411551_ch07lev1sec5.html#ch07fig12">Figure 7.12</A> will summarize the different possibilities available to the process by calling <TT>shutdown</TT> and <TT>close</TT>. The operation of <TT>close</TT> depends on the value of the <TT>SO_LINGER</TT> socket option.</P>
+<BLOCKQUOTE><P><P class="docList">The three <TT>SHUT_</TT><span class="docEmphasis">xxx</span> names are defined by the POSIX specification. Typical values for the <span class="docEmphasis">howto</span> argument that you will encounter will be 0 (close the read half), 1 (close the write half), and 2 (close the read half and the write half).</P></P></BLOCKQUOTE>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

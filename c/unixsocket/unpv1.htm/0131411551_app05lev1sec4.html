@@ -1,0 +1,34 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Chapter 4"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app05lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app05lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app05lev1sec4"></A>
+<H3 class="docSection1Title"> Chapter 4</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch04a01"></A><B><A class="docLink" HREF="0131411551_ch04lev1sec12.html#ch04q01">4.1</A></B></TD><TD><P class="docText">Look at the definitions for the constants beginning with <TT>INADDR_</TT> except <TT>INADDR_ANY</TT> (which is all zero bits) and <TT>INADDR_NONE</TT> (which is all one bits). For example, the class D multicast address <TT>INADDR_MAX_LOCAL_GROUP</TT> is defined as <TT>0xe00000ff</TT> with the comment "224.0.0.255," which is clearly in host byte order.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch04a02"></A><B><A class="docLink" HREF="0131411551_ch04lev1sec12.html#ch04q02">4.2</A></B></TD><TD><P class="docText">Here are the new lines added after the call to <TT>connect</TT>:</P><pre>
+</pre><pre>
+len = sizeof(cliaddr);
+Getsockname(sockfd, (SA *) &amp;cliaddr, &amp;len);
+printf("local addr: %s\n",
+       Sock_ntop((SA *) &amp;cliaddr, len));
+</pre><pre>
+</pre><P class="docText">This requires a declaration of <TT>len</TT> as a <TT>socklen_t</TT> and a declaration of <TT>cliaddr</TT> as a <TT>struct sockaddr_in</TT>. Notice that the value-result argument for <TT>getsockname</TT> (<TT>len</TT>) must be initialized before the call to the size of the variable pointed to by the second argument. The most common programming error with value-result arguments is to forget this initialization.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch04a03"></A><B><A class="docLink" HREF="0131411551_ch04lev1sec12.html#ch04q03">4.3</A></B></TD><TD><P class="docText">When the child calls <TT>close</TT>, the reference count is decremented from 2 to 1, so a FIN is not sent to the client. Later, when the parent calls <TT>close</TT>, the reference count is decremented to 0 and the FIN is sent.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch04a04"></A><B><A class="docLink" HREF="0131411551_ch04lev1sec12.html#ch04q04">4.4</A></B></TD><TD><P class="docText"><TT>accept</TT> returns <TT>EINVAL</TT>, since the first argument is not a listening socket.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch04a05"></A><B><A class="docLink" HREF="0131411551_ch04lev1sec12.html#ch04q05">4.5</A></B></TD><TD><P class="docText">Without a call to <TT>bind</TT>, the call to <TT>listen</TT> assigns an ephemeral port to the listening socket.</P></TD></TR></TABLE></P><br>
+<P class="docText"></P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app05lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app05lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

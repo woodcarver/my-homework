@@ -1,0 +1,324 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="27.3 IPv4 Source Route Options"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch27lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch27lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch27lev1sec3"></A>
+<H3 class="docSection1Title" id="225793-871">27.3 IPv4 Source Route Options</H3>
+<P class="docText">A <span class="docEmphasis">source route</span> is a list of IP addresses specified by the sender of the IP datagram. If the source route is <span class="docEmphasis">strict</span>, then the datagram must pass through each listed node and only the listed nodes. That is, all the nodes listed in the source route must be neighbors. But if the source route is <span class="docEmphasis">loose</span>, the datagram must pass through each listed node, but can also pass through other nodes that do not appear in the source route.</P>
+<BLOCKQUOTE><P><P class="docList">IPv4 source routing is controversial. While it can be very useful for network debugging, it can be used for "source address spoofing" and other types of attacks. [Cheswick, Bellovin, and Rubin 2003] advocate disabling the feature on all your routers, and many organizations and service providers do this. One legitimate use for source routing is to detect asymmetric routes using the <TT>traceroute</TT> program, as demonstrated on pp. 108–109 of TCPv1, although as more and more routers on the Internet disable source routing, even this use disappears. Nevertheless, specifying and receiving source routes is part of the sockets API and needs to be described.</P></P></BLOCKQUOTE>
+<P class="docText">IPv4 source routes are called <span class="docEmphasis">source and record routes</span> (LSRR for the loose option and SSRR for the strict option), because as a datagram passes through all the listed nodes, each one replaces its listed address with the address of the outgoing interface. This allows the receiver to take this new list and reverse it to follow the reverse path back to the sender. Examples of these two source routes, along with the corresponding <TT>tcpdump</TT> output, are found in Section 8.5 of TCPv1.</P>
+<P class="docText">We specify a source route as an array of IPv4 addresses, prefixed by three one-byte fields, as shown in <A class="docLink" HREF="#ch27fig01">Figure 27.1</A>. This is the format of the buffer that we will pass to <TT>setsockopt</TT>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch27fig01"></A>Figure 27.1. Passing a source route to the kernel.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="71" src="FILES/27fig01.gif" ALT="graphics/27fig01.gif"></p>
+
+</CENTER>
+<P class="docText">We place an NOP before the source route option, which causes all the IP addresses to be aligned on a four-byte boundary. This is not required, but takes no additional space (the IP options are always padded to be a multiple of four bytes) and aligns the addresses.</P>
+<P class="docText">In this figure, we show up to 10 IP addresses in the route, but the first listed address is removed from the source route option and becomes the destination address of the IP datagram when it leaves the source host. Although there is room for only 9 IP addresses in the 40-byte IP option space (do not forget the 3-byte option header that we are about to describe), there are actually 10 IP addresses in an IPv4 header when the destination address is included.</P>
+<P class="docText">The <span class="docEmphasis">code</span> is either <TT>0x83</TT> for an LSRR option or <TT>0x89</TT> for an SSRR option. The <span class="docEmphasis">len</span> that we specify is the size of the option in bytes, including the three-byte header, and including the extra destination address at the end. It will be 11 for a route consisting of one IP address, 15 for a route consisting of two IP addresses, and so on, up to a maximum of 43. The NOP is not part of the option and is not included in the <span class="docEmphasis">len</span> field, but is included in the size of the buffer that we specify to <TT>setsockopt</TT>. When the first address in the list is removed from the source route option and placed into the destination address field of the IP header, this <span class="docEmphasis">len</span> value is decremented by four (Figures 9.32 and 9.3 of TCPv2). <span class="docEmphasis">ptr</span> is a pointer which contains the offset of the next IP address to be processed in the route, and we initialize it to 4, which points to the first IP address. The value of this field increases by four as the datagram is processed by each listed node.</P>
+<P class="docText">We now develop three functions to initialize, create, and process a source route option. Our functions handle only a source route option. While it is possible to combine a source route with other IP options (such as router alert), such a combination is rare. <A class="docLink" HREF="#ch27fig02">Figure 27.2</A> is the first function, <TT>inet_srcrt_init</TT>, along with some static variables that are used as an option is being built.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch27fig02"></A>Figure 27.2 <TT>inet_srcrt_init</TT> function: initializes before storing a source route.</H5>
+<P class="docText"><span class="docEmphasis">ipopts/sourceroute.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+ 2 #include    &lt;netinet/in_systm.h&gt;
+ 3 #include    &lt;netinet/ip.h&gt;
+
+ 4 static u_char *optr;            /* pointer into options being formed */
+ 5 static u_char *lenptr;          /* pointer to length byte in SRR option */
+ 6 static int ocnt;                /* count of # addresses */
+
+ 7 u_char *
+ 8 inet_srcrt_init(int type)
+ 9 {
+10     optr = Malloc(44);          /* NOP, code, len, ptr, up to 10 addresses */
+11     bzero(optr, 44);            /* guarantees EOLs at end */
+12     ocnt = 0;
+13     *optr++ = IPOPT_NOP;        /* NOP for alignment */
+14     *optr++ = type ? IPOPT_SSRR : IPOPT_LSRR;
+15     lenptr = optr++;            /* we fill in length later */
+16     *optr++ = 4;                /* offset to first address */
+
+17     return (optr - 4);          /* pointer for setsockopt() */
+18 }
+</PRE>
+
+<A NAME="ch27lev3sec1"></A>
+<H4 class="docSection2Title"> Initialize</H4>
+<p class="docText"><span class="docEmphasis"><TT>10–17</TT></span> We allocate a maximum sized buffer of 44 bytes and set it to 0. The value of the EOL option is 0, so this initializes the entire option to EOL bytes. We then set up the source route header. As shown in <A class="docLink" HREF="#ch27fig01">Figure 27.1</A>, we first use an NOP for alignment, then the type of source route (loose or strict), the length, and the pointer. We save a pointer to the <span class="docEmphasis">len</span> field and will store this value as each address is added to the list. The pointer to the option is returned to the caller and will be passed as the fourth argument to <TT>setsockopt</TT>.</p>
+<P class="docText">The next function, <TT>inet_srcrt_add</TT>, adds one IPv4 address to the source route being constructed.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch27fig03"></A>Figure 27.3 <TT>inet_srcrt_add</TT> function: adds one IPv4 address to a source route.</H5>
+<P class="docText"><span class="docEmphasis">ipopts/sourceroute.c</span></P>
+
+<PRE>
+19 int
+20 inet_srcrt_add(char *hostptr)
+21 {
+22     int     len;
+23     struct addrinfo *ai;
+24     struct sockaddr_in *sin;
+
+25     if (ocnt &gt; 9)
+26         err_quit("too many source routes with: %s", hostptr);
+
+27     ai = Host_serv(hostptr, NULL, AF_INET, 0);
+28     sin = (struct sockaddr_in *) ai-&gt;ai_addr;
+29     memcpy(optr, &amp;sin-&gt;sin_addr, sizeof(struct in_addr));
+30     freeaddrinfo(ai);
+
+31     optr += sizeof(struct in_addr);
+32     ocnt++;
+33     len = 3 + (ocnt * sizeof(struct in_addr));
+34     *lenptr = len;
+35     return (len + 1);           /* size for setsockopt() */
+36 }
+</PRE>
+
+
+<A NAME="ch27lev3sec2"></A>
+<H4 class="docSection2Title"> Argument</H4>
+<p class="docText"><span class="docEmphasis"><TT>19–20</TT></span> The argument points to either a hostname or a dotted-decimal IP address.</p>
+
+<A NAME="ch27lev3sec3"></A>
+<H4 class="docSection2Title"> Check for overflow</H4>
+<p class="docText"><span class="docEmphasis"><TT>25–26</TT></span> We check that too many addresses are not specified and then initialize if this is the first address.</p>
+
+<A NAME="ch27lev3sec4"></A>
+<H4 class="docSection2Title"> Obtain binary IP address and store in route</H4>
+<p class="docText"><span class="docEmphasis"><TT>27–35</TT></span> Our <TT>host_serv</TT> function handles either a hostname or a dotted-decimal string and we store the resulting binary address in the list. We update the <span class="docEmphasis">len</span> field and return the total size of the buffer (including the NOP) that the caller must pass to <TT>setsockopt</TT>.</p>
+<P class="docText">When a received source route is returned to the application by <TT>getsockopt</TT>, the format is different from <A class="docLink" HREF="#ch27fig01">Figure 27.1</A>. We show the received format in <A class="docLink" HREF="#ch27fig04">Figure 27.4</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch27fig04"></A>Figure 27.4. Format of source route option returned by <TT>getsockopt</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="74" src="FILES/27fig04.gif" ALT="graphics/27fig04.gif"></p>
+
+</CENTER>
+<P class="docText">First, the order of the addresses has been reversed by the kernel from the ordering in the received source route. What we mean by "reversed" is that if the received source route contains the four addresses A, B, C, and D, in that order, the reverse of this route is D, C, B, and then A. The first 4 bytes contain the first IP address in the list, followed by a 1-byte NOP (for alignment), followed by the 3-byte source route option header, followed by the remaining IP addresses. Up to 9 IP addresses can follow the 3-byte header, and the <span class="docEmphasis">len</span> field in the returned header will have a maximum value of 39. Since the NOP is always present, the length returned by <TT>getsockopt</TT> will always be a multiple of 4 bytes.</P>
+<BLOCKQUOTE><P><P class="docList">The format shown in <A class="docLink" HREF="#ch27fig04">Figure 27.4</A> is defined in <TT>&lt;netinet/ip_var.h&gt;</TT> as the following structure:</P><pre>
+
+</pre><pre>
+#define MAX_IPOPTLEN    40
+
+struct ipoption {
+  struct in_addr ipopt_dst;  /* first-hop dst if source routed */
+  char           ipopt_list[MAX_IPOPTLEN];   /* options proper */
+};
+</pre><pre>
+</pre></P><P><P class="docList">In <A class="docLink" HREF="#ch27fig05">Figure 27.5</A>, we find it just as easy to parse the data ourselves, instead of using this structure.</P></P></BLOCKQUOTE>
+<P class="docText">This returned format differs from the format that we pass to <TT>setsockopt</TT>. If we wanted to convert the format in <A class="docLink" HREF="#ch27fig04">Figure 27.4</A> to the format in <A class="docLink" HREF="#ch27fig01">Figure 27.1</A>, we would have to swap the first 4 bytes with the following 4 bytes and add 4 to the length field. Fortunately, we do not have to do this, as Berkeley-derived implementations automatically use the reverse of a received source route for a TCP socket. That is, the information shown in <A class="docLink" HREF="#ch27fig04">Figure 27.4</A> is returned by <TT>getsockopt</TT> for our information only. We do not have to call <TT>setsockopt</TT> to tell the kernel to use this route for IP datagrams sent on the TCP connection; the kernel does that automatically. We will see an example of this shortly with our TCP server.</P>
+<P class="docText">The next of our source route functions takes a received source route, in the format shown in <A class="docLink" HREF="#ch27fig04">Figure 27.4</A>, and prints the information. We show our <TT>inet_srcrt_print</TT> function in <A class="docLink" HREF="#ch27fig05">Figure 27.5</A>.</P>
+
+<A NAME="ch27lev3sec5"></A>
+<H4 class="docSection2Title"> Save first IP address, skip any NOPs</H4>
+<p class="docText"><span class="docEmphasis"><TT>43–45</TT></span> The first IP address in the buffer is saved and any NOPs that follow are skipped.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch27fig05"></A>Figure 27.5 <TT>inet_srcrt_print</TT> function: prints a received source route.</H5>
+<P class="docText"><span class="docEmphasis">ipopts/sourceroute.c</span></P>
+
+<PRE>
+37 void
+38 inet_srcrt_print(u_char *ptr, int len)
+39 {
+40     u_char  c;
+41     char    str[INET_ADDRSTRLEN];
+42     struct in_addr hop1;
+
+43     memcpy(&amp;hop1, ptr, sizeof(struct in_addr));
+44     ptr += sizeof(struct in_addr);
+
+45     while ( (c = *ptr++) == IPOPT_NOP) ; /* skip any leading NOPs */
+
+46     if (c == IPOPT_LSRR)
+47         printf("received LSRR: ");
+48     else if (c == IPOPT_SSRR)
+49         printf("received SSRR: ");
+50     else {
+51         printf("received option type %d\n", c);
+52         return;
+53     }
+54     printf("%s ", Inet_ntop(AF_INET, &amp;hop1, str, sizeof(str)));
+
+55     len = *ptr++ - sizeof(struct in_addr); /* subtract dest IP addr */
+56     ptr++;                      /* skip over pointer */
+57     while (len &gt; 0) {
+58         printf("%s ", Inet_ntop(AF_INET, ptr, str, sizeof(str)));
+59         ptr += sizeof(struct in_addr);
+60         len -= sizeof(struct in_addr);
+61     }
+62     printf("\n");
+63 }
+</PRE>
+
+
+<A NAME="ch27lev3sec6"></A>
+<H4 class="docSection2Title"> Check for source route option</H4>
+<p class="docText"><span class="docEmphasis"><TT>46–62</TT></span> We only print the information for a source route, and from the three-byte header, we check the <span class="docEmphasis">code</span>, fetch the <span class="docEmphasis">len</span>, and skip over the <span class="docEmphasis">ptr</span>. We then print all the IP addresses that follow the three-byte header, except the destination IP address.</p>
+
+<A NAME="ch27lev2sec1"></A>
+<H4 class="docSection2Title"> Example</H4>
+<P class="docText">We now modify our TCP echo client to specify a source route and our TCP echo server to print a received source route. <A class="docLink" HREF="#ch27fig06">Figure 27.6</A> is our client.</P>
+<A NAME="ch27lev3sec7"></A>
+<H5 class="docSection3Title"> Process command-line arguments</H5>
+<p class="docText"><span class="docEmphasis"><TT>12–26</TT></span> We call our <TT>inet_srcrt_init</TT> function to initialize the source route, with the type of route specified by either the <TT>-g</TT> option (loose) or the <TT>-G</TT> option (strict).</p>
+<p class="docText"><span class="docEmphasis"><TT>27–33</TT></span> If the <TT>ptr</TT> pointer is set, a source route option was specified and we add all the specified intermediate hops to the source route that we allocated above with our <TT>inet_srcrt_add</TT> function. If <TT>ptr</TT> is not set, but there is more than one argument remaining on the command line, the user specified a route without specifying whether it is loose or strict, so we exit with an error.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch27fig06"></A>Figure 27.6 TCP echo client that specifies a source route.</H5>
+<P class="docText"><span class="docEmphasis">ipopts/tcpcli01.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     c, sockfd, len = 0;
+ 6     u_char *ptr = NULL;
+ 7     struct addrinfo *ai;
+
+ 8     if (argc &lt; 2)
+ 9         err_quit("usage: tcpcli01 [ -[gG] &lt;hostname&gt; ... ] &lt;hostname&gt;");
+
+10     opterr = 0;                 /* don't want getopt() writing to stderr */
+11     while ( (c = getopt(argc, argv, "gG")) != -1) {
+12         switch (c) {
+13         case 'g':               /* loose source route */
+14             if (ptr)
+15                 err_quit("can't use both -g and -G");
+16             ptr = inet_srcrt_init(0);
+17             break;
+
+18         case 'G':               /* strict source route */
+19             if (ptr)
+20                 err_quit("can't use both -g and -G");
+21             ptr = inet_srcrt_init(1);
+22             break;
+
+23         case '?':
+24             err_quit("unrecognized option: %c", c);
+25         }
+26     }
+
+27     if (ptr)
+28         while (optind &lt; argc - 1)
+29             len = inet_srcrt_add(argv[optind++]);
+30     else if (optind &lt; argc - 1)
+31         err_quit("need -g or -G to specify route");
+
+32     if (optind != argc - 1)
+33         err_quit("missing &lt;hostname&gt;");
+
+34     ai = Host_serv(argv[optind], SERV_PORT_STR, AF_INET, SOCK_STREAM);
+
+35     sockfd = Socket(ai-&gt;ai_family, ai-&gt;ai_socktype, ai-&gt;ai_protocol);
+
+36     if (ptr) {
+37         len = inet_srcrt_add(argv[optind]); /* dest at end */
+38         Setsockopt(sockfd, IPPROTO_IP, IP_OPTIONS, ptr, len);
+39         free(ptr);
+40     }
+
+41     Connect(sockfd, ai-&gt;ai_addr, ai-&gt;ai_addrlen);
+
+42     str_cli(stdin, sockfd);     /* do it all */
+
+43     exit(0);
+44 }
+</PRE>
+
+
+<A NAME="ch27lev3sec8"></A>
+<H5 class="docSection3Title"> Handle destination address and create socket</H5>
+<p class="docText"><span class="docEmphasis"><TT>34–35</TT></span> The final command-line argument is the hostname or dotted-decimal address of the server and our <TT>host_serv</TT> function processes it. We are not able to call our <TT>tcp_connect</TT> function because we must specify the source route between the calls to <TT>socket</TT> and <TT>connect</TT>. The latter initiates the three-way handshake and we want the initial SYN and all subsequent packets to use this source route.</p>
+<p class="docText"><span class="docEmphasis"><TT>36–42</TT></span> If a source route is specified, we must add the server's IP address to the end of the list of IP addresses (<A class="docLink" HREF="#ch27fig01">Figure 27.1</A>). <TT>setsockopt</TT> installs the source route for this socket. We then call <TT>connect</TT>, followed by our <TT>str_cli</TT> function (<A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A>).</p>
+<P class="docText">Our TCP server is almost identical to the code shown in <A class="docLink" HREF="0131411551_ch05lev1sec10.html#ch05fig12">Figure 5.12</A>, with the following changes. First, we allocate space for the options.</P>
+<pre>
+
+</pre><pre>
+int      len;
+u_char   *opts;
+
+opts = Malloc(44);
+</pre><pre>
+</pre>
+<P class="docText">We then fetch the IP options after the call to <TT>accept</TT>, but before the call to <TT>fork</TT>.</P>
+<pre>
+
+</pre><pre>
+len = 44;
+Getsockopt(connfd, IPPROTO_IP, IP_OPTIONS, opts, &amp;len);
+if (len &gt; 0) {
+    printf("received IP options, len = %d\n", len);
+    inet_srcrt_print(opts, len);
+}
+</pre><pre>
+</pre>
+<P class="docText">If the received SYN from the client does not contain any IP options, the <span class="docEmphasis">len</span> variable will contain 0 on return from <TT>getsockopt</TT> (it is a value-result argument). As mentioned earlier, we do not have to do anything to cause TCP to use the reverse of the received source route: That is done automatically by TCP (p. 931 of TCPv2). All we are doing by calling <TT>getsockopt</TT> is obtaining a copy of the reversed source route. If we do not want TCP to use this route, we call <TT>setsockopt</TT> after <TT>accept</TT> returns, specifying a fifth argument (the length) of 0, and this removes any IP options currently in use. The source route has already been used by TCP for the second segment of the three-way handshake (<A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02fig05">Figure 2.5</A>), but if we remove the options, IP will use whatever route it calculates for future packets to this client.</P>
+<P class="docText">We now show an example of our client/server when we specify a source route. We run our client on the host <TT>freebsd</TT> as follows:</P>
+<pre>
+
+</pre><pre>
+freebsd4 % <span class="docEmphStrong">tcpcli01 -g macosx freebsd4 macosx</span>
+</pre><pre>
+</pre>
+<P class="docText">After the appropriate configuration to handle source routes and forward IP, this sends the IP datagrams from <TT>freebsd4</TT> to the host <TT>macosx</TT>, back to <TT>freebsd4</TT>, and then finally to the host <TT>macosx</TT>, which is running the server. The two systems, <TT>freebsd4</TT> and <TT>macosx</TT>, must forward and accept source-routed datagrams for this example to work.</P>
+<P class="docText">When the connection is established at the server, it outputs the following:</P>
+<pre>
+
+</pre><pre>
+macosx % <span class="docEmphStrong">tcpserv01</span>
+received IP options, len = 16
+received LSRR: 172.24.37.94 172.24.37.78 172.24.37.94
+</pre><pre>
+</pre>
+<P class="docText">The first IP address printed is the first hop of the reverse path (<TT>freebsd4</TT>, as shown in <A class="docLink" HREF="#ch27fig04">Figure 27.4</A>), and the next two addresses are in the order used by the server to send datagrams back to the client. If we watch the client/server exchange using <TT>tcpdump</TT>, we can see the source route option on every datagram in both directions.</P>
+<BLOCKQUOTE><P><P class="docList">Unfortunately, the operation of the <TT>IP_OPTIONS</TT> socket option has never been documented, so you may encounter variations on systems that are not derived from the Berkeley source code. For example, under Solaris 2.5, the first address returned in the buffer by <TT>getsockopt</TT> (<A class="docLink" HREF="#ch27fig04">Figure 27.4</A>) is not the first-hop address for the return route, but the address of the peer. Nevertheless, the reversed route used by TCP is correct. Also, Solaris 2.5 precedes all source route options with four NOPs, limiting the option to eight IP addresses instead of the real limit of nine.</P></P></BLOCKQUOTE>
+
+
+<A NAME="ch27lev2sec2"></A>
+<H4 class="docSection2Title"> Deleting Received Source Route</H4>
+<P class="docText">Unfortunately, source routes present a security hole to programs that perform authentication using only IP addresses (now known to be inadequate). If a hacker sends packets with a trusted address as the source, but his or her own address in the source route, the return packets using the reverse source route will get to the hacker without involving the system listed as the original source at all. Starting with the Net/1 release (1989), the <TT>rlogind</TT> and <TT>rshd</TT> servers had code similar to the following:</P>
+<pre>
+
+</pre><pre>
+u_char  buf[44];
+char    lbuf[BUFSIZ];
+int     optsize;
+
+optsize = sizeof(buf);
+if (getsockopt(0, IPPROTO_IP, IP_OPTIONS, 
+                buf, &amp;optsize) == 0 &amp;&amp; optsize ! = 0) {
+    /* format the options as hex numbers to print in lbuf [] */
+    syslog(LOG_NOTICE,
+           "Connection received using IP options (ignored) :%s", lbuf);
+    setsockopt (0, IPPROTO_IP, IP_OPTIONS, NULL, 0);
+}
+</pre><pre>
+</pre>
+<P class="docText">If a connection arrives with any IP options (the value of <TT>optsize</TT> returned by <TT>getsockopt</TT> is nonzero), a message is logged using <TT>syslog</TT> and <TT>setsockopt</TT> is called to clear the options. This prevents any future TCP segments sent on this connection from using the reverse of the received source route. This technique is now known to be inadequate, because by the time the application receives the connection, the TCP three-way handshake is complete, and the second segment (the server's SYN-ACK in <A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02fig05">Figure 2.5</A>) has already followed the reverse of the source route back to the client (or at least to one of the intermediate hops listed in the source route, which is where the hacker is located). Since the hacker has seen TCP's sequence numbers in both directions, even if no more packets are sent with the source route, the hacker can still send packets to the server with the correct sequence number.</P>
+<P class="docText">The only solution for this potential problem is to forbid all TCP connections that arrive with a source route when you are using the source IP address for some form of validation (as do <TT>rlogind</TT> and <TT>rshd</TT>). Replace the call to <TT>setsockopt</TT> in the code fragment just shown with a closing of the just-accepted connection and a termination of the newly spawned server. This way, the second segment of the three-way handshake has already been sent, but the connection should not be left open.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch27lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch27lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

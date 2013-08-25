@@ -1,0 +1,249 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.6 TCP Preforked Server, No Locking Around 'accept'"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec6"></A>
+<H3 class="docSection1Title">30.6 TCP Preforked Server, No Locking Around <TT>accept</TT></H3>
+<P class="docText">Our first of the "enhanced" TCP servers uses a technique called <span class="docEmphasis">preforking</span>. Instead of generating one <TT>fork</TT> per client, the server preforks some number of children when it starts, and then the children are ready to service the clients as each client connection arrives. <A class="docLink" HREF="#ch30fig08">Figure 30.8</A> shows a scenario where the parent has preforked <span class="docEmphasis">N</span> children and two clients are currently connected.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch30fig08"></A>Figure 30.8. Preforking of children by server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="246" src="FILES/30fig08.gif" ALT="graphics/30fig08.gif"></p>
+
+</CENTER>
+<P class="docText">The advantage of this technique is that new clients can be handled without the cost of a <TT>fork</TT> by the parent. The disadvantage is that the parent must guess how many children to prefork when it starts. If the number of clients at any time ever equals the number of children, additional clients are ignored until a child is available. But recall from <A class="docLink" HREF="0131411551_ch04lev1sec5.html#ch04lev1sec5">Section 4.5</A> that the clients are not completely ignored. The kernel will complete the three-way handshake for any additional clients, up to the <TT>listen</TT> backlog for this socket, and then pass the completed connections to the server when it calls <TT>accept</TT>. But, the client application can notice a degradation in response time because even though its <TT>connect</TT> might return immediately, its first request might not be handled by the server for some time.</P>
+<P class="docText">With some extra coding, the server can always handle the client load. What the parent must do is continually monitor the number of available children, and if this value drops below some threshold, the parent must <TT>fork</TT> additional children. Also, if the number of available children exceeds another threshold, the parent can terminate some of the excess children, because as we'll see later in this chapter, having too many available children can degrade performance, too.</P>
+<P class="docText">But before worrying about these enhancements, let's examine the basic structure of this type of server. <A class="docLink" HREF="#ch30fig09">Figure 30.9</A> shows the <TT>main</TT> function for the first version of our preforked server.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig09"></A>Figure 30.9 <TT>main</TT> function for preforked server.</H5>
+<P class="docText"><span class="docEmphasis">server/serv02.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 static int nchildren;
+ 3 static pid_t *pids;
+
+ 4 int
+ 5 main(int argc, char **argv)
+ 6 {
+ 7     int     listenfd, i;
+ 8     socklen_t addrlen;
+ 9     void    sig_int(int);
+10     pid_t   child_make(int, int, int);
+
+11     if (argc == 3)
+12         listenfd = Tcp_listen(NULL, argv[1], &amp;addrlen);
+13     else if (argc == 4)
+14         listenfd = Tcp_listen(argv[1], argv[2], &amp;addrlen);
+15     else
+16         err_quit("usage: serv02 [ &lt;host&gt; ] &lt;port#&gt; &lt;#children&gt;");
+17     nchildren = atoi(argv[argc - 1]);
+18     pids = Calloc(nchildren, sizeof(pid_t));
+
+19     for (i = 0; i &lt; nchildren; i++)
+20         pids[i] = child_make(i, listenfd, addrlen); /* parent returns */
+
+21     Signal(SIGINT, sig_int);
+
+22     for ( ; ; )
+23         pause();                /* everything done by children */
+24 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>11–18</TT></span> An additional command-line argument is the number of children to prefork. An array is allocated to hold the PIDs of the children, which we need when the program terminates to allow the <TT>main</TT> function to terminate all the children.</p>
+<p class="docText"><span class="docEmphasis"><TT>19–20</TT></span> Each child is created by <TT>child_make</TT>, which we will examine in <A class="docLink" HREF="#ch30fig11">Figure 30.11</A>.</p>
+<P class="docText">Our signal handler for <TT>SIGINT</TT>, which we show in <A class="docLink" HREF="#ch30fig10">Figure 30.10</A>, differs from <A class="docLink" HREF="0131411551_ch30lev1sec5.html#ch30fig05">Figure 30.5</A>.</P>
+<p class="docText"><span class="docEmphasis"><TT>30–34</TT></span> <TT>getrusage</TT> reports on the resource utilization of <span class="docEmphasis">terminated</span> children, so we must terminate all the children before calling <TT>pr_cpu_time</TT>. We do this by sending <TT>SIGTERM</TT> to each child, and then we <TT>wait</TT> for all the children.</p>
+<P class="docText"><A class="docLink" HREF="#ch30fig11">Figure 30.11</A> shows the <TT>child_make</TT> function, which is called by <TT>main</TT> to create each child.</P>
+<p class="docText"><span class="docEmphasis"><TT>7–9</TT></span> <TT>fork</TT> creates each child and only the parent returns. The child calls the function <TT>child_main</TT>, which we show in <A class="docLink" HREF="#ch30fig12">Figure 30.12</A> and which is an infinite loop.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig10"></A>Figure 30.10 Singal handler for <TT>SIGINT</TT>.</H5>
+<P class="docText"><span class="docEmphasis">server/serv02.c</span></P>
+
+<PRE>
+25 void
+26 sig_int(int signo)
+27 {
+28     int     i;
+29     void    pr_cpu_time(void);
+
+30         /* terminate all children */
+31     for (i = 0; i &lt; nchildren; i++)
+32         kill(pids[i], SIGTERM);
+33     while (wait(NULL) &gt; 0)     /* wait for all children */
+34         ;
+35     if (errno != ECHILD)
+36         err_sys("wait error");
+
+37     pr_cpu_time();
+38     exit(0);
+39 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch30fig11"></A>Figure 30.11 <TT>child_make</TT> function: creates each child.</H5>
+<P class="docText"><span class="docEmphasis">server/child02.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 pid_t
+ 3 child_make(int i, int listenfd, int addrlen)
+ 4 {
+ 5     pid_t   pid;
+ 6     void    child_main(int, int, int);
+
+ 7     if ( (pid = Fork()) &gt; 0)
+ 8         return (pid);            /* parent */
+
+ 9     child_main(i, listenfd, addrlen);     /* never returns */
+10 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch30fig12"></A>Figure 30.12 <TT>child_main</TT> function: infinite loop executed by each child.</H5>
+<P class="docText"><span class="docEmphasis">server/child02.c</span></P>
+
+<PRE>
+11 void
+12 child_main(int i, int listenfd, int addrlen)
+13 {
+14     int     connfd;
+15     void    web_child(int);
+16     socklen_t clilen;
+17     struct sockaddr *cliaddr;
+
+18     cliaddr = Malloc(addrlen);
+
+19     printf("child %ld starting\n", (long) getpid());
+20     for ( ; ; ) {
+21         clilen = addrlen;
+22         connfd = Accept(listenfd, cliaddr, &amp;clilen);
+
+23         web_child(connfd);      /* process the request */
+24         Close(connfd);
+25     }
+26 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>20–25</TT></span> Each child calls <TT>accept</TT>, and when this returns, the function <TT>web_child</TT> (<A class="docLink" HREF="0131411551_ch30lev1sec5.html#ch30fig07">Figure 30.7</A>) handles the client request. The child continues in this loop until terminated by the parent.</p>
+<A NAME="ch30lev2sec1"></A>
+<H4 class="docSection2Title"> 4.4BSD Implementation</H4>
+<P class="docText">If you have never seen this type of arrangement (multiple processes calling <TT>accept</TT> on the same listening descriptor), you probably wonder how it can even work. It's worth a short digression on how this is implemented in Berkeley-derived kernels (e.g., as presented in TCPv2).</P>
+<P class="docText">The parent creates the listening socket before spawning any children, and if you recall, all descriptors are duplicated in each child each time <TT>fork</TT> is called. <A class="docLink" HREF="#ch30fig13">Figure 30.13</A> shows the arrangement of the <TT>proc</TT> structures (one per process), the one <TT>file</TT> structure for the listening descriptor, and the one <TT>socket</TT> structure.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch30fig13"></A>Figure 30.13. Arrangement of <TT>proc</TT>, <TT>file</TT>, and <TT>socket</TT> structures.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="354" src="FILES/30fig13.gif" ALT="graphics/30fig13.gif"></p>
+
+</CENTER>
+<P class="docText">Descriptors are just an index in an array in the <TT>proc</TT> structure that reference a <TT>file</TT> structure. One of the properties of the duplication of descriptors in the child that occurs with <TT>fork</TT> is that a given descriptor in the child references the same <TT>file</TT> structure as that same descriptor in the parent. Each <TT>file</TT> structure has a reference count that starts at one when the file or socket is opened and is incremented by one each time <TT>fork</TT> is called or each time the descriptor is <TT>duped</TT>. In our example with <span class="docEmphasis">N</span> children, the reference count in the <TT>file</TT> structure would be <span class="docEmphasis">N</span> + 1 (don't forget the parent that still has the listening descriptor open, even though the parent never calls <TT>accept</TT>).</P>
+<P class="docText">When the program starts, <span class="docEmphasis">N</span> children are created, and all <span class="docEmphasis">N</span> call <TT>accept</TT> and all are put to sleep by the kernel (line 140, p. 458 of TCPv2). When the first client connection arrives, all <span class="docEmphasis">N</span> children are awakened. This is because all <span class="docEmphasis">N</span> have gone to sleep on the same "wait channel," the <TT>so_timeo</TT> member of the <TT>socket</TT> structure, because all <span class="docEmphasis">N</span> share the same listening descriptor, which points to the same <TT>socket</TT> structure. Even though all <span class="docEmphasis">N</span> are awakened, the first of the <span class="docEmphasis">N</span> to run will obtain the connection and the remaining <span class="docEmphasis">N</span> - 1 will all go back to sleep, because when each of the remaining <span class="docEmphasis">N</span> - 1 execute the statement on line 135 of p. 458 of TCPv2, the queue length will be 0 since the first child to run already took the connection.</P>
+<P class="docText">This is sometimes called the <span class="docEmphasis">thundering herd</span> problem because all <span class="docEmphasis">N</span> are awakened even though only one will obtain the connection. Nevertheless, the code works, with the performance side effect of waking up too many processes each time a connection is ready to be <TT>accepted</TT>. We now measure this performance effect.</P>
+
+<A NAME="ch30lev2sec2"></A>
+<H4 class="docSection2Title"> Effect of Too Many Children</H4>
+<P class="docText">The CPU time of 1.8 for the server in row 2 of <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A> is for 15 children and a maximum of 10 simultaneous clients. We can measure the effect of the thundering herd problem by just increasing the number of children for the same maximum number of clients (10). We don't show the results of increasing the number of children because the individual test results aren't that interesting. Since any number greater than 10 introduces superfluous children, the thundering herd problem worsens and the timing results increase.</P>
+<BLOCKQUOTE><P><P class="docList">Some Unix kernels have a function, often named <TT>wakeup_one</TT>, that wakes up only one process that is waiting for some event, instead of waking up all processes waiting for the event [Schimmel 1994].</P></P></BLOCKQUOTE>
+
+<A NAME="ch30lev2sec3"></A>
+<H4 class="docSection2Title"> Distribution of Connections to the Children</H4>
+<P class="docText">The next thing to examine is the distribution of the client connections to the pool of available children that are blocked in the call to <TT>accept</TT>. To collect this information, we modify the <TT>main</TT> function to allocate an array of long integer counters in shared memory, one counter per child. This is done with the following:</P>
+<pre>
+
+</pre><pre>
+long   *cptr, *meter(int);     /* for counting # clients/child */
+
+cptr = meter(nchildren);       /* before spawning children */
+</pre><pre>
+</pre>
+<P class="docText"><A class="docLink" HREF="#ch30fig14">Figure 30.14</A> shows the <TT>meter</TT> function.</P>
+<P class="docText">We use anonymous memory mapping, if supported (e.g., 4.4BSD), or the mapping of <TT>/dev/zero</TT> (e.g., SVR4). Since the array is created by <TT>mmap</TT> before the children are spawned, the array is then shared between this process (the parent) and all its children created later by <TT>fork</TT>.</P>
+<P class="docText">We then modify our <TT>child_main</TT> function (<A class="docLink" HREF="#ch30fig12">Figure 30.12</A>) so that each child increments its counter when <TT>accept</TT> returns and our <TT>SIGINT</TT> handler prints this array after all the children are terminated.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig14"></A>Figure 30.14 <TT>meter</TT> function to allocate an array in shared memory.</H5>
+<P class="docText"><span class="docEmphasis">server/meter.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+ 2 #include    &lt;sys/mman.h&gt;
+
+ 3 /*
+ 4  * Allocate an array of "nchildren" longs in shared memory that can
+ 5  * be used as a counter by each child of how many clients it services.
+ 6  * See pp. 467-470 of "Advanced Programming in the Unix Environment."
+ 7  */
+
+ 8 long *
+ 9 meter(int nchildren)
+10 {
+11     int     fd;
+12     long   *ptr;
+
+13 #ifdef MAP_ANON
+14     ptr = Mmap(0, nchildren * sizeof(long), PROT_READ | PROT_WRITE,
+15                MAP_ANON | MAP_SHARED, -1, 0);
+16 #else
+17     fd = Open("/dev/zero", O_RDWR, 0);
+
+18     ptr = Mmap(0, nchildren * sizeof(long), PROT_READ | PROT_WRITE,
+19                 MAP_SHARED, fd, 0);
+20     Close(fd);
+21 #endif
+
+22     return (ptr);
+23 }
+</PRE>
+
+<P class="docText"><A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A> shows the distribution. When the available children are blocked in the call to <TT>accept</TT>, the kernel's scheduling algorithm distributes the connections uniformly to all the children.</P>
+
+<A NAME="ch30lev2sec4"></A>
+<H4 class="docSection2Title"> <TT>select</TT> Collisions</H4>
+<P class="docText">While looking at this example under 4.4BSD, we can also examine another poorly understood, but rare phenomenon. Section 16.13 of TCPv2 talks about <span class="docEmphasis">collisions</span> with the <TT>select</TT> function and how the kernel handles this possibility. A collision occurs when multiple processes call <TT>select</TT> on the same descriptor, because room is allocated in the <TT>socket</TT> structure for only one process ID to be awakened when the descriptor is ready. If multiple processes are waiting for the same descriptor, the kernel must wake up <span class="docEmphasis">all</span> processes that are blocked in a call to <TT>select</TT> since it doesn't know which processes are affected by the descriptor that just became ready.</P>
+<P class="docText">We can force <TT>select</TT> collisions with our example by preceding the call to <TT>accept</TT> in <A class="docLink" HREF="#ch30fig12">Figure 30.12</A> with a call to <TT>select</TT>, waiting for readability on the listening socket. The children will spend their time blocked in this call to <TT>select</TT> instead of in the call to <TT>accept</TT>. <A class="docLink" HREF="#ch30fig15">Figure 30.15</A> shows the portion of the <TT>child_main</TT> function that changes, using plus signs to note the lines that have changed from <A class="docLink" HREF="#ch30fig12">Figure 30.12</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig15"></A>Figure 30.15 Modification to <A class="docLink" HREF="#ch30fig12">Figure 30.12</A> to block in <TT>select</TT> instead of <TT>accept</TT>.</H5>
+
+<PRE>
+     printf("child %ld starting\n", (long) getpid());
++    FD_ZERO(&amp;rset);
+     for   ( ; ; ) {
++          FD_SET(listenfd, &amp;rset);
++          Select(listenfd+1, &amp;rset, NULL, NULL, NULL);
++          if (FD_ISSET(listenfd, &amp;rset) == 0)
++              err_quit("listenfd readable");
++
+           clilen = addrlen;
+           connfd = Accept(listenfd, cliaddr, &amp;clilen);
+
+           web_child(connfd);      /* process request */
+           Close(connfd);
+     }
+</PRE>
+
+<P class="docText">If we make this change and then examine the kernel's <TT>select</TT> collision counter before and after, we see 1,814 collisions one time we run the sever and 2,045 collisions the next time. Since the two clients create a total of 5,000 connections for each run of the server, this corresponds to about 35–40% of the calls to <TT>select</TT> invoking a collision.</P>
+<P class="docText">If we compare the server's CPU time for this example, the value of 1.8 in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A> increases to 2.9 when we add the call to <TT>select</TT>. Part of this increase is probably because of the additional system call (since we are calling <TT>select</TT> and <TT>accept</TT> instead of just <TT>accept</TT>), and another part is probably because of the kernel overhead in handling the collisions.</P>
+<P class="docText">The lesson to be learned from this discussion is when multiple processes are blocking on the same descriptor, it is better to block in a function such as <TT>accept</TT> instead of blocking in <TT>select</TT>.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,56 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="28.4 Raw Socket Input"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch28lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch28lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch28lev1sec4"></A>
+<H3 class="docSection1Title" id="225793-898">28.4 Raw Socket Input</H3>
+<P class="docText">The first question that we must answer regarding raw socket input is: Which received IP datagrams does the kernel pass to raw sockets? The following rules apply:</P>
+<UL><LI><P class="docList">Received UDP packets and received TCP packets are <span class="docEmphasis">never</span> passed to a raw socket. If a process wants to read IP datagrams containing UDP or TCP packets, the packets must be read at the datalink layer, as described in <A class="docLink" HREF="0131411551_ch29.html#ch29">Chapter 29</A>.</P></LI><LI><P class="docList"><span class="docEmphasis">Most</span> ICMP packets are passed to a raw socket after the kernel has finished processing the ICMP message. Berkeley-derived implementations pass all received ICMP packets to a raw socket other than echo request, timestamp request, and address mask request (pp. 302–303 of TCPv2). These three ICMP messages are processed entirely by the kernel.</P></LI><LI><P class="docList"><span class="docEmphasis">All</span> IGMP packets are passed to a raw socket after the kernel has finished processing the IGMP message.</P></LI><LI><P class="docList"><span class="docEmphasis">All</span> IP datagrams with a protocol field that the kernel does not understand are passed to a raw socket. The only kernel processing done on these packets is the minimal verification of some IP header fields: the IP version, IPv4 header checksum, header length, and destination IP address (pp. 213–220 of TCPv2).</P></LI><LI><P class="docList">If the datagram arrives in fragments, nothing is passed to a raw socket until all fragments have arrived and have been reassembled.</P></LI></UL>
+<P class="docText">When the kernel has an IP datagram to pass to the raw sockets, all raw sockets for all processes are examined, looking for all matching sockets. A copy of the IP datagram is delivered to <span class="docEmphasis">each</span> matching socket. The following tests are performed for each raw socket and only if all three tests are true is the datagram delivered to the socket:</P>
+<UL><LI><P class="docList">If a nonzero <span class="docEmphasis">protocol</span> is specified when the raw socket is created (the third argument to <TT>socket</TT>), then the received datagram's protocol field must match this value or the datagram is not delivered to this socket.</P></LI><LI><P class="docList">If a local IP address is bound to the raw socket by <TT>bind</TT>, then the destination IP address of the received datagram must match this bound address or the datagram is not delivered to this socket.</P></LI><LI><P class="docList">If a foreign IP address was specified for the raw socket by <TT>connect</TT>, then the source IP address of the received datagram must match this connected address or the datagram is not delivered to this socket.</P></LI></UL>
+<P class="docText">Notice that if a raw socket is created with a <span class="docEmphasis">protocol</span> of 0, and neither <TT>bind</TT> nor <TT>connect</TT> is called, then that socket receives a copy of <span class="docEmphasis">every</span> raw datagram the kernel passes to raw sockets.</P>
+<P class="docText">Whenever a received datagram is passed to a raw IPv4 socket, the entire datagram, including the IP header, is passed to the process. For a raw IPv6 socket, only the payload (i.e., no IPv6 header or any extension headers) is passed to the socket (e.g., <A class="docLink" HREF="0131411551_ch28lev1sec5.html#ch28fig11">Figures 28.11</A> and <A class="docLink" HREF="0131411551_ch28lev1sec6.html#ch28fig22">28.22</A>).</P>
+<BLOCKQUOTE><P><P class="docList">In the IPv4 header passed to the application, <TT>ip_len</TT>, <TT>ip_off</TT>, and <TT>ip_id</TT> are host byte ordered, and <TT>ip_len</TT> contains only the IP payload length (with the IP header length subtracted), but the remaining fields are network byte ordered. Under Linux, all fields are left in network byte order.</P></P><P><P class="docList">As previously mentioned, the raw socket interface is defined to provide an identical interface to the one a protocol would have if it was resident in the kernel, so the contents of the fields are dependent on the OS kernel.</P></P><P><P class="docList">We mentioned in the previous section that all fields in a datagram received on a raw IPv6 socket are left in network byte order.</P></P></BLOCKQUOTE>
+<A NAME="ch28lev2sec3"></A>
+<H4 class="docSection2Title"> ICMPv6 Type Filtering</H4>
+<P class="docText">A raw ICMPv4 socket receives most ICMPv4 messages received by the kernel. But ICMPv6 is a superset of ICMPv4, including the functionality of ARP and IGMP (<A class="docLink" HREF="0131411551_ch02lev1sec2.html#ch02lev1sec2">Section 2.2</A>). Therefore, a raw ICMPv6 socket can potentially receive many more packets compared to a raw ICMPv4 socket. But most applications using a raw socket are interested in only a small subset of all ICMP messages.</P>
+<P class="docText">To reduce the number of packets passed from the kernel to the application across a raw ICMPv6 socket, an application-specified filter is provided. A filter is declared with a datatype of <TT>struct icmp6_filter</TT>, which is defined by including <TT>&lt;netinet/icmp6.h&gt;</TT>. The current filter for a raw ICMPv6 socket is set and fetched using <TT>setsockopt</TT> and <TT>getsockopt</TT> with a <span class="docEmphasis">level</span> of <TT>IPPROTO_ICMPv6</TT> and an <span class="docEmphasis">optname</span> of <TT>ICMP6_FILTER</TT>.</P>
+<P class="docText">Six macros operate on the <TT>icmp6_filter</TT> structure.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netinet/icmp6.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void ICMP6_FILTER_SETPASSALL (struct icmp6_filter *</TT><span class="docEmphasis">filt</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void ICMP6_FILTER_SETBLOCKALL (struct icmp6_filter *</TT><span class="docEmphasis">filt</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void ICMP6_FILTER_SETPASS (int</TT> <span class="docEmphasis">msgtype</span><TT>, struct icmp6_filter *</TT><span class="docEmphasis">filt</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void ICMP6_FILTER_SETBLOCK (int</TT> <span class="docEmphasis">msgtype</span><TT>, struct icmp6_filter *</TT><span class="docEmphasis">filt</span><TT>)</TT><TT>;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int ICMP6_FILTER_WILLPASS (int</TT> <span class="docEmphasis">msgtype</span><TT>, const struct icmp6_filter *</TT><span class="docEmphasis">filt</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int ICMP6_FILTER_WILLBLOCK (int</TT> <span class="docEmphasis">msgtype</span><TT>, const struct icmp6_filter *</TT><span class="docEmphasis">filt</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: 1 if filter will pass (block) message type, 0 otherwise</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The <span class="docEmphasis">filt</span> argument to all the macros is a pointer to an <TT>icmp6_filter</TT> variable that is modified by the first four macros and examined by the final two macros. The <span class="docEmphasis">msgtype</span> argument is a value between 0 and 255 and specifies the ICMP message type.</P>
+<P class="docText">The <TT>SETPASSALL</TT> macro specifies that all message types are to be passed to the application, while the <TT>SETBLOCKALL</TT> macros specifies that no message types are to be passed. By default, when an ICMPv6 raw socket is created, all ICMPv6 message types are passed to the application.</P>
+<P class="docText">The <TT>SETPASS</TT> macro enables one specific message type to be passed to the application while the <TT>SETBLOCK</TT> macro blocks one specific message type. The <TT>WILLPASS</TT> macro returns 1 if the specified message type is passed by the filter, or 0 otherwise; the <TT>WILLBLOCK</TT> macro returns 1 if the specified message type is blocked by the filter, or 0 otherwise.</P>
+<P class="docText">As an example, consider the following application, which wants to receive only ICMPv6 router advertisements:</P>
+<pre>
+
+</pre><pre>
+struct icmp6_filter myfilt;
+
+fd = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+
+ICMP6_FILTER_SETBLOCKALL (&amp;myfilt);
+ICMP6_FILTER_SETPASS (ND_ROUTER_ADVERT, &amp;myfilt);
+Setsockopt (fd, IPPROTO_ICMPV6, ICMP6_FILTER. &amp;myfilt, sizeof (myfilt));
+</pre><pre>
+</pre>
+<P class="docText">We first block all message types (since the default is to pass all message types) and then pass only router advertisements. Despite our use of the filter, the application must be prepared to receive all types of ICMPv6 packets since any ICMPv6 packets that arrive between the <TT>socket</TT> and the <TT>setsockopt</TT> will be added to the receive queue. The <TT>ICMP6_FILTER</TT> option is simply an optimization.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch28lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch28lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,279 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="7.10 SCTP Socket Options"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch07lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch07lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch07lev1sec10"></A>
+<H3 class="docSection1Title">7.10 SCTP Socket Options</H3>
+<P class="docText">The relatively large number of socket options for SCTP (17 at present writing) reflects the finer grain of control SCTP provides to the application developer. We specify the <span class="docEmphasis">level</span> as <TT>IPPROTO_SCTP</TT>.</P>
+<P class="docText">Several options used to get information about SCTP require that data be passed into the kernel (e.g., association ID and/or peer address). While some implementations of <TT>getsockopt</TT> support passing data both into and out of the kernel, not all do. The SCTP API defines a <TT>sctp_opt_info</TT> function (<A class="docLink" HREF="0131411551_ch09lev1sec11.html#ch09lev1sec11">Section 9.11</A>) that hides this difference. On systems on which <TT>getsockopt</TT> does support this, it is simply a wrapper around <TT>getsockopt</TT>. Otherwise, it performs the required action, perhaps using a custom <TT>ioctl</TT> or a new system call. We recommend always using <TT>sctp_opt_info</TT> when retrieving these options for maximum portability. These options are marked with a dagger (<img src="FILES/U2020.GIF" border=0>) in <A class="docLink" HREF="0131411551_ch07lev1sec2.html#ch07fig02">Figure 7.2</A> and include <TT>SCTP_ASSOCINFO</TT>, <TT>SCTP_GET_PEER_ADDR_INFO</TT>, <TT>SCTP_PEER_ADDR_PARAMS</TT>, <TT>SCTP_PRIMARY_ADDR</TT>, <TT>SCTP_RTOINFO</TT>, and <TT>SCTP_STATUS</TT>.</P>
+<A NAME="ch07lev2sec38"></A>
+<H4 class="docSection2Title"> <TT>SCTP_ADAPTION_LAYER</TT> Socket Option</H4>
+<P class="docText">During association initialization, either endpoint may specify an adaption layer indication. This indication is a 32-bit unsigned integer that can be used by the two applications to coordinate any local application adaption layer. This option allows the caller to fetch or set the adaption layer indication that this endpoint will provide to peers.</P>
+<P class="docText">When fetching this value, the caller will only retrieve the value the local socket will provide to all future peers. To retrieve the peer's adaption layer indication, an application must subscribe to adaption layer events.</P>
+
+<A NAME="ch07lev2sec39"></A>
+<H4 class="docSection2Title"> <TT>SCTP_ASSOCINFO</TT> Socket Option</H4>
+<P class="docText">The <TT>SCTP_ASSOCINFO</TT> socket option can be used for three purposes: (i) to retrieve information about an existing association, (ii) to change the parameters of an existing association, and/or (iii) to set defaults for future associations. When retrieving information about an existing association, the <TT>sctp_opt_info</TT> function should be used instead of <TT>getsockopt</TT>. This option takes as input the <TT>sctp_assocparams</TT> structure.</P>
+<pre>
+
+</pre><pre>
+struct sctp_assocparams {
+  sctp_assoc_t sasoc_assoc_id;
+  u_int16_t sasoc_asocmaxrxt;
+  u_int16_t sasoc_number_peer_destinations;
+  u_int32_t sasoc_peer_rwnd;
+  u_int32_t sasoc_local_rwnd;
+  u_int32_t sasoc_cookie_life;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields have the following meaning:</P>
+<UL><LI><P class="docList"><TT>sasoc_assoc_id</TT> holds the identification for the association of interest. If this value is set to 0 when calling the <TT>setsockopt</TT> function, then <TT>sasoc_asocmaxrxt</TT> and <TT>sasoc_cookie_life</TT> represent values that are to be set as defaults on the socket. Calling <TT>getsockopt</TT> will return association-specific information if the association ID is supplied; otherwise, if this field is 0, the default endpoint settings will be returned.</P></LI><LI><P class="docList"><TT>sasoc_asocmaxrxt</TT> holds the maximum number of retransmissions an association will make without acknowledgment before giving up, reporting the peer unusable and closing the association.</P></LI><LI><P class="docList"><TT>sasoc_number_peer_destinations</TT> holds the number of peer destination addresses. It cannot be set, only retrieved.</P></LI><LI><P class="docList"><TT>sasoc_peer_rwnd</TT> holds the peer's current calculated receive window. This value represents the total number of data bytes that can yet be sent. This field is dynamic; as the local endpoint sends data, this value decreases. As the remote application reads data that has been received, this value increases. This value cannot be changed by this socket option call.</P></LI><LI><P class="docList"><TT>sasoc_local_rwnd</TT> represents the local receive window the SCTP stack is currently reporting to the peer. This value is dynamic as well and is influenced by the <TT>SO_SNDBUF</TT> socket option. This value cannot be changed by this socket option call.</P></LI><LI><P class="docList"><TT>sasoc_cookie_life</TT> represents the number of milliseconds for which a cookie, given to a remote peer, is valid. Each state cookie sent to a peer has a lifetime associated with it to prevent replay attacks. The default value of 60,000 milliseconds can be changed by setting this option with a <TT>sasoc_assoc_id</TT> value of 0.</P></LI></UL>
+<P class="docText">We will provide advice on tuning the value of <TT>sasoc_asocmaxrxt</TT> for performance in <A class="docLink" HREF="0131411551_ch23lev1sec11.html#ch23lev1sec11">Section 23.11</A>. The <TT>sasoc_cookie_life</TT> can be reduced for greater protection against cookie replay attacks but less robustness to network delay during association initiation. The other values are useful for debugging.</P>
+
+<A NAME="ch07lev2sec40"></A>
+<H4 class="docSection2Title"> <TT>SCTP_AUTOCLOSE</TT> Socket Option</H4>
+<P class="docText">This option allows us to fetch or set the autoclose time for an SCTP endpoint. The autoclose time is the number of seconds an SCTP association will remain open when idle. Idle is defined by the SCTP stack as neither endpoint sending or receiving user data. The default is for the autoclose function to be disabled.</P>
+<P class="docText">The autoclose option is intended to be used in the one-to-many-style SCTP interface (<A class="docLink" HREF="0131411551_ch09.html#ch09">Chapter 9</A>). When this option is set, the integer passed to the option is the number of seconds before an idle connection should be closed; a value of 0 disables autoclose. Only future associations created by this endpoint will be affected by this option; existing associations retain their current setting.</P>
+<P class="docText">Autoclose can be used by a server to force the closing of idle associations without the server needing to maintain additional state. A server using this feature needs to carefully assess the longest idle time expected on all its associations. Setting the autoclose value smaller than needed results in the premature closing of associations.</P>
+
+<A NAME="ch07lev2sec41"></A>
+<H4 class="docSection2Title"> <TT>SCTP_DEFAULT_SEND_PARAM</TT> Socket Option</H4>
+<P class="docText">SCTP has many optional send parameters that are often passed as ancillary data or used with the <TT>sctp_sendmsg</TT> function call (which is often implemented as a library call that passes ancillary data for the user). An application that wishes to send a large number of messages, all with the same parameters, can use this option to set up the default parameters and thus avoid using ancillary data or the <TT>sctp_sendmsg</TT> call. This option takes as input the <TT>sctp_sndrcvinfo</TT> structure.</P>
+<pre>
+
+</pre><pre>
+struct sctp_sndrcvinfo {
+  u_int16_t sinfo_stream;
+  u_int16_t sinfo_ssn;
+  u_int16_t sinfo_flags;
+  u_int32_t sinfo_ppid;
+  u_int32_t sinfo_context;
+  u_int32_t sinfo_timetolive;
+  u_int32_t sinfo_tsn;
+  u_int32_t sinfo_cumtsn;
+  sctp_assoc_t sinfo_assoc_id;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>sinfo_stream</TT> specifies the new default stream to which all messages will be sent.</P></LI><LI><P class="docList"><TT>sinfo_ssn</TT> is ignored when setting the default options. When receiving a message with the <TT>recvmsg</TT> function or <TT>sctp_recvmsg</TT> function, this field will hold the value the peer placed in the stream sequence number (SSN) field in the SCTP DATA chunk.</P></LI><LI><P class="docList"><TT>sinfo_flags</TT> dictates the default flags to apply to all future message sends. Allowable flag values can be found in <A class="docLink" HREF="#ch07fig16">Figure 7.16</A>.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch07fig16"></A>Figure 7.16. Allowable SCTP flag values for the <TT>sinfo_flags</TT> field.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="98" src="FILES/07fig16.gif" ALT="graphics/07fig16.gif"></p>
+
+</CENTER></LI><LI><P class="docList"><TT>sinfo_pid</TT> provides the default value to use when setting the SCTP payload protocol identifier in all data transmissions.</P></LI><LI><P class="docList"><TT>sinfo_context</TT> specifies the default value to place in the <TT>sinfo_context</TT> field, which is provided as a local tag when messages that could not be sent to a peer are retrieved.</P></LI><LI><P class="docList"><TT>sinfo_timetolive</TT> dictates the default lifetime that will be applied to all message sends. The lifetime field is used by SCTP stacks to know when to discard an outgoing message due to excessive delay (prior to its first transmission). If the two endpoints support the partial reliability option, then the lifetime is also used to specify how long a message is valid after its first transmission.</P></LI><LI><P class="docList"><TT>sinfo_tsn</TT> is ignored when setting the default options. When receiving a message with the <TT>recvmsg</TT> function or <TT>sctp_recvmsg</TT> function, this field will hold the value the peer placed in the transport sequence number (TSN) field in the SCTP DATA chunk.</P></LI><LI><P class="docList"><TT>sinfo_cumtsn</TT> is ignored when setting the default options. When receiving a message with the <TT>recvmsg</TT> function or <TT>sctp_recvmsg</TT> function, this field will hold the current cumulative TSN the local SCTP stack has associated with its remote peer.</P></LI><LI><P class="docList"><TT>sinfo_assoc_id</TT> specifies the association identification that the requester wishes the default parameters to be set against. For one-to-one sockets, this field is ignored.</P></LI></UL>
+<P class="docText">Note that all default settings will only affect messages sent without their own <TT>sctp_sndrcvinfo</TT> structure. Any send that provides this structure (e.g., <TT>sctp_sendmsg</TT> or <TT>sendmsg</TT> function with ancillary data) will override the default settings. Besides setting the default values, this option may be used to retrieve the current default parameters by using the <TT>sctp_opt_info</TT> function.</P>
+
+<A NAME="ch07lev2sec42"></A>
+<H4 class="docSection2Title"> <TT>SCTP_DISABLE_FRAGMENTS</TT> Socket Option</H4>
+<P class="docText">SCTP normally fragments any user message that does not fit in a single SCTP packet into multiple DATA chunks. Setting this option disables this behavior on the sender. When disabled by this option, SCTP will return the error <TT>EMSGSIZE</TT> and not send the message. The default behavior is for this option to be disabled; SCTP will normally fragment user messages.</P>
+<P class="docText">This option may be used by applications that wish to control message sizes, ensuring that every user application message will fit in a single IP packet. An application that enables this option must be prepared to handle the error case (i.e., its message was too big) by either providing application-layer fragmentation of the message or a smaller message.</P>
+
+<A NAME="ch07lev2sec43"></A>
+<H4 class="docSection2Title"> <TT>SCTP_EVENTS</TT> Socket Option</H4>
+<P class="docText">This socket option allows a caller to fetch, enable, or disable various SCTP notifications. An SCTP notification is a message that the SCTP stack will send to the application. The message is read as normal data, with the <TT>msg_flags</TT> field of the <TT>recvmsg</TT> function being set to <TT>MSG_NOTIFICATION</TT>. An application that is not prepared to use either <TT>recvmsg</TT> or <TT>sctp_recvmsg</TT> should not enable events. Eight different types of events can be subscribed to by using this option and passing an <TT>sctp_event_subscribe</TT> structure. Any value of 0 represents a non-subscription and a value of 1 represents a subscription.</P>
+<P class="docText">The <TT>sctp_event_subscribe</TT> structure takes the following form:</P>
+<pre>
+
+</pre><pre>
+struct sctp_event_subscribe {
+  u_int8_t sctp_data_io_event;
+  u_int8_t sctp_association_event;
+  u_int8_t sctp_address_event;
+  u_int8_t sctp_send_failure_event;
+  u_int8_t sctp_peer_error_event;
+  u_int8_t sctp_shutdown_event;
+  u_int8_t sctp_partial_delivery_event;
+  u_int8_t sctp_adaption_layer_event;
+};
+</pre><pre>
+</pre>
+<P class="docText"><A class="docLink" HREF="#ch07fig17">Figure 7.17</A> summarizes the various events. Further details on notifications can be found in <A class="docLink" HREF="0131411551_ch09lev1sec14.html#ch09lev1sec14">Section 9.14</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch07fig17"></A>Figure 7.17. SCTP event subscriptions.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="128" src="FILES/07fig17.gif" ALT="graphics/07fig17.gif"></p>
+
+</CENTER>
+
+<A NAME="ch07lev2sec44"></A>
+<H4 class="docSection2Title"> <TT>SCTP_GET_PEER_ADDR_INFO</TT> Socket Option</H4>
+<P class="docText">This option retrieves information about a peer address, including the congestion window, smoothed RTT and MTU. This option may only be used to retrieve information about a specific peer address. The caller provides a <TT>sctp_paddrinfo</TT> structure with the <TT>spinfo_address</TT> field filled in with the peer address of interest, and should use <TT>sctp_opt_info</TT> instead of <TT>getsockopt</TT> for maximum portability. The sctp_paddrinfo structure has the following format:</P>
+<pre>
+
+</pre><pre>
+struct sctp_paddrinfo {
+  sctp_assoc_t spinfo_assoc_id;
+  struct sockaddr_storage spinfo_address;
+  int32_t spinfo_state;
+  u_int32_t spinfo_cwnd;
+  u_int32_t spinfo_srtt;
+  u_int32_t spinfo_rto;
+  u_int32_t spinfo_mtu;
+};
+</pre><pre>
+</pre>
+<P class="docText">The data returned to the caller provides the following:</P>
+<UL><LI><P class="docList"><TT>spinfo_assoc_id</TT> contains association identification information, also provided in the "communication up" notification (<TT>SCTP_COMM_UP</TT>). This unique value can be used as a shorthand method to represent the association for almost all SCTP operations.</P></LI><LI><P class="docList"><TT>spinfo_address</TT> is set by the caller to inform the SCTP socket on which address to return information. On return, its value should be unchanged.</P></LI><LI><P class="docList"><TT>spinfo_state</TT> holds one or more of the values seen in <A class="docLink" HREF="#ch07fig18">Figure 7.18</A>.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch07fig18"></A>Figure 7.18. SCTP peer address states.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="414" HEIGHT="74" src="FILES/07fig18.gif" ALT="graphics/07fig18.gif"></p>
+
+</CENTER><P class="docList">An <span class="docEmphasis">unconfirmed address</span> is one that the peer had listed as a valid address, but the local SCTP endpoint has not been able to confirm that the peer holds that address. An SCTP endpoint confirms an address when a heartbeat or user data, sent to that address, is acknowledged. Note that an unconfirmed address will also not have a valid retransmission timeout (RTO) value. Active addresses represent addresses that are considered available for use.</P></LI><LI><P class="docList"><TT>spinfo_cwnd</TT> represents the current congestion window recorded for the peer address. A description of how the the <TT>cwnd</TT> value is managed can be found on page 177 of [Stewart and Xie 2001].</P></LI><LI><P class="docList"><TT>spinfo_srtt</TT> represents the current estimate of the smoothed RTT for this address.</P></LI><LI><P class="docList"><TT>spinfo_rto</TT> represents the current retransmission timeout in use for this address.</P></LI><LI><P class="docList"><TT>spinfo_mtu</TT> represents the current path MTU as discovered by path MTU discovery.</P></LI></UL>
+<P class="docText">One interesting use for this option is to translate an IP address structure into an association identification that can be used in other calls. We will illustrate the use of this socket option in <A class="docLink" HREF="0131411551_ch23.html#ch23">Chapter 23</A>. Another possibility is for the application to track performance to each address of a multihomed peer and update the primary address of the association to the peer's best address. These values are also useful for logging and debugging.</P>
+
+<A NAME="ch07lev2sec45"></A>
+<H4 class="docSection2Title"> <TT>SCTP_I_WANT_MAPPED_V4_ADDR</TT> Socket Option</H4>
+<P class="docText">This flag can be used to enable or disable IPv4-mapped addresses on an <TT>AF_INET6</TT>-type socket. Note that when enabled (which is the default behavior), all IPv4 addresses will be mapped to a IPv6 address before sending to the application. If this option is disabled, the SCTP socket will <span class="docEmphasis">not</span> map IPv4 addresses and will instead pass them as a <TT>sockaddr_in</TT> structure.</P>
+
+<A NAME="ch07lev2sec46"></A>
+<H4 class="docSection2Title"> <TT>SCTP_INITMSG</TT> Socket Option</H4>
+<P class="docText">This option can be used to get or set the default initial parameters used on an SCTP socket when sending out the INIT message. The option uses the <TT>sctp_initmsg</TT> structure, which is defined as:</P>
+<pre>
+
+</pre><pre>
+struct sctp_initmsg {
+  uint16_t sinit_num_ostreams;
+  uint16_t sinit_max_instreams;
+  uint16_t sinit_max_attempts;
+  uint16_t sinit_max_init_timeo;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>sinit_num_ostreams</TT> represents the number of outbound SCTP streams an application would like to request. This value is not confirmed until after the association finishes the initial handshake, and may be negotiated downward via peer endpoint limitations.</P></LI><LI><P class="docList"><TT>sinit_max_instreams</TT> represents the maximum number of inbound streams the application is prepared to allow. This value will be overridden by the SCTP stack if it is greater than the maximum allowable streams the SCTP stack supports.</P></LI><LI><P class="docList"><TT>sinit_max_attempts</TT> expresses how many times the SCTP stack should send the initial INIT message before considering the peer endpoint unreachable.</P></LI><LI><P class="docList"><TT>sinit_max_init_timeo</TT> represents the maximum RTO value for the INIT timer. During exponential backoff of the initial timer, this value replaces <TT>RTO.max</TT> as the ceiling for retransmissions. This value is expressed in milliseconds.</P></LI></UL>
+<P class="docText">Note that when setting these fields, any value set to 0 will be ignored by the SCTP socket. A user of the one-to-many-style socket (described in <A class="docLink" HREF="0131411551_ch09lev1sec2.html#ch09lev1sec2">Section 9.2</A>) may also pass an <TT>sctp_initmsg</TT> structure in ancillary data during implicit association setup.</P>
+
+<A NAME="ch07lev2sec47"></A>
+<H4 class="docSection2Title"> <TT>SCTP_MAXBURST</TT> Socket Option</H4>
+<P class="docText">This socket option allows the application to fetch or set the <span class="docEmphasis">maximum burst size</span> used when sending packets. When an SCTP implementation sends data to a peer, no more than <TT>SCTP_MAXBURST</TT> packets are sent at once to avoid flooding the network with packets. An implementation may apply this limit by either: (i) reducing its congestion window to the current flight size plus the maximum burst size times the path MTU, or (ii) using this value as a separate micro-control, sending at most maximum burst packets at any single send opportunity.</P>
+
+<A NAME="ch07lev2sec48"></A>
+<H4 class="docSection2Title"> <TT>SCTP_MAXSEG</TT> Socket Option</H4>
+<P class="docText">This socket option allows the application to fetch or set the <span class="docEmphasis">maximum fragment size</span> used during SCTP fragmentation. This option is similar to the TCP option <TT>TCP_MAXSEG</TT> described in <A class="docLink" HREF="0131411551_ch07lev1sec9.html#ch07lev1sec9">Section 7.9</A>.</P>
+<P class="docText">When an SCTP sender receives a message from an application that is larger than this value, the SCTP sender will break the message into multiple pieces for transport to the peer endpoint. The size that the SCTP sender normally uses is the smallest MTU of all addresses associated with the peer. This option overrides this value downward to the value specified. Note that the SCTP stack may fragment a message at a smaller boundary than requested by this option. This smaller fragmentation will occur when one of the paths to the peer endpoint has a smaller MTU than the value requested in the <TT>SCTP_MAXSEG</TT> option.</P>
+<P class="docText">This value is an endpoint-wide setting and may affect more than one association in the one-to-many interface style.</P>
+
+<A NAME="ch07lev2sec49"></A>
+<H4 class="docSection2Title"> <TT>SCTP_NODELAY</TT> Socket Option</H4>
+<P class="docText">If set, this option disables SCTP's <span class="docEmphasis">Nagle algorithm</span>. This option is OFF by default (i.e., the Nagle algorithm is ON by default). SCTP's Nagle algorithm works identically to TCP's except that it is trying to coalesce multiple DATA chunks as opposed to simply coalescing bytes on a stream. For a further discussion of the Nagle algorithm, see <TT>TCP_MAXSEG</TT>.</P>
+
+<A NAME="ch07lev2sec50"></A>
+<H4 class="docSection2Title"> <TT>SCTP_PEER_ADDR_PARAMS</TT> Socket Option</H4>
+<P class="docText">This socket option allows an application to fetch or set various parameters on an association. The caller provides the <TT>sctp_paddrparams</TT> structure, filling in the association identification. The <TT>sctp_paddrparams</TT> structure has the following format:</P>
+<pre>
+
+</pre><pre>
+struct sctp_paddrparams {
+  sctp_assoc_t spp_assoc_id;
+  struct sockaddr_storage spp_address;
+  u_int32_t spp_hbinterval;
+  u_int16_t spp_pathmaxrxt;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>spp_assoc_id</TT> holds the association identification for the information being requested or set. If this value is set to 0, the endpoint default values are set or retrieved instead of the association-specific values.</P></LI><LI><P class="docList"><TT>spp_address</TT> specifies the IP address for which these parameters are being requested or set. If the <TT>spp_assoc_id</TT> field is set to 0, then this field is ignored.</P></LI><LI><P class="docList"><TT>spp_hbinterval</TT> is the interval between heartbeats. A value of <TT>SCTP_NO_HB</TT> disables heartbeats. A value of <TT>SCTP_ISSUE_HB</TT> requests an on-demand heartbeat. Any other value changes the heartbeat interval to this value in milliseconds. When setting the default parameters, the value of <TT>SCTP_ISSUE_HB</TT> is not allowed.</P></LI><LI><P class="docList"><TT>spp_hbpathmaxrxt</TT> holds the number of retransmissions that will be attempted on this destination before it is declared INACTIVE. When an address is declared INACTIVE, if it is the primary address, an alternate address will be chosen as the primary.</P></LI></UL>
+
+<A NAME="ch07lev2sec51"></A>
+<H4 class="docSection2Title"> <TT>SCTP_PRIMARY_ADDR</TT> Socket Option</H4>
+<P class="docText">This socket option fetches or sets the address that the local endpoint is using as primary. The primary address is used, by default, as the destination address for all messages sent to a peer. To set this value, the caller fills in the association identification and the peer's address that should be used as the primary address. The caller passes this information in a <TT>sctp_setprim</TT> structure, which is defined as:</P>
+<pre>
+
+</pre><pre>
+struct sctp_setprim {
+  sctp_assoc_t            ssp_assoc_id;
+  struct sockaddr_storage ssp_addr;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>spp_assoc_id</TT> specifies the association identification on which the requester wishes to set or retrieve the current primary address. For the one-to-one style, this field is ignored.</P></LI><LI><P class="docList"><TT>sspp_addr</TT> specifies the primary address, which must be an address belonging to the peer. If the operation is a <TT>setsockopt</TT> function call, then the value in this field represents the new peer address the requester would like to be made into the primary destination address.</P></LI></UL>
+<P class="docText">Note that retrieving the value of this option on a one-to-one socket that has only one local address associated with it is the same as calling <TT>getsockname</TT>.</P>
+
+<A NAME="ch07lev2sec52"></A>
+<H4 class="docSection2Title"> <TT>SCTP_RTOINFO</TT> Socket Option</H4>
+<P class="docText">This socket option can be used to fetch or set various RTO information on a specific association or the default values used by this endpoint. When fetching, the caller should use <TT>sctp_opt_info</TT> instead of <TT>getsockopt</TT> for maximum portability. The caller provides a <TT>sctp_rtoinfo</TT> structure of the following form:</P>
+<pre>
+
+</pre><pre>
+struct sctp_rtoinfo {
+  sctp_assoc          srto_assoc_id;
+  uint32_t            srto_initial;
+  uint32_t            srto_max;
+  uint32_t            srto_min;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>srto_assoc_id</TT> holds either the specific association of interest or 0. If this field contains the value 0, then the system's default parameters are affected by the call.</P></LI><LI><P class="docList"><TT>srto_initial</TT> contains the initial RTO value used for a peer address. The initial RTO is used when sending an INIT chunk to the peer. This value is in milliseconds and has a default value of 3,000.</P></LI><LI><P class="docList"><TT>srto_max</TT> contains the maximum RTO value that will be used when an update is made to the retransmission timer. If the updated value is larger than the RTO maximum, then the RTO maximum is used as the RTO instead of the calculated value. The default value for this field is 60,000 milliseconds.</P></LI><LI><P class="docList"><TT>srto_min</TT> contains the minimum RTO value that will be used when starting a retransmission timer. Anytime an update is made to the RTO timer, the RTO minimum value is checked against the new value. If the new value is smaller than the minimum, the minimum replaces the new value. The default value for this field is 1,000 milliseconds.</P></LI></UL>
+<P class="docText">A value of 0 for <TT>srto_initial</TT>, <TT>srto_max</TT>, or <TT>srto_min</TT> indicates that the default value currently set should not be changed. All time values are expressed in milliseconds. We provide guidance on setting these timers for performance in <A class="docLink" HREF="0131411551_ch23lev1sec11.html#ch23lev1sec11">Section 23.11</A>.</P>
+
+<A NAME="ch07lev2sec53"></A>
+<H4 class="docSection2Title"> <TT>SCTP_SET_PEER_PRIMARY_ADDR</TT> Socket Option</H4>
+<P class="docText">Setting this option causes a message to be sent that requests that the peer set the specified local address as its primary address. The caller provides an <TT>sctp_setpeerprim</TT> structure and must fill in both the association identification and a local address to request the peer mark as its primary. The address provided must be one of the local endpoint's bound addresses. The <TT>sctp_setpeerprim</TT> structure is defined as follows:</P>
+<pre>
+
+</pre><pre>
+struct sctp_setpeerprim {
+  sctp_assoc_t            sspp_assoc_id;
+  struct sockaddr_storage sspp_addr;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>sspp_assoc_id</TT> specifies the association identification on which the requester wishes to set the primary address. For the one-to-one style, this field is ignored.</P></LI><LI><P class="docList"><TT>sspp_addr</TT> holds the local address that the requester wishes to ask the peer system to set as the primary address.</P></LI></UL>
+<P class="docText">This feature is optional, and must be supported by both endpoints to operate. If the local endpoint does not support the feature, an error of <TT>EOPNOTSUPP</TT> will be returned to the caller. If the remote endpoint does not support the feature, an error of <TT>EINVAL</TT> will be returned to the caller. Note that this value may only be set and cannot be retrieved.</P>
+
+<A NAME="ch07lev2sec54"></A>
+<H4 class="docSection2Title"> <TT>SCTP_STATUS</TT> Socket Option</H4>
+<P class="docText">This socket option will retrieve the current state of an SCTP association. The caller should use <TT>sctp_opt_info</TT> instead of <TT>getaddrinfo</TT> for maximum portability. The caller provides an <TT>sctp_status</TT> structure, filling in the association identification field, <TT>sstat_assoc_id</TT>. The structure will be returned filled in with the information pertaining to the requested association. The <TT>sctp_status</TT> structure has the following format:</P>
+<pre>
+
+</pre><pre>
+struct sctp_status {
+  sctp_assoc_t sstat_assoc_id;
+  int32_t sstat_state;
+  u_int32_t sstat_rwnd;
+  u_int16_t sstat_unackdata;
+  u_int16_t sstat_penddata;
+  u_int16_t sstat_instrms;
+  u_int16_t sstat_outstrms;
+  u_int32_t sstat_fragmentation_point;
+  struct sctp_paddrinfo sstat_primary;
+};
+</pre><pre>
+</pre>
+<P class="docText">These fields are defined as follows:</P>
+<UL><LI><P class="docList"><TT>sstat_assoc_id</TT> holds the association identification.</P></LI><LI><P class="docList"><TT>sstat_state</TT> holds one of the values found in <A class="docLink" HREF="#ch07fig19">Figure 7.19</A> and indicates the overall state of the association. A detailed depiction of the states an SCTP endpoint goes through during association setup or shutdown can be found in <A class="docLink" HREF="0131411551_ch02lev1sec8.html#ch02fig08">Figure 2.8</A>.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch07fig19"></A>Figure 7.19. SCTP states.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="470" HEIGHT="135" src="FILES/07fig19.gif" ALT="graphics/07fig19.gif"></p>
+
+</CENTER></LI><LI><P class="docList"><TT>sstat_rwnd</TT> holds our endpoint's current estimate of the peer's receive window.</P></LI><LI><P class="docList"><TT>sstat_unackdata</TT> holds the number of unacknowledged DATA chunks pending for the peer.</P></LI><LI><P class="docList"><TT>sstat_penddata</TT> holds the number of unread DATA chunks that the local endpoint is holding for the application to read.</P></LI><LI><P class="docList"><TT>sstat_instrms</TT> holds the number of streams the peer is using to send data to this endpoint.</P></LI><LI><P class="docList"><TT>sstat_outstrms</TT> holds the number of allowable streams that this endpoint can use to send data to the peer.</P></LI><LI><P class="docList"><TT>sstat_fragmentation_point</TT> contains the current value the local SCTP endpoint is using as the fragmentation point for user messages. This value is normally the smallest MTU of all destinations, or possibly a smaller value set by the local application with <TT>SCTP_MAXSEG</TT>.</P></LI><LI><P class="docList"><TT>sstat_primary</TT> holds the current primary address. The primary address is the default address used when sending data to the peer endpoint.</P></LI></UL>
+<P class="docText">These values are useful for diagnostics and for determining the characteristics of the session; for example, the <TT>sctp_get_no_strms</TT> function in <A class="docLink" HREF="0131411551_ch10lev1sec2.html#ch10lev1sec2">Section 10.2</A> will use the <TT>sstat_outstrms</TT> member to determine how many streams are available for outbound use. A low <TT>sstat_rwnd</TT> and/or a high <TT>sstat_unackdata</TT> value can be used to determine that the peer's receive socket buffer is becoming full, which can be used as a cue to the application to slow down transmission if possible. The <TT>sstat_fragmentation_point</TT> can be used by some applications to reduce the number of fragments that SCTP has to create, by sending smaller application messages.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch07lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch07lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

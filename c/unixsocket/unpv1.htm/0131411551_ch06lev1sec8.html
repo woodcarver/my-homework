@@ -1,0 +1,195 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.8 TCP Echo Server (Revisited)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec8"></A>
+<H3 class="docSection1Title">6.8 TCP Echo Server (Revisited)</H3>
+<P class="docText">We can revisit our TCP echo server from <A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05lev1sec2">Sections 5.2</A> and <A class="docLink" HREF="0131411551_ch05lev1sec3.html#ch05lev1sec3">5.3</A> and rewrite the server as a single process that uses <TT>select</TT> to handle any number of clients, instead of <TT>forking</TT> one child per client. Before showing the code, let's look at the data structures that we will use to keep track of the clients. <A class="docLink" HREF="#ch06fig14">Figure 6.14</A> shows the state of the server before the first client has established a connection.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig14"></A>Figure 6.14. TCP server before first client has established a connection.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="125" HEIGHT="127" src="FILES/06fig14.gif" ALT="graphics/06fig14.gif"></p>
+
+</CENTER>
+<P class="docText">The server has a single listening descriptor, which we show as a bullet.</P>
+<P class="docText">The server maintains only a read descriptor set, which we show in <A class="docLink" HREF="#ch06fig15">Figure 6.15</A>. We assume that the server is started in the foreground, so descriptors 0, 1, and 2 are set to standard input, output, and error. Therefore, the first available descriptor for the listening socket is 3. We also show an array of integers named <TT>client</TT> that contains the connected socket descriptor for each client. All elements in this array are initialized to –1.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig15"></A>Figure 6.15. Data structures for TCP server with just a listening socket.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="136" src="FILES/06fig15.gif" ALT="graphics/06fig15.gif"></p>
+
+</CENTER>
+<P class="docText">The only nonzero entry in the descriptor set is the entry for the listening sockets and the first argument to <TT>select</TT> will be 4.</P>
+<P class="docText">When the first client establishes a connection with our server, the listening descriptor becomes readable and our server calls <TT>accept</TT>. The new connected descriptor returned by <TT>accept</TT> will be 4, given the assumptions of this example. <A class="docLink" HREF="#ch06fig16">Figure 6.16</A> shows the connection from the client to the server.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig16"></A>Figure 6.16. TCP server after first client establishes connection.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="302" HEIGHT="177" src="FILES/06fig16.gif" ALT="graphics/06fig16.gif"></p>
+
+</CENTER>
+<P class="docText">From this point on, our server must remember the new connected socket in its <TT>client</TT> array, and the connected socket must be added to the descriptor set. These updated data structures are shown in <A class="docLink" HREF="#ch06fig17">Figure 6.17</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig17"></A>Figure 6.17. Data structures after first client connection is established.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="140" src="FILES/06fig17.gif" ALT="graphics/06fig17.gif"></p>
+
+</CENTER>
+<P class="docText">Sometime later a second client establishes a connection and we have the scenario shown in <A class="docLink" HREF="#ch06fig18">Figure 6.18</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig18"></A>Figure 6.18. TCP server after second client connection is established.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="405" HEIGHT="153" src="FILES/06fig18.gif" ALT="graphics/06fig18.gif"></p>
+
+</CENTER>
+<P class="docText">The new connected socket (which we assume is 5) must be remembered, giving the data structures shown in <A class="docLink" HREF="#ch06fig19">Figure 6.19</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig19"></A>Figure 6.19. Data structures after second client connection is established.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="134" src="FILES/06fig19.gif" ALT="graphics/06fig19.gif"></p>
+
+</CENTER>
+<P class="docText">Next, we assume the first client terminates its connection. The client TCP sends a FIN, which makes descriptor 4 in the server readable. When our server reads this connected socket, <TT>read</TT> returns 0. We then close this socket and update our data structures accordingly. The value of <TT>client [0]</TT> is set to –1 and descriptor 4 in the descriptor set is set to 0. This is shown in <A class="docLink" HREF="#ch06fig20">Figure 6.20</A>. Notice that the value of <TT>maxfd</TT> does not change.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig20"></A>Figure 6.20. Data structures after first client terminates its connection.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="143" src="FILES/06fig20.gif" ALT="graphics/06fig20.gif"></p>
+
+</CENTER>
+<P class="docText">In summary, as clients arrive, we record their connected socket descriptor in the first available entry in the <TT>client</TT> array (i.e., the first entry with a value of –1). We must also add the connected socket to the read descriptor set. The variable <TT>maxi</TT> is the highest index in the <TT>client</TT> array that is currently in use and the variable <TT>maxfd</TT> (plus one) is the current value of the first argument to <TT>select</TT>. The only limit on the number of clients that this server can handle is the minimum of the two values <TT>FD_SETSIZE</TT> and the maximum number of descriptors allowed for this process by the kernel (which we talked about at the end of <A class="docLink" HREF="0131411551_ch06lev1sec3.html#ch06lev1sec3">Section 6.3</A>).</P>
+<P class="docText"><A class="docLink" HREF="#ch06fig21">Figure 6.21</A> shows the first half of this version of the server.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch06fig21"></A>Figure 6.21 TCP server using a single process and <TT>select:</TT> initialization.</H5>
+<P class="docText"><span class="docEmphasis">tcpcliserv/tcpservselect01.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     i, maxi, maxfd, listenfd, connfd, sockfd;
+ 6     int     nready, client[FD_SETSIZE];
+ 7     ssize_t n;
+ 8     fd_set  rset, allset;
+ 9     char    buf[MAXLINE];
+10     socklen_t  clilen;
+11     struct sockaddr_in cliaddr, servaddr;
+
+12     listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+13     bzero(&amp;servaddr, sizeof(servaddr));
+14     servaddr.sin_family = AF_INET;
+15     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+16     servaddr.sin_port = htons(SERV_PORT);
+
+17     Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+18     Listen(listenfd, LISTENQ);
+
+19     maxfd = listenfd;            /* initialize */
+20     maxi = -1;                   /* index into client[] array */
+21     for (i = 0; i &lt; FD_SETSIZE;  i++)
+22         client[i] = -1;          /* -1 indicates available entry */
+23     FD_ZERO(&amp;allset);
+24     FD_SET(listenfd, &amp;allset);
+</PRE>
+
+<A NAME="ch06lev3sec4"></A>
+<H4 class="docSection2Title"> Create listening socket and initialize for <TT>select</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>12–24</TT></span> The steps to create the listening socket are the same as seen earlier: <TT>socket</TT>, <TT>bind</TT>, and <TT>listen</TT>. We initialize our data structures assuming that the only descriptor that we will <TT>select</TT> on initially is the listening socket.</p>
+<P class="docText">The last half of the function is shown in <A class="docLink" HREF="#ch06fig22">Figure 6.22</A></P>
+
+<H5 class="docExampleTitle"><A NAME="ch06fig22"></A>Figure 6.22 TCP server using a single process and <TT>select</TT> loop.</H5>
+<P class="docText"><span class="docEmphasis">tcpcliserv/tcpservselect01.c</span></P>
+
+<PRE>
+25       for ( ; ; ) {
+26           rset = allset;          /* structure assignment */
+27           nready = Select(maxfd + 1, &amp;rset, NULL, NULL, NULL);
+
+28           if (FD_ISSET(listenfd, &amp;rset)) {       /* new client connection */
+29               clilen = sizeof(cliaddr);
+30               connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;clilen);
+
+31               for (i = 0; i &lt; FD_SETSIZE; i++)
+32                   if (client[i] &lt; 0) {
+33                       client[i] = connfd; /* save descriptor */
+34                       break;
+35                   }
+36               if (i == FD_SETSIZE)
+37                   err_quit("too many clients");
+38               FD_SET(connfd, &amp;allset);       /* add new descriptor to set */
+39               if (connfd &gt; maxfd)
+40                   maxfd = connfd; /* for select */
+41               if (i &gt; maxi)
+42                   maxi = i;          /* max index in client[] array */
+
+43               if (--nready &lt;= 0)
+44                   continue;          /* no more readable descriptors */
+45          }
+46          for (i = 0; i &lt;= maxi; i++) {       /* check all clients for data */
+47              if ( (sockfd = client[i]) &lt; 0)
+48                  continue;
+49              if (FD_ISSET(sockfd, &amp;rset)) {
+50                  if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
+51                          /* connection closed by client */
+52                      Close(sockfd);
+53                      FD_CLR(sockfd, &amp;allset);
+54                      client[i] = -1;
+55                  } else
+56                      Writen(sockfd, buf, n);
+
+57                  if (--nready &lt;= 0)
+58                      break;         /* no more readable descriptors */
+59              }
+60          }
+61      }
+62  }
+</PRE>
+
+
+<A NAME="ch06lev3sec5"></A>
+<H4 class="docSection2Title"> Block in <TT>select</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>26–27</TT></span> <TT>select</TT> waits for something to happen: either the establishment of a new client connection or the arrival of data, a FIN, or an RST on an existing connection.</p>
+
+<A NAME="ch06lev3sec6"></A>
+<H4 class="docSection2Title"> <TT>accept</TT> new connections</H4>
+<p class="docText"><span class="docEmphasis"><TT>28–45</TT></span> If the listening socket is readable, a new connection has been established. We call <TT>accept</TT> and update our data structures accordingly. We use the first unused entry in the <TT>client</TT> array to record the connected socket. The number of ready descriptors is decremented, and if it is 0, we can avoid the next <TT>for</TT> loop. This lets us use the return value from <TT>select</TT> to avoid checking descriptors that are not ready.</p>
+
+<A NAME="ch06lev3sec7"></A>
+<H4 class="docSection2Title"> Check existing connections</H4>
+<p class="docText"><span class="docEmphasis"><TT>46–60</TT></span> A test is made for each existing client connection as to whether or not its descriptor is in the descriptor set returned by <TT>select</TT>. If so, a line is read from the client and echoed back to the client. If the client closes the connection, <TT>read</TT> returns 0 and we update our data structures accordingly.</p>
+<P class="docText">We never decrement the value of <TT>maxi</TT>, but we could check for this possibility each time a client closes its connection.</P>
+<P class="docText">This server is more complicated than the one shown in <A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05fig02">Figures 5.2</A> and <A class="docLink" HREF="0131411551_ch05lev1sec4.html#ch05fig03">5.3</A>, but it avoids all the overhead of creating a new process for each client and it is a nice example of <TT>select</TT>. Nevertheless, in <A class="docLink" HREF="0131411551_ch16lev1sec6.html#ch16lev1sec6">Section 16.6</A>, we will describe a problem with this server that is easily fixed by making the listening socket nonblocking and then checking for, and ignoring, a few errors from <TT>accept</TT>.</P>
+
+<A NAME="ch06lev2sec10"></A>
+<H4 class="docSection2Title"> Denial-of-Service Attacks</H4>
+<P class="docText">Unfortunately, there is a problem with the server that we just showed. Consider what happens if a malicious client connects to the server, sends one byte of data (other than a newline), and then goes to sleep. The server will call <TT>read</TT>, which will read the single byte of data from the client and then block in the next call to <TT>read</TT>, waiting for more data from this client. The server is then blocked ("hung" may be a better term) by this one client and will not service any other clients (either new client connections or existing clients' data) until the malicious client either sends a newline or terminates.</P>
+<P class="docText">The basic concept here is that when a server is handling multiple clients, the server can <span class="docEmphasis">never</span> block in a function call related to a single client. Doing so can hang the server and deny service to all other clients. This is called a <span class="docEmphasis">denial-of-service</span> attack. It does something to the server that prevents it from servicing other legitimate clients. Possible solutions are to: (i) use nonblocking I/O (<A class="docLink" HREF="0131411551_ch16.html#ch16">Chapter 16</A>), (ii) have each client serviced by a separate thread of control (e.g., either spawn a process or a thread to service each client), or (iii) place a timeout on the I/O operations (<A class="docLink" HREF="0131411551_ch14lev1sec2.html#ch14lev1sec2">Section 14.2</A>).</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

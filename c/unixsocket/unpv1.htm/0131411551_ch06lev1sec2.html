@@ -1,0 +1,115 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.2 I/O Models"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec2"></A>
+<H3 class="docSection1Title">6.2 I/O Models</H3>
+<P class="docText">Before describing <TT>select</TT> and <TT>poll</TT>, we need to step back and look at the bigger picture, examining the basic differences in the five I/O models that are available to us under Unix:</P>
+<UL><LI><P class="docList">blocking I/O</P></LI><LI><P class="docList">nonblocking I/O</P></LI><LI><P class="docList">I/O multiplexing (<TT>select</TT> and <TT>poll</TT>)</P></LI><LI><P class="docList">signal driven I/O (<TT>SIGIO</TT>)</P></LI><LI><P class="docList">asynchronous I/O (the POSIX <TT>aio_</TT>functions)</P></LI></UL>
+<P class="docText">You may want to skim this section on your first reading and then refer back to it as you encounter the different I/O models described in more detail in later chapters.</P>
+<P class="docText">As we show in all the examples in this section, there are normally two distinct phases for an input operation:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">Waiting for the data to be ready</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Copying the data from the kernel to the process</P></span></LI></OL></span>
+<P class="docText">For an input operation on a socket, the first step normally involves waiting for data to arrive on the network. When the packet arrives, it is copied into a buffer within the kernel. The second step is copying this data from the kernel's buffer into our application buffer.</P>
+<A NAME="ch06lev2sec1"></A>
+<H4 class="docSection2Title"> Blocking I/O Model</H4>
+<P class="docText">The most prevalent model for I/O is the <span class="docEmphasis">blocking I/O model</span>, which we have used for all our examples so far in the text. By default, all sockets are blocking. Using a datagram socket for our examples, we have the scenario shown in <A class="docLink" HREF="#ch06fig01">Figure 6.1</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig01"></A>Figure 6.1. Blocking I/O model.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="278" src="FILES/06fig01.gif" ALT="graphics/06fig01.gif"></p>
+
+</CENTER>
+<P class="docText">We use UDP for this example instead of TCP because with UDP, the concept of data being "ready" to read is simple: either an entire datagram has been received or it has not. With TCP it gets more complicated, as additional variables such as the socket's low-water mark come into play.</P>
+<P class="docText">In the examples in this section, we also refer to <TT>recvfrom</TT> as a system call because we are differentiating between our application and the kernel. Regardless of how <TT>recvfrom</TT> is implemented (as a system call on a Berkeley-derived kernel or as a function that invokes the <TT>getmsg</TT> system call on a System V kernel), there is normally a switch from running in the application to running in the kernel, followed at some time later by a return to the application.</P>
+<P class="docText">In <A class="docLink" HREF="#ch06fig01">Figure 6.1</A>, the process calls <TT>recvfrom</TT> and the system call does not return until the datagram arrives and is copied into our application buffer, or an error occurs. The most common error is the system call being interrupted by a signal, as we described in <A class="docLink" HREF="0131411551_ch05lev1sec9.html#ch05lev1sec9">Section 5.9</A>. We say that our process is <span class="docEmphasis">blocked</span> the entire time from when it calls <TT>recvfrom</TT> until it returns. When <TT>recvfrom</TT> returns successfully, our application processes the datagram.</P>
+
+<A NAME="ch06lev2sec2"></A>
+<H4 class="docSection2Title"> Nonblocking I/O Model</H4>
+<P class="docText">When we set a socket to be nonblocking, we are telling the kernel "when an I/O operation that I request cannot be completed without putting the process to sleep, do not put the process to sleep, but return an error instead." We will describe nonblocking I/O in <A class="docLink" HREF="0131411551_ch16.html#ch16">Chapter 16</A>, but <A class="docLink" HREF="#ch06fig02">Figure 6.2</A> shows a summary of the example we are considering.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig02"></A>Figure 6.2. Nonblocking I/O model.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="278" src="FILES/06fig02.gif" ALT="graphics/06fig02.gif"></p>
+
+</CENTER>
+<P class="docText">The first three times that we call <TT>recvfrom</TT>, there is no data to return, so the kernel immediately returns an error of <TT>EWOULDBLOCK</TT> instead. The fourth time we call <TT>recvfrom</TT>, a datagram is ready, it is copied into our application buffer, and <TT>recvfrom</TT> returns successfully. We then process the data.</P>
+<P class="docText">When an application sits in a loop calling <TT>recvfrom</TT> on a nonblocking descriptor like this, it is called <span class="docEmphasis">polling</span>. The application is continually polling the kernel to see if some operation is ready. This is often a waste of CPU time, but this model is occasionally encountered, normally on systems dedicated to one function.</P>
+
+<A NAME="ch06lev2sec3"></A>
+<H4 class="docSection2Title"> I/O Multiplexing Model</H4>
+<P class="docText">With <span class="docEmphasis">I/O multiplexing</span>, we call <TT>select</TT> or <TT>poll</TT> and block in one of these two system calls, instead of blocking in the actual I/O system call. <A class="docLink" HREF="#ch06fig03">Figure 6.3</A> is a summary of the I/O multiplexing model.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig03"></A>Figure 6.3. I/O multiplexing model.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="272" src="FILES/06fig03.gif" ALT="graphics/06fig03.gif"></p>
+
+</CENTER>
+<P class="docText">We block in a call to <TT>select</TT>, waiting for the datagram socket to be readable. When <TT>select</TT> returns that the socket is readable, we then call <TT>recvfrom</TT> to copy the datagram into our application buffer.</P>
+<P class="docText">Comparing <A class="docLink" HREF="#ch06fig03">Figure 6.3</A> to <A class="docLink" HREF="#ch06fig01">Figure 6.1</A>, there does not appear to be any advantage, and in fact, there is a slight disadvantage because using <TT>select</TT> requires two system calls instead of one. But the advantage in using <TT>select</TT>, which we will see later in this chapter, is that we can wait for more than one descriptor to be ready.</P>
+<BLOCKQUOTE><P><P class="docList">Another closely related I/O model is to use multithreading with blocking I/O. That model very closely resembles the model described above, except that instead of using <TT>select</TT> to block on multiple file descriptors, the program uses multiple threads (one per file descriptor), and each thread is then free to call blocking system calls like <TT>recvfrom</TT>.</P></P></BLOCKQUOTE>
+
+<A NAME="ch06lev2sec4"></A>
+<H4 class="docSection2Title"> Signal-Driven I/O Model</H4>
+<P class="docText">We can also use signals, telling the kernel to notify us with the <TT>SIGIO</TT> signal when the descriptor is ready. We call this <span class="docEmphasis">signal-driven I/O</span> and show a summary of it in <A class="docLink" HREF="#ch06fig04">Figure 6.4</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig04"></A>Figure 6.4. Signal-Driven I/O model.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="274" src="FILES/06fig04.gif" ALT="graphics/06fig04.gif"></p>
+
+</CENTER>
+<P class="docText">We first enable the socket for signal-driven I/O (as we will describe in <A class="docLink" HREF="0131411551_ch25lev1sec2.html#ch25lev1sec2">Section 25.2</A>) and install a signal handler using the <TT>sigaction</TT> system call. The return from this system call is immediate and our process continues; it is not blocked. When the datagram is ready to be read, the <TT>SIGIO</TT> signal is generated for our process. We can either read the datagram from the signal handler by calling <TT>recvfrom</TT> and then notify the main loop that the data is ready to be processed (this is what we will do in <A class="docLink" HREF="0131411551_ch25lev1sec3.html#ch25lev1sec3">Section 25.3</A>), or we can notify the main loop and let it read the datagram.</P>
+<P class="docText">Regardless of how we handle the signal, the advantage to this model is that we are not blocked while waiting for the datagram to arrive. The main loop can continue executing and just wait to be notified by the signal handler that either the data is ready to process or the datagram is ready to be read.</P>
+
+<A NAME="ch06lev2sec5"></A>
+<H4 class="docSection2Title"> Asynchronous I/O Model</H4>
+<P class="docText"><span class="docEmphasis">Asynchronous I/O</span> is defined by the POSIX specification, and various differences in the <span class="docEmphasis">real-time</span> functions that appeared in the various standards which came together to form the current POSIX specification have been reconciled. In general, these functions work by telling the kernel to start the operation and to notify us when the entire operation (including the copy of the data from the kernel to our buffer) is complete. The main difference between this model and the signal-driven I/O model in the previous section is that with signal-driven I/O, the kernel tells us when an I/O operation can be <span class="docEmphasis">initiated</span>, but with asynchronous I/O, the kernel tells us when an I/O operation is <span class="docEmphasis">complete</span>. We show an example in <A class="docLink" HREF="#ch06fig05">Figure 6.5</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig05"></A>Figure 6.5. Asynchronous I/O model.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="280" src="FILES/06fig05.gif" ALT="graphics/06fig05.gif"></p>
+
+</CENTER>
+<P class="docText">We call <TT>aio_read</TT> (the POSIX asynchronous I/O functions begin with <TT>aio_</TT> or <TT>lio_</TT>) and pass the kernel the descriptor, buffer pointer, buffer size (the same three arguments for <TT>read</TT>), file offset (similar to <TT>lseek</TT>), and how to notify us when the entire operation is complete. This system call returns immediately and our process is not blocked while waiting for the I/O to complete. We assume in this example that we ask the kernel to generate some signal when the operation is complete. This signal is not generated until the data has been copied into our application buffer, which is different from the signal-driven I/O model.</P>
+<BLOCKQUOTE><P><P class="docList">As of this writing, few systems support POSIX asynchronous I/O. We are not certain, for example, if systems will support it for sockets. Our use of it here is as an example to compare against the signal-driven I/O model.</P></P></BLOCKQUOTE>
+
+<A NAME="ch06lev2sec6"></A>
+<H4 class="docSection2Title"> Comparison of the I/O Models</H4>
+<P class="docText"><A class="docLink" HREF="#ch06fig06">Figure 6.6</A> is a comparison of the five different I/O models. It shows that the main difference between the first four models is the first phase, as the second phase in the first four models is the same: the process is blocked in a call to <TT>recvfrom</TT> while the data is copied from the kernel to the caller's buffer. Asynchronous I/O, however, handles both phases and is different from the first four.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig06"></A>Figure 6.6. Comparison of the five I/O models.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="274" src="FILES/06fig06.gif" ALT="graphics/06fig06.gif"></p>
+
+</CENTER>
+
+<A NAME="ch06lev2sec7"></A>
+<H4 class="docSection2Title"> Synchronous I/O versus Asynchronous I/O</H4>
+<P class="docText">POSIX defines these two terms as follows:</P>
+<UL><LI><P class="docList">A <span class="docEmphasis">synchronous I/O operation</span> causes the requesting process to be blocked until that I/O operation completes.</P></LI><LI><P class="docList">An <span class="docEmphasis">asynchronous I/O operation</span> does not cause the requesting process to be blocked.</P></LI></UL>
+<P class="docText">Using these definitions, the first four I/O models—blocking, nonblocking, I/O multiplexing, and signal-driven I/O—are all synchronous because the actual I/O operation (<TT>recvfrom</TT>) blocks the process. Only the asynchronous I/O model matches the asynchronous I/O definition.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

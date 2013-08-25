@@ -1,0 +1,91 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.3 TCP Test Client"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec3"></A>
+<H3 class="docSection1Title">30.3 TCP Test Client</H3>
+<P class="docText"><A class="docLink" HREF="#ch30fig03">Figure 30.3</A> shows the client that we will use to test all the variations of our server.</P>
+<p class="docText"><span class="docEmphasis"><TT>10–12</TT></span> Each time we run the client, we specify the hostname or IP address of the server, the server's port, the number of children for the client to <TT>fork</TT> (allowing us to initiate multiple connections to the same server concurrently), the number of requests each child should send to the server, and the number of bytes to request the server to return each time.</p>
+<p class="docText"><span class="docEmphasis"><TT>17–30</TT></span> The parent calls <TT>fork</TT> for each child, and each child establishes the specified number of connections with the server. On each connection, the child sends a line specifying the number of bytes for the server to return, and then the child reads that amount of data from the server. The parent just <TT>waits</TT> for all the children to terminate. Notice that the client closes each TCP connection, so TCP's TIME_WAIT state occurs on the client, not on the server. This is a difference between our client/server and normal HTTP connections.</p>
+<P class="docText">When we measure the various servers in this chapter, we execute the client as</P>
+<pre>
+
+</pre><pre>
+% client 192.168.1.20 8888 5 500 4000
+</pre><pre>
+</pre>
+<P class="docText">This creates 2,500 TCP connections to the server: 500 connections from each of five children. On each connection, 5 bytes are sent from the client to the server (<TT>"4000\n"</TT>) and 4,000 bytes are transferred from the server back to the client. We run the client from two different hosts to the same server, providing a total of 5,000 TCP connections, with a maximum of 10 simultaneous connections at the server at any given time.</P>
+<BLOCKQUOTE><P><P class="docList">Sophisticated benchmarks exist for testing various Web servers. One is called WebStone and is available from <A class="docLink" target="_blank" HREF="http://www.mindcraft.com/webstone">http://www.mindcraft.com/webstone</A>. However, we do not need anything this sophisticated to make some general comparisons of the various server design alternatives that we will examine in this chapter.</P></P></BLOCKQUOTE>
+<P class="docText">We now present the nine different server designs.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig03"></A>Figure 30.3 TCP client program for testing our various servers.</H5>
+<P class="docText"><span class="docEmphasis">server/client.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 #define MAXN    16384     /* max # bytes to request from server */
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     i, j, fd, nchildren, nloops, nbytes;
+ 7     pid_t   pid;
+ 8     ssize_t n;
+ 9     char    request[MAXLINE], reply[MAXN];
+
+10     if (argc != 6)
+11         err_quit("usage: client &lt;hostname or IPaddr&gt; &lt;port&gt; &lt;#children&gt; "
+12                   "&lt;#loops/child&gt; &lt;#bytes/request&gt;");
+
+13     nchildren = atoi(argv[3]);
+14     nloops = atoi(argv[4]);
+15     nbytes = atoi(argv[5]);
+16     snprintf(request, sizeof(request), "%d\n", nbytes); /* newline at end */
+
+17     for (i = 0; i &lt; nchildren; i++) {
+18         if ( (pid = Fork()) == 0) { /* child */
+19             for (j = 0; j &lt; nloops; j++) {
+20                 fd = Tcp_connect(argv[1], argv[2]);
+
+21                 Write(fd, request, strlen(request));
+
+22                 if ( (n = Readn(fd, reply, nbytes)) != nbytes)
+23                     err_quit("server returned %d bytes", n);
+
+24                 Close(fd);       /* TIME_WAIT on client, not server */
+25             }
+26             printf("child %d done\n", i);
+27             exit(0);
+28         }
+29         /* parent loops around to fork() again */
+30     }
+
+31     while (wait(NULL) &gt; 0)     /* now parent waits for all children */
+32         ;
+33     if (errno != ECHILD)
+34         err_sys("wait error");
+
+35     exit(0);
+36 }
+</PRE>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

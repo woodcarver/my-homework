@@ -1,0 +1,150 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="26.7 Mutexes: Mutual Exclusion"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch26lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch26lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch26lev1sec7"></A>
+<H3 class="docSection1Title">26.7 Mutexes: Mutual Exclusion</H3>
+<P class="docText">Notice in <A class="docLink" HREF="0131411551_ch26lev1sec6.html#ch26fig14">Figure 26.14</A> that when a thread terminates, the main loop decrements both <TT>nconn</TT> and <TT>nlefttoread</TT>. We could have placed these two decrements in the function <TT>do_get_read</TT>, letting each thread decrement these two counters immediately before the thread terminates. But this would be a subtle, yet significant, concurrent programming error.</P>
+<P class="docText">The problem with placing the code in the function that each thread executes is that these two variables are global, not thread-specific. If one thread is in the middle of decrementing a variable, that thread is suspended, and if another thread executes and decrements the same variable, an error can result. For example, assume that the C compiler turns the decrement operator into three instructions: load from memory into a register, decrement the register, and store from the register into memory. Consider the following possible scenario:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">Thread A is running and it loads the value of <TT>nconn</TT> (3) into a register.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">The system switches threads from A to B. A's registers are saved, and B's registers are restored.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Thread B executes the three instructions corresponding to the C expression <TT>nconn--</TT>, storing the new value of 2.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Sometime later, the system switches threads from B to A. A's registers are restored and A continues where it left off, at the second machine instruction in the three-instruction sequence. The value of the register is decremented from 3 to 2, and the value of 2 is stored in <TT>nconn</TT>.</P></span></LI></OL></span>
+<P class="docText">The end result is that <TT>nconn</TT> is 2 when it should be 1. This is wrong.</P>
+<P class="docText">These types of concurrent programming errors are hard to find for numerous reasons. First, they occur rarely. Nevertheless, it is an error and it will fail (Murphy's Law). Second, the error is hard to duplicate since it depends on the nondeterministic timing of many events. Lastly, on some systems, the hardware instructions might be atomic; that is, there might be a hardware instruction to decrement an integer in memory (instead of the three-instruction sequence we assumed above) and the hardware cannot be interrupted during this instruction. But, this is not guaranteed by all systems, so the code works on one system but not on another.</P>
+<P class="docText">We call threads programming <span class="docEmphasis">concurrent programming</span>, or <span class="docEmphasis">parallel programming</span>, since multiple threads can be running concurrently (in parallel), accessing the same variables. While the error scenario we just discussed assumes a single-CPU system, the potential for error also exists if threads A and B are running at the same time on different CPUs on a multiprocessor system. With normal Unix programming, we do not encounter these concurrent programming problems because with <TT>fork</TT>, nothing besides descriptors is shared between the parent and child. We will, however, encounter this same type of problem when we discuss shared memory between processes.</P>
+<P class="docText">We can easily demonstrate this problem with threads. <A class="docLink" HREF="#ch26fig17">Figure 26.17</A> is a simple program that creates two threads and then has each thread increment a global variable 5,000 times.</P>
+<P class="docText">We exacerbate the potential for a problem by fetching the current value of <TT>counter</TT>, printing the new value, and then storing the new value. If we run this program, we have the output shown in <A class="docLink" HREF="#ch26fig16">Figure 26.16</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig16"></A>Figure 26.16. Output from program in <A class="docLink" HREF="#ch26fig17">Figure 26.17</A>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="339" HEIGHT="228" src="FILES/26fig16.gif" ALT="graphics/26fig16.gif"></p>
+
+</CENTER>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig17"></A>Figure 26.17 Two threads that increment a global variable incorrectly.</H5>
+<P class="docText"><span class="docEmphasis">threads/example01.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+
+ 2 #define NLOOP 5000
+
+ 3 int     counter;                /* incremented by threads */
+
+ 4 void   *doit(void *);
+
+ 5 int
+ 6 main(int argc, char **argv)
+ 7 {
+ 8     pthread_t tidA, tidB;
+
+ 9     Pthread_create(&amp;tidA, NULL, &amp;doit, NULL);
+10     Pthread_create(&amp;tidB, NULL, &amp;doit, NULL);
+
+11         /* wait for both threads to terminate */
+12     Pthread_join(tidA, NULL);
+13     Pthread_join(tidB, NULL);
+
+14     exit(0);
+15 }
+
+16 void *
+17 doit(void *vptr)
+18 {
+19      int    i, val;
+
+20      /*
+21       * Each thread fetches, prints, and increments the counter NLOOP times.
+22       * The value of the counter should increase monotonically.
+23       */
+
+24      for (i = 0; i &lt; NLOOP; i++) {
+25          val = counter;
+26          printf("%d: %d\n", pthread_self(), val + 1);
+27          counter = val + 1;
+28      }
+
+29      return (NULL);
+30 }
+</PRE>
+
+<P class="docText">Notice the error the first time the system switches from thread 4 to thread 5: The value 518 is stored by each thread. This happens numerous times through the 10,000 lines of output.</P>
+<P class="docText">The nondeterministic nature of this type of problem is also evident if we run the program a few times: Each time, the end result is different from the previous run of the program. Also, if we redirect the output to a disk file, sometimes the error does not occur since the program runs faster, providing fewer opportunities to switch between the threads. The greatest number of errors occurs when we run the program interactively, writing the output to the (slow) terminal, but saving the output in a file using the Unix <TT>script</TT> program (discussed in detail in Chapter 19 of APUE).</P>
+<P class="docText">The problem we just discussed, multiple threads updating a shared variable, is the simplest problem. The solution is to protect the shared variable with a <span class="docEmphasis">mutex</span> (which stands for "mutual exclusion") and access the variable only when we hold the mutex. In terms of Pthreads, a mutex is a variable of type <TT>pthread_mutex_t</TT>. We lock and unlock a mutex using the following two functions:</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_mutex_lock(pthread_mutex_t *</TT> <span class="docEmphasis">mptr</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_mutex_unlock(pthread_mutex_t *</TT> <span class="docEmphasis">mptr</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">If we try to lock a mutex that is already locked by some other thread, we are blocked until the mutex is unlocked.</P>
+<P class="docText">If a mutex variable is statically allocated, we must initialize it to the constant <TT>PTHREAD_MUTEX_INITIALIZER</TT>. We will see in <A class="docLink" HREF="0131411551_ch30lev1sec8.html#ch30lev1sec8">Section 30.8</A> that if we allocate a mutex in shared memory, we must initialize it at runtime by calling the <TT>pthread_mutex_init</TT> function.</P>
+<BLOCKQUOTE><P><P class="docList">Some systems (e.g., Solaris) define <TT>PTHREAD_MUTEX_INITIALIZER</TT> to be 0, so omitting this initialization is acceptable, since statically allocated variables are automatically initialized to 0. But there is no guarantee that this is acceptable and other systems (e.g., Digital Unix) define the initializer to be nonzero.</P></P></BLOCKQUOTE>
+<P class="docText"><A class="docLink" HREF="#ch26fig18">Figure 26.18</A> is a corrected version of <A class="docLink" HREF="#ch26fig17">Figure 26.17</A> that uses a single mutex to lock the counter between the two threads.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig18"></A>Figure 26.18 Corrected version of <A class="docLink" HREF="#ch26fig17">Figure 26.17</A> using a mutex to protect the shared variable.</H5>
+<P class="docText"><span class="docEmphasis">threads/example02.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+
+ 2 #define NLOOP 5000
+
+ 3 int     counter;                /* incremented by threads */
+ 4 pthread_mutex_t counter_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+ 5 void   *doit(void *);
+
+ 6 int
+ 7 main(int argc, char **argv)
+ 8 {
+ 9     pthread_t tidA, tidB;
+
+10     Pthread_create(&amp;tidA, NULL, &amp;doit, NULL);
+11     Pthread_create(&amp;tidB, NULL, &amp;doit, NULL);
+
+12         /* wait for both threads to terminate */
+13     Pthread_join(tidA, NULL);
+14     Pthread_join(tidB, NULL);
+
+15     exit(0);
+16 }
+17 void *
+18 doit(void *vptr)
+19 {
+20     int     i, val;
+
+21     /*
+22      * Each thread fetches, prints, and increments the counter NLOOP times.
+23      * The value of the counter should increase monotonically.
+24      */
+
+25     for (i = 0; i &lt; NLOOP; i++) {
+26         Pthread_mutex_lock(&amp;counter_mutex);
+
+27         val = counter;
+28         printf("%d: %d\n", pthread_self(), val + 1);
+29         counter = val + 1;
+
+30         Pthread_mutex_unlock(&amp;counter_mutex);
+31     }
+
+32     return (NULL);
+33 }
+</PRE>
+
+<P class="docText">We declare a mutex named <TT>counter_mutex</TT> and this mutex must be locked by the thread before the thread manipulates the <TT>counter</TT> variable. When we run this program, the output is always correct: The value is incremented monotonically and the final value printed is always 10,000.</P>
+<P class="docText">How much overhead is involved with mutex locking? The programs in <A class="docLink" HREF="#ch26fig17">Figures 26.17</A> and <A class="docLink" HREF="#ch26fig18">26.18</A> were changed to loop 50,000 times and were timed while the output was directed to <TT>/dev/null</TT>. The difference in CPU time from the incorrect version with no mutex to the correct version that used a mutex was 10%. This tells us that mutex locking is not a large overhead.</P>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch26lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch26lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

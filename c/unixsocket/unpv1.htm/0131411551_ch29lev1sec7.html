@@ -1,0 +1,864 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="29.7 Examining the UDP Checksum Field"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch29lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch29lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch29lev1sec7"></A>
+<H3 class="docSection1Title">29.7 Examining the UDP Checksum Field</H3>
+<P class="docText">We will now develop an example that sends a UDP datagram containing a DNS query to a name server and reads the reply using the packet capture library. The goal of the example is to determine whether the name server computes a UDP checksum or not. With IPv4, the computation of a UDP checksum is optional. Most current systems enable these checksums by default, but unfortunately, older systems, notably SunOS 4.1.x, disable these checksums by default. All systems today, and especially a system running a name server, should <span class="docEmphasis">always</span> run with UDP checksums enabled, as corrupted datagrams can corrupt the server's database.</P>
+<BLOCKQUOTE><P><P class="docList">Enabling or disabling UDP checksums is normally done on a systemwide basis, as described in Appendix E of TCPv1.</P></P></BLOCKQUOTE>
+<P class="docText">We will build our own UDP datagram (the DNS query) and write it to a raw socket. We will also show the same code using <TT>libnet</TT>. We could use a normal UDP socket to send the query, but we want to show how to use the <TT>IP_HDRINCL</TT> socket option to build a complete IP datagram.</P>
+<P class="docText">We can never obtain the UDP checksum when reading from a normal UDP socket, and we can never read UDP or TCP packets using a raw socket (<A class="docLink" HREF="0131411551_ch28lev1sec4.html#ch28lev1sec4">Section 28.4</A>). Therefore, we must use the packet capture facility to obtain the entire UDP datagram containing the name server's reply.</P>
+<P class="docText">We will also examine the UDP checksum field in the UDP header. If it is 0, the server does not have UDP checksums enabled.</P>
+<P class="docText"><A class="docLink" HREF="#ch29fig03">Figure 29.3</A> summarizes the operation of our program.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch29fig03"></A>Figure 29.3. Our application to check if a name server has UDP checksums enabled.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="376" HEIGHT="314" src="FILES/29fig03.gif" ALT="graphics/29fig03.gif"></p>
+
+</CENTER>
+<P class="docText">We write our own UDP datagrams to the raw socket and read back the replies using <TT>libpcap</TT>. Notice that UDP also receives the name server reply, and it will respond with an ICMP "port unreachable" because it knows nothing about the source port number that our application chooses. The name server will ignore this ICMP error. We also note that it is harder to write a test program of this form that uses TCP, even though we are easily able to write our own TCP segments because any reply to the TCP segments we generate will normally cause our TCP to respond with an RST to whomever we sent the segment.</P>
+<BLOCKQUOTE><P><P class="docList">One way around this is to send TCP segments with a source IP address that belongs to the attached subnet but is not currently assigned to some other node. Add an ARP entry to the sending host for this new IP address so that the sending host will answer ARP requests for this new address, but do not configure the new IP address as an alias. This will cause the IP stack on the sending host to discard packets received for this new IP address, assuming the sending host is not acting as a router.</P></P></BLOCKQUOTE>
+<P class="docText"><A class="docLink" HREF="#ch29fig04">Figure 29.4</A> is a summary of the functions that comprise our program.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch29fig04"></A>Figure 29.4. Summary of functions for our <TT>udpcksum</TT> program.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="492" HEIGHT="269" src="FILES/29fig04.gif" ALT="graphics/29fig04.gif"></p>
+
+</CENTER>
+<P class="docText"><A class="docLink" HREF="#ch29fig05">Figure 29.5</A> shows the header <TT>udpcksum.h</TT>, which includes our basic <TT>unp.h</TT> header along with the various system headers that are needed to access the structure definitions for the IP and UDP packet headers.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig05"></A>Figure 29.5 <TT>udpcksum.h</TT> header.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpcksum.h</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+ 2 #include    &lt;pcap.h&gt;
+
+ 3 #include    &lt;netinet/in_systm.h&gt;    /* required for ip.h */
+ 4 #include    &lt;netinet/in.h&gt;
+ 5 #include    &lt;netinet/ip.h&gt;
+ 6 #include    &lt;netinet/ip_var.h&gt;
+ 7 #include    &lt;netinet/udp.h&gt;
+ 8 #include    &lt;netinet/udp_var.h&gt;
+ 9 #include    &lt;net/if.h&gt;
+10 #include    &lt;netinet/if_ether.h&gt;
+
+11 #define TTL_OUT     64          /* outgoing TTL */
+
+12                     /* declare global variables */
+13 extern struct sockaddr *dest, *local;
+14 extern socklen_t destlen, locallen;
+15 extern int datalink;
+16 extern char *device;
+17 extern pcap_t *pd;
+18 extern int rawfd;
+19 extern int snaplen;
+20 extern int verbose;
+21 extern int zerosum;
+
+22                      /* function prototypes */
+23 void    cleanup(int);
+24 char   *next_pcap(int *);
+25 void    open_output(void);
+26 void    open_pcap(void);
+27 void    send_dns_query(void);
+28 void    test_udp(void);
+29 void    udp_write(char *, int);
+30 struct udpiphdr *udp_read(void);
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>3–10</TT></span> Additional Internet headers are required to deal with the IP and UDP header fields.</p>
+<p class="docText"><span class="docEmphasis"><TT>11–29</TT></span> We define some global variables and prototypes for our own functions that we will show shortly.</p>
+<P class="docText">The first part of the <TT>main</TT> function is shown in <A class="docLink" HREF="#ch29fig06">Figure 29.6</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig06"></A>Figure 29.6 <TT>main</TT> function: definitions.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/main.c</span></P>
+
+<PRE>
+ 1 #include    "udpcksum.h"
+
+ 2             /* define global variables */
+ 3 struct sockaddr *dest, *local;
+ 4 struct sockaddr_in locallookup;
+ 5 socklen_t destlen, locallen;
+
+ 6 int     datalink;              /* from pcap_datalink(), in &lt;net/bpf.h&gt; */
+ 7 char   *device;                /* pcap device */
+ 8 pcap_t *pd;                    /* packet capture struct pointer */
+ 9 int     rawfd;                 /* raw socket to write on */
+10 int     snaplen = 200;         /* amount of data to capture */
+11 int     verbose;
+12 int     zerosum;               /* send UDP query with no checksum */
+
+13 static void usage(const char *);
+
+14 int
+15 main(int argc, char *argv[])
+16 {
+17     int     c, lopt = 0;
+18     char   *ptr, localname[1024], *localport;
+19     struct addrinfo *aip;
+</PRE>
+
+<P class="docText">The next part of the <TT>main</TT> function, shown in <A class="docLink" HREF="#ch29fig07">Figure 29.7</A>, processes the command-line arguments.</P>
+<A NAME="ch29lev3sec1"></A>
+<H4 class="docSection2Title"> Process command-line options</H4>
+<p class="docText"><span class="docEmphasis"><TT>20–25</TT></span> We call <TT>getopt</TT> to process the command-line arguments. The <TT>-0</TT> option lets us send our UDP query without a UDP checksum to see if the server handles this differently from a datagram with a checksum.</p>
+<p class="docText"><span class="docEmphasis"><TT>26–28</TT></span> The <TT>-i</TT> option lets us specify the interface on which to receive the server's reply. If this is not specified, the packet capture library chooses one, which might not be correct on a multihomed host. This is one way that reading from a packet capture device differs from reading from a normal socket: With a socket, we can wildcard the local address, allowing us to receive packets arriving on any interface, but with a packet capture device, we receive arriving packets on only one interface.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig07"></A>Figure 29.7 <TT>main</TT> function: processes command-line arguments.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/main.c</span></P>
+
+<PRE>
+20     opterr = 0;                 /* don't want getopt() writing to stderr */
+21     while ( (c = getopt(argc, argv, "0i:l:v")) != -1) {
+22          switch (c) {
+
+23          case '0':
+24              zerosum = 1;
+25              break;
+
+26          case 'i':
+27              device = optarg;    /* pcap device */
+28              break;
+
+29          case 'l':               /* local IP address and port #: a.b.c.d.p */
+30              if ( (ptr = strrchr(optarg, '.')) == NULL)
+31                   usage("invalid -l option");
+
+32              *ptr++ = 0;         /* null replaces final period */
+33              localport = ptr;    /* service name or port number */
+34              strncpy(localname, optarg, sizeof(localname));
+35              lopt = 1;
+36              break;
+
+37          case 'v':
+38              verbose = 1;
+39              break;
+
+40         case '?':
+41              usage("unrecognized option");
+42         }
+43    }
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList">We note that the Linux <TT>SOCK_PACKET</TT> feature does not limit its datalink capture to a single device. Nevertheless, <TT>libpcap</TT> provides this filtering based on either its default or on our <TT>-i</TT> option.</P></P></BLOCKQUOTE>
+<p class="docText"><span class="docEmphasis"><TT>29–36</TT></span> The <TT>-l</TT> option lets us specify the source IP address and port number. The port (or a service name) is taken as the string following the final period, and the source IP address is taken as everything before the final period.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig08"></A>Figure 29.8 <TT>main</TT> function: converts hostnames and service names; creates socket.</H5>
+
+<PRE>
+44     if (optind != argc - 2)
+45         usage("missing &lt;host&gt; and/or &lt;serv&gt;");
+
+46         /* convert destination name and service */
+47     aip = Host_serv(argv[optind], argv[optind + 1], AF_INET, SOCK_DGRAM);
+48     dest = aip-&gt;ai_addr;       /* don't freeaddrinfo() */
+49     destlen = aip-&gt;ai_addrlen;
+
+50     /*
+51      * Need local IP address for source IP address for UDP datagrams.
+52      * Can't specify 0 and let IP choose, as we need to know it for
+53      * the pseudoheader to calculate the UDP checksum.
+54      * If -l option supplied, then use those values; otherwise,
+55      * connect a UDP socket to the destination to determine the right
+56      * source address.
+57      */
+58     if (lopt) {
+59             /* convert local name and service */
+60         aip = Host_serv(localname, localport, AF_INET, SOCK_DGRAM);
+61         local = aip-&gt;ai_addr; /* don't freeaddrinfo() */
+62         locallen = aip-&gt;ai_addrlen;
+63     } else {
+64         int     s;
+65         s = Socket(AF_INET, SOCK_DGRAM, 0);
+66         Connect(s, dest, destlen);
+67         /* kernel chooses correct local address for dest */
+68         locallen = sizeof(locallookup);
+69         local = (struct sockaddr *) &amp;locallookup;
+70         Getsockname(s, local, &amp;locallen);
+71         if (locallookup.sin_addr.s_addr == htonl(INADDR_ANY))
+72             err_quit("Can't determine local address - use -l\n");
+73         close(s);
+74     }
+
+75     open_output();              /* open output, either raw socket or libnet */
+
+76     open_pcap();                /* open packet capture device */
+
+77     setuid(getuid());           /* don't need superuser privileges anymore */
+
+78     Signal(SIGTERM, cleanup);
+79     Signal(SIGINT, cleanup);
+80     Signal(SIGHUP, cleanup);
+
+81     test_udp();
+
+82     cleanup(0);
+83 }
+</PRE>
+
+<P class="docText">The last part of the <TT>main</TT> function is shown in <A class="docLink" HREF="#ch29fig08">Figure 29.8</A>.</P>
+
+<A NAME="ch29lev3sec2"></A>
+<H4 class="docSection2Title"> Process destination name and port</H4>
+<p class="docText"><span class="docEmphasis"><TT>46–49</TT></span> We verify that exactly two command-line arguments remain: the destination host-name and service name. We call <TT>host_serv</TT> to convert these into a socket address structure, the pointer to which we save in <TT>dest</TT>.</p>
+
+<A NAME="ch29lev3sec3"></A>
+<H4 class="docSection2Title"> Process local name and port</H4>
+<p class="docText"><span class="docEmphasis"><TT>50–74</TT></span> If specified on the command line, we then do the same conversion of the local host-name and port, saving the pointer to the socket address structure in <TT>local</TT>. Otherwise, we determine the local IP address to use by connecting a datagram socket to the destination and storing the resulting local address in <TT>local</TT>. Since we will be building our own IP and UDP headers, we must know the source IP address when we write the UDP datagram. We cannot leave it as 0 and let IP choose the address, because the address is part of the UDP pseudoheader (which we describe shortly) that we must use for the UDP checksum computation.</p>
+
+<A NAME="ch29lev3sec4"></A>
+<H4 class="docSection2Title"> Create raw socket and open packet capture device</H4>
+<p class="docText"><span class="docEmphasis"><TT>75–76</TT></span> The function <TT>open_output</TT> prepares the output method, whether raw sockets or <TT>libnet</TT>. The function <TT>open_pcap</TT> opens the packet capture device; we will show this function next.</p>
+
+<A NAME="ch29lev3sec5"></A>
+<H4 class="docSection2Title"> Change permissions and establish signal handlers</H4>
+<p class="docText"><span class="docEmphasis"><TT>77–80</TT></span> We need superuser privileges to create a raw socket. We normally need superuser privileges to open the packet capture device, but this depends on the implementation. For example, with BPF, the administrator can set the permissions of the <TT>/dev/bpf</TT> devices to whatever is desired for that system. We now give up these additional permissions, assuming the program file is set-user-ID. If the process has superuser privileges, calling <TT>setuid</TT> sets our real user ID, effective user ID, and saved set-user-ID to our real user ID (<TT>getuid</TT>). We establish signal handlers in case the user terminates the program before it is done.</p>
+
+<A NAME="ch29lev3sec6"></A>
+<H4 class="docSection2Title"> Perform test and cleanup</H4>
+<p class="docText"><span class="docEmphasis"><TT>81–82</TT></span> The function <TT>test_udp</TT> (<A class="docLink" HREF="#ch29fig10">Figure 29.10</A>) performs the test and then returns. <TT>cleanup</TT> (<A class="docLink" HREF="#ch29fig18">Figure 29.18</A>) prints summary statistics from the packet capture library and terminates the process.</p>
+<P class="docText"><A class="docLink" HREF="#ch29fig09">Figure 29.9</A> shows the <TT>open_pcap</TT> function, which we called from the <TT>main</TT> function to open the packet capture device.</P>
+
+<A NAME="ch29lev3sec7"></A>
+<H4 class="docSection2Title"> Choose packet capture device</H4>
+<p class="docText"><span class="docEmphasis"><TT>10–14</TT></span> If the packet capture device was not specified (the <TT>-i</TT> command-line option), then <TT>pcap_lookupdev</TT> chooses a device. It issues the <TT>SIOCGIFCONF ioctl</TT> and chooses the lowest numbered device that is up, but not the loopback. Many of the <TT>pcap</TT> library functions fill in an error string if an error occurs. The sole argument to this function is an array that is filled in with an error string.</p>
+
+<A NAME="ch29lev3sec8"></A>
+<H4 class="docSection2Title"> Open device</H4>
+<p class="docText"><span class="docEmphasis"><TT>15–17</TT></span> <TT>pcap_open_live</TT> opens the device. The term "live" refers to an actual device being opened, instead of a save file containing previously saved packets. The first argument is the device name, the second is the number of bytes to save per packet (<TT>snaplen</TT>, which we initialized to 200 in <A class="docLink" HREF="#ch29fig06">Figure 29.6</A>), the third is a promiscuous flag, the fourth is a timeout value in milliseconds, and the fifth is a pointer to an error message array.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig09"></A>Figure 29.9 <TT>open_pcap</TT> function: opens and initializes packet capture device.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/pcap.c</span></P>
+
+<PRE>
+ 1 #include    "udpcksum.h"
+
+ 2 #define CMD     "udp and src host %s and src port %d"
+
+ 3 void
+ 4 open_pcap(void)
+ 5 {
+ 6     uint32_t localnet, netmask;
+ 7     char    cmd[MAXLINE], errbuf[PCAP_ERRBUF_SIZE],
+ 8         str1[INET_ADDRSTRLEN], str2[INET_ADDRSTRLEN];
+ 9     struct bpf_program fcode;
+
+10     if (device == NULL) {
+11         if ( (device = pcap_lookupdev(errbuf)) == NULL)
+12             err_quit("pcap_lookup: %s", errbuf);
+13     }
+14     printf("device = %s\n", device);
+
+15         /* hardcode: promisc=0, to_ms=500 */
+16     if ( (pd = pcap_open_live(device, snaplen, 0, 500, errbuf) ) == NULL)
+17         err_quit("pcap_open_live: %s", errbuf);
+
+18     if (pcap_lookupnet(device, &amp;localnet, &amp;netmask, errbuf) &lt; 0)
+19         err_quit("pcap_lookupnet: %s", errbuf);
+20     if (verbose)
+21         printf("localnet = %s, netmask = %s\n",
+22                Inet_ntop(AF_INET, &amp;localnet, str1, sizeof(str1)),
+23                Inet_ntop(AF_INET, &amp;netmask, str2, sizeof(str2)));
+
+24     snprintf(cmd, sizeof(cmd), CMD,
+25              Sock_ntop_host(dest, destlen),
+26              ntohs(sock_get_port(dest, destlen)));
+27     if (verbose)
+28         printf("cmd = %s\n", cmd);
+29     if (pcap_compile(pd, &amp;fcode, cmd, 0, netmask) &lt; 0)
+30         err_quit("pcap_compile: %s", pcap_geterr(pd));
+
+31     if (pcap_setfilter(pd, &amp;fcode) &lt; 0)
+32         err_quit("pcap_setfilter: %s", pcap_geterr(pd));
+
+33     if ( (datalink = pcap_datalink(pd)) &lt; 0)
+34         err_quit("pcap_datalink: %s", pcap_geterr(pd));
+35     if (verbose)
+36         printf("datalink = %d\n", datalink);
+37 }
+</PRE>
+
+<P class="docText">If the promiscuous flag is set, the interface is placed into promiscuous mode, causing it to receive all packets passing by on the wire. This is the normal mode for <TT>tcpdump</TT>. For our example, however, the DNS server replies will be sent to our host.</P>
+<P class="docText">The timeout argument is a read timeout. Instead of having the device return a packet to the process every time a packet is received (which could be inefficient, invoking lots of copies of individual packets from the kernel to the process), a packet is returned only when either the device's read buffer is full or when the read timeout expires. If the read timeout is set to 0, every packet is returned as soon as it is received.</P>
+
+<A NAME="ch29lev3sec9"></A>
+<H4 class="docSection2Title"> Obtain network address and subnet mask</H4>
+<p class="docText"><span class="docEmphasis"><TT>18–23</TT></span> <TT>pcap_lookupnet</TT> returns the network address and subnet mask for the packet capture device. We must specify the subnet mask in the call to <TT>pcap_compile</TT> that follows, because the packet filter needs this to determine if an IP address is a subnet-directed broadcast address.</p>
+
+<A NAME="ch29lev3sec10"></A>
+<H4 class="docSection2Title"> Compile packet filter</H4>
+<p class="docText"><span class="docEmphasis"><TT>24–30</TT></span> <TT>pcap_compile</TT> takes a filter string (which we build in the <TT>cmd</TT> array) and compiles it into a filter program (stored in <TT>fcode</TT>). This will select the packets that we want to receive.</p>
+
+<A NAME="ch29lev3sec11"></A>
+<H4 class="docSection2Title"> Load filter program</H4>
+<p class="docText"><span class="docEmphasis"><TT>31–32</TT></span> <TT>pcap_setfilter</TT> takes the filter program we just compiled and loads it into the packet capture device. This initiates the capturing of the packets we selected with the filter.</p>
+
+<A NAME="ch29lev3sec12"></A>
+<H4 class="docSection2Title"> Determine datalink type</H4>
+<p class="docText"><span class="docEmphasis"><TT>33–36</TT></span> <TT>pcap_datalink</TT> returns the type of datalink for the packet capture device. We need this when receiving packets to determine the size of the datalink header that will be at the beginning of each packet we read (<A class="docLink" HREF="#ch29fig15">Figure 29.15</A>).</p>
+<P class="docText">After calling <TT>open_pcap</TT>, the <TT>main</TT> function calls <TT>test_udp</TT>, which we show in <A class="docLink" HREF="#ch29fig10">Figure 29.10</A>. This function sends a DNS query and reads the server's reply.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig10"></A>Figure 29.10 <TT>test_udp</TT> function: sends queries and reads responses.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpcksum.c</span></P>
+
+<PRE>
+12 void
+13 test_udp(void)
+14 {
+15     volatile int nsent = 0, timeout = 3;
+16     struct udpiphdr *ui;
+
+17     Signal(SIGALRM, sig_alrm);
+
+18     if (sigsetjmp(jmpbuf, 1)) {
+19         if (nsent &gt;= 3)
+20             err_quit("no response");
+21         printf("timeout\n");
+22         timeout *= 2;           /* exponential backoff: 3, 6, 12 */
+23     }
+24     canjump = 1;                /* siglongjmp is now OK */
+
+25     send_dns_query();
+26     nsent++;
+
+27     alarm(timeout);
+28     ui = udp_read();
+29     canjump = 0;
+30     alarm(0);
+
+31     if (ui-&gt;ui_sum == 0)
+32         printf("UDP checksums off\n");
+33     else
+34         printf("UDP checksums on\n");
+35     if (verbose)
+36         printf("received UDP checksum = %x\n", ntohs(ui-&gt;ui_sum));
+37 }
+</PRE>
+
+
+<A NAME="ch29lev3sec13"></A>
+<H4 class="docSection2Title"> <TT>volatile</TT> variables</H4>
+<p class="docText"><span class="docEmphasis"><TT>50</TT></span> We want the two automatic variables, <TT>nsent</TT> and <TT>timeout</TT>, to retain their values after a <TT>siglongjmp</TT> from the signal handler back to this function. An implementation is allowed to restore automatic variables back to what their value was when <TT>sigsetjmp</TT> was called (p. 178 of APUE), but adding the <TT>volatile</TT> qualifier prevents this from happening.</p>
+
+<A NAME="ch29lev3sec14"></A>
+<H4 class="docSection2Title"> Establish signal handler and jump buffer</H4>
+<p class="docText"><span class="docEmphasis"><TT>52–53</TT></span> A signal handler is established for <TT>SIGALRM</TT> and <TT>sigsetjmp</TT> establishes a jump buffer for <TT>siglongjmp</TT>. (These two functions are described in detail in Section 10.15 of APUE.) The second argument of 1 to <TT>sigsetjmp</TT> tells it to save the current signal mask since we will call <TT>siglongjmp</TT> from our signal handler.</p>
+
+<A NAME="ch29lev3sec15"></A>
+<H4 class="docSection2Title"> Handle <TT>siglongjmp</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>54–58</TT></span> This code is executed only when <TT>siglongjmp</TT> is called from our signal handler. This indicates that a timeout occurred: We sent a request and never received a reply. If we have sent three requests, we terminate. Otherwise, we print a message and multiply the timeout value by 2. This is an <span class="docEmphasis">exponential backoff</span>, which we described in <A class="docLink" HREF="0131411551_ch22lev1sec5.html#ch22lev1sec5">Section 22.5</A>. The first timeout will be for 3 seconds, then 6, and then 12.</p>
+<P class="docText">The reason we use <TT>sigsetjmp</TT> and <TT>siglongjmp</TT> in this example, rather than just catching <TT>EINTR</TT> (as in <A class="docLink" HREF="0131411551_ch14lev1sec2.html#ch14fig01">Figure 14.1</A>), is because the packet capture library reading functions (which are called by our <TT>udp_read</TT> function) restart a <TT>read</TT> operation when <TT>EINTR</TT> is returned. Since we do not want to modify the library functions to return this error, our only solution is to catch the <TT>SIGALRM</TT> signal and perform a nonlocal goto, returning control to our code instead of the library code.</P>
+
+<A NAME="ch29lev3sec16"></A>
+<H4 class="docSection2Title"> Send DNS query and read reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>60–65</TT></span> <TT>send_dns_query</TT> (<A class="docLink" HREF="#ch29fig12">Figure 29.12</A>) sends a DNS query to a name server. <TT>udp_read</TT> (<A class="docLink" HREF="#ch29fig15">Figure 29.15</A>) reads the reply. We call <TT>alarm</TT> to prevent the read from blocking forever. If the specified timeout period (in seconds) expires, <TT>SIGALRM</TT> is generated and our signal handler calls <TT>siglongjmp</TT>.</p>
+
+<A NAME="ch29lev3sec17"></A>
+<H4 class="docSection2Title"> Examine received UDP checksum</H4>
+<p class="docText"><span class="docEmphasis"><TT>66–71</TT></span> If the received UDP checksum is 0, the server did not calculate and send a checksum.</p>
+<P class="docText"><A class="docLink" HREF="#ch29fig11">Figure 29.11</A> shows our signal handler, <TT>sig_alrm</TT>, which handles the <TT>SIGALRM</TT> signal.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig11"></A>Figure 29.11 <TT>sig_alrm</TT> function: handles <TT>SIGALRM</TT> signal.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpcksum.c</span></P>
+
+<PRE>
+ 1 #include    "udpcksum.h"
+ 2 #include    &lt;setjmp.h&gt;
+
+ 3 static sigjmp_buf jmpbuf;
+ 4 static int canjump;
+
+ 5 void
+ 6 sig_alrm(int signo)
+ 7 {
+ 8     if(canjump == 0)
+ 9        return;
+10     siglongjmp(jmpbuf, 1);
+11 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>8–10</TT></span> The flag <TT>canjump</TT> was set in <A class="docLink" HREF="#ch29fig10">Figure 29.10</A> after the jump buffer was initialized by <TT>sigsetjmp</TT>. If the flag has been set, we call <TT>siglongjmp</TT>, which causes the flow of control to act as if the <TT>sigsetjmp</TT> in <A class="docLink" HREF="#ch29fig10">Figure 29.10</A> had returned with a value of 1.</p>
+<P class="docText"><A class="docLink" HREF="#ch29fig12">Figure 29.12</A> shows the <TT>send_dns_query</TT> function that sends a UDP query to a DNS server using a raw socket. This function builds the application data, a DNS query.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig12"></A>Figure 29.12 <TT>send_dns_query</TT> function: sends a query to a DNS server.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/senddnsquery-raw.c</span></P>
+
+<PRE>
+ 6 void
+ 7 send_dns_query(void)
+ 8 {
+ 9     size_t nbytes;
+10     char  *buf, *ptr;
+
+11     buf = Malloc(sizeof(struct udpiphdr) + 100);
+12     ptr = buf + sizeof(struct udpiphdr);    /* leave room for IP/UDP headers */
+
+13     *((uint16_t *) ptr) = htons(1234);  /* identification */
+14     ptr += 2;
+15     *((uint16_t *) ptr) = htons(0x0100);    /* flags: recursion desired */
+16     ptr += 2;
+17     *((uint16_t *) ptr) = htons(1); /* # questions */
+18     ptr += 2;
+19     *((uint16_t *) ptr) = 0;    /* # answer RRs */
+20     ptr += 2;
+21     *((uint16_t *) ptr) = 0;    /* # authority RRs */
+22     ptr += 2;
+23     *((uint16_t *) ptr) = 0;    /* # additional RRs */
+24     ptr += 2;
+
+25     memcpy(ptr, "\001a\014root-servers\003net\000", 20);
+26     ptr += 20;
+27     *((uint16_t *) ptr) = htons(1); /* query type = A */
+28     ptr += 2;
+29     *((uint16_t *) ptr) = htons(1); /* query class = 1 (IP addr) */
+30     ptr += 2;
+
+31     nbytes = (ptr - buf) - sizeof(struct udpiphdr);
+32     udp_write(buf, nbytes);
+33     if (verbose)
+34         printf("sent: %d bytes of data\n", nbytes);
+35 }
+</PRE>
+
+
+<A NAME="ch29lev3sec18"></A>
+<H4 class="docSection2Title"> Allocate buffer and initialize pointer</H4>
+<p class="docText"><span class="docEmphasis"><TT>11–12</TT></span> We use <TT>malloc</TT> to allocate <TT>buf</TT> with room for a 20-byte IP header, an 8-byte UDP header, and 100 bytes of user data. <TT>ptr</TT> is set to point to the first byte of user data.</p>
+
+<A NAME="ch29lev3sec19"></A>
+<H4 class="docSection2Title"> Build DNS query</H4>
+<p class="docText"><span class="docEmphasis"><TT>13–24</TT></span> To understand the details of the UDP datagram built by this function requires an understanding of the DNS message format. This is found in Section 14.3 of TCPv1. We set the identification field to 1234, the flags to 0, the number of questions to 1, and the number of answer resource records (RRs), the number of authority RRs, and the number of additional RRs to 0.</p>
+<p class="docText"><span class="docEmphasis"><TT>25–30</TT></span> We form the single question that follows in the message: an A query for the IP addresses of the host <TT>a.root-servers.net</TT>. This domain name is stored in 20 bytes and consists of 4 labels: the 1-byte label <TT>a</TT>, the 12-byte label <TT>root-servers</TT> (remember that <TT>\014</TT> is an octal character constant), the 3-byte label <TT>net</TT>, and the root label whose length is 0. The query type is 1 (called an A query) and the query class is also 1.</p>
+
+<A NAME="ch29lev3sec20"></A>
+<H4 class="docSection2Title"> Write UDP datagram</H4>
+<p class="docText"><span class="docEmphasis"><TT>31–32</TT></span> This message consists of 36 bytes of user data (eight 2-byte fields and the 20-byte domain name), but we calculate the message length by subtracting the beginning of the buffer from the current pointer within the buffer to avoid having to change a constant if we change the format of the message we're sending. We call our function <TT>udp_write</TT> to build the UDP and IP headers and write the IP datagram to our raw socket.</p>
+<P class="docText"><A class="docLink" HREF="#ch29fig13">Figure 29.13</A> shows the <TT>open_output</TT> function for use with raw sockets.</P>
+
+<A NAME="ch29lev3sec21"></A>
+<H4 class="docSection2Title"> Declare raw socket descriptor</H4>
+<p class="docText"><span class="docEmphasis"><TT>2</TT></span> We declare a global variable in which to hold the descriptor for the raw socket.</p>
+
+<A NAME="ch29lev3sec22"></A>
+<H4 class="docSection2Title"> Create raw socket and enable <TT>IP_HDRINCL</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>7–13</TT></span> We create a raw socket and enable the <TT>IP_HDRINCL</TT> socket option. This option lets us write complete IP datagrams, including the IP header.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig13"></A>Figure 29.13 <TT>open_output</TT> function: prepares a raw socket.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpwrite.c</span></P>
+
+<PRE>
+ 2 int     rawfd;                /* raw socket to write on */
+
+ 3 void
+ 4 open_output(void)
+ 5 {
+ 6     int     on = 1;
+ 7     /*
+ 8      * Need a raw socket to write our own IP datagrams to.
+ 9      * Process must have superuser privileges to create this socket.
+10      * Also must set IP_HDRINCL so we can write our own IP headers.
+11      */
+
+12     rawfd = Socket(dest-&gt;sa_family, SOCK_RAW, 0);
+
+13     Setsockopt(rawfd, IPPROTO_IP, IP_HDRINCL, &amp;on, sizeof(on));
+14 }
+</PRE>
+
+<P class="docText"><A class="docLink" HREF="#ch29fig14">Figure 29.14</A> shows our function, <TT>udp_write</TT>, which builds the IP and UDP headers and then writes the datagram to the raw socket.</P>
+
+<A NAME="ch29lev3sec23"></A>
+<H4 class="docSection2Title"> Initialize packet header pointers</H4>
+<p class="docText"><span class="docEmphasis"><TT>24–26</TT></span> <TT>ip</TT> points to the beginning of the IP header (an <TT>ip</TT> structure) and <TT>ui</TT> points to the same location, but the structure <TT>udpiphdr</TT> is the combined IP and UDP headers.</p>
+
+<A NAME="ch29lev3sec24"></A>
+<H4 class="docSection2Title"> Zero header</H4>
+<p class="docText"><span class="docEmphasis"><TT>27</TT></span> We explicitly set the header area to zeros, to avoid checksumming any leftover data that might be in the buffer.</p>
+<BLOCKQUOTE><P><P class="docList">Previous versions of this code explicitly set every element of the <TT>struct udpiphdr</TT> to zero; however, this struct contains some implementation details so it may be different from system to system. This is a typical portability problem when building headers explicitly.</P></P></BLOCKQUOTE>
+
+<A NAME="ch29lev3sec25"></A>
+<H4 class="docSection2Title"> Update lengths</H4>
+<p class="docText"><span class="docEmphasis"><TT>28–31</TT></span> <TT>ui_len</TT> is the UDP length: the number of bytes of user data plus the size of the UDP header (8 bytes). <TT>userlen</TT> (the number of bytes of user data that follows the UDP header) is incremented by 28 (20 bytes for the IP header and 8 bytes for the UDP header) to reflect the total size of the IP datagram.</p>
+
+<A NAME="ch29lev3sec26"></A>
+<H4 class="docSection2Title"> Fill in UDP header and calculate UDP checksum</H4>
+<p class="docText"><span class="docEmphasis"><TT>32–45</TT></span> When the UDP checksum is calculated, it includes not only the UDP header and UDP data, but also fields from the IP header. These additional fields from the IP header form what is called the <span class="docEmphasis">pseudoheader</span>. The inclusion of the pseudoheader provides additional verification that if the checksum is correct, then the datagram was delivered to the correct host and to the correct protocol code. These statements initialize the fields in the IP header that form the pseudoheader. The code is somewhat obtuse, but is explained in Section 23.6 of TCPv2. The result is storing the UDP checksum in the <TT>ui_sum</TT> member if the <TT>zerosum</TT> flag (the <TT>- 0</TT> command-line argument) is not set.</p>
+<P class="docText">If the calculated checksum is 0, the value <TT>0xffff</TT> is stored instead. In one's-complement arithmetic, the two values are the same, but UDP sets the checksum to 0 to indicate that the sender did not store a UDP checksum. Notice that we did not check for a calculated checksum of 0 in <A class="docLink" HREF="0131411551_ch28lev1sec5.html#ch28fig14">Figure 28.14</A> because the ICMPv4 checksum is required: The value of 0 does not indicate the absence of a checksum.</P>
+<BLOCKQUOTE><P><P class="docList">We note that Solaris 2.x, for x &lt; 6, has a bug with regard to checksums for TCP segments or UDP datagrams sent on a raw socket with the <TT>IP_HDRINCL</TT> socket option set. The kernel calculates the checksum and we must set the <TT>ui_sum</TT> field to the UDP length.</P></P></BLOCKQUOTE>
+
+<A NAME="ch29lev3sec27"></A>
+<H4 class="docSection2Title"> Fill in IP header</H4>
+<p class="docText"><span class="docEmphasis"><TT>46–59</TT></span> Since we have set the <TT>IP_HDRINCL</TT> socket option, we must fill in most fields in the IP header. (<A class="docLink" HREF="0131411551_ch28lev1sec3.html#ch28lev1sec3">Section 28.3</A> discusses these writes to a raw socket when this socket option is set.) We set the identification field to 0 (<TT>ip_id</TT>), which tells IP to set this field. IP also calculates the IP header checksum. <TT>sendto</TT> writes the IP datagram.</p>
+<BLOCKQUOTE><P><P class="docList">Note that we set the <TT>ip_len</TT> field in either host or network byte order, depending on the OS we're using. This is a typical portability problem when using raw sockets.</P></P></BLOCKQUOTE>
+<P class="docText">The next function is <TT>udp_read</TT>, shown in <A class="docLink" HREF="#ch29fig15">Figure 29.15</A>, which was called from <A class="docLink" HREF="#ch29fig10">Figure 29.10</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig14"></A>Figure 29.14 <TT>udp_write</TT> function: builds UDP and IP headers and writes IP datagram to raw socket.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpwrite.c</span></P>
+
+<PRE>
+19 void
+20 udp_write(char *buf, int userlen)
+21 {
+22     struct udpiphdr *ui;
+23     struct ip *ip;
+
+24         /* fill in and checksum UDP header */
+25     ip = (struct ip *) buf;
+26     ui = (struct udpiphdr *) buf;
+27     bzero(ui, sizeof(*ui));
+28             /* add 8 to userlen for pseudoheader length */
+29     ui-&gt;ui_len = htons((uint16_t) (sizeof(struct udphdr) + userlen));
+30             /* then add 28 for IP datagram length */
+31     userlen += sizeof(struct udpiphdr);
+
+32     ui-&gt;ui_pr = IPPROTO_UDP;
+33     ui-&gt;ui_src.s_addr = ((struct sockaddr_in *) local)-&gt;sin_addr.s_addr;
+34     ui-&gt;ui_dst.s_addr = ((struct sockaddr_in *) dest)-&gt;sin_addr.s_addr;
+35     ui-&gt;ui_sport = ((struct sockaddr_in *) local)-&gt;sin_port;
+36     ui-&gt;ui_dport = ((struct sockaddr_in *) dest)-&gt;sin_port;
+37     ui-&gt;ui_ulen = ui-&gt;ui_len;
+38     if (zerosum == 0) {
+39 #if 1                              /* change to if 0 for Solaris 2.x, x &lt; 6 */
+40         if ( (ui-&gt;ui_sum = in_cksum((u_int16_t *) ui, userlen)) == 0)
+41              ui-&gt;ui_sum = 0xffff;
+42 #else
+43         ui-&gt;ui_sum = ui-&gt;ui_len;
+44 #endif
+45     }
+46         /* fill in rest of IP header; */
+47         /* ip_output() calcuates &amp; stores IP header checksum */
+48     ip-&gt;ip_v = IPVERSION;
+49     ip-&gt;ip_hl = sizeof(struct ip) &gt;&gt; 2;
+50     ip-&gt;ip_tos = 0;
+51 #if defined(linux) || defined(__OpenBSD__)
+52     ip-&gt;ip_len = htons(userlen);    /* network byte order */
+53 #else
+54     ip-&gt;ip_len = userlen;       /* host byte order */
+55 #endif
+56     ip-&gt;ip_id = 0;              /* let IP set this */
+57     ip-&gt;ip_off = 0;             /* frag offset, MF and DF flags */
+58     ip-&gt;ip_ttl = TTL_OUT;
+
+59     Sendto(rawfd, buf, userlen, 0, dest, destlen);
+60 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch29fig15"></A>Figure 29.15 <TT>udp_read</TT> function: reads next packet from packet capture device.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpread.c</span></P>
+
+<PRE>
+ 7 struct udpiphdr *
+ 8 udp_read(void)
+ 9 {
+10     int     len;
+11     char   *ptr;
+12     struct ether_header *eptr;
+
+13     for ( ; ; ) {
+14         ptr = next_pcap(&amp;len);
+
+15         switch (datalink) {
+16         case DLT_NULL:          /* loopback header = 4 bytes */
+17             return (udp_check(ptr + 4, len - 4));
+
+18         case DLT_EN10MB:
+19             eptr = (struct ether_header *) ptr;
+20             if (ntohs(eptr-&gt;ether_type) != ETHERTYPE_IP)
+21                 err_quit("Ethernet type %x not IP", ntohs(eptr-&gt;ether_type));
+22             return (udp_check(ptr + 14, len - 14));
+
+23         case DLT_SLIP:          /* SLIP header = 24 bytes */
+24             return (udp_check(ptr + 24, len - 24));
+
+25         case DLT_PPP:           /* PPP header = 24 bytes */
+26             return (udp_check(ptr + 24, len - 24));
+
+27         default:
+28             err_quit("unsupported datalink (%d)", datalink);
+29         }
+30     }
+31 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>14–29</TT></span> Our function <TT>next_pcap</TT> (<A class="docLink" HREF="#ch29fig16">Figure 29.16</A>) returns the next packet from the packet capture device. Since the datalink headers differ depending on the actual device type, we branch based on the value returned by the <TT>pcap_datalink</TT> function.</p>
+<BLOCKQUOTE><P><P class="docList">These magic offsets of 4, 14, and 24 are shown in Figure 31.9 of TCPv2. The 24-byte offsets shown for SLIP and PPP are for BSD/OS 2.1.</P></P><P><P class="docList">Despite having the qualifier "10MB" in the name <TT>DLT_EN10MB</TT>, this datalink type is also used for 100 Mbit/sec Ethernet.</P></P></BLOCKQUOTE>
+<P class="docText">Our function <TT>udp_check</TT> (<A class="docLink" HREF="#ch29fig19">Figure 29.19</A>) examines the packet and verifies fields in the IP and UDP headers.</P>
+<P class="docText"><A class="docLink" HREF="#ch29fig16">Figure 29.16</A> shows the <TT>next_pcap</TT> function, which returns the next packet from the packet capture device.</P>
+<p class="docText"><span class="docEmphasis"><TT>43–44</TT></span> We call the library function <TT>pcap_next</TT>, which returns the next packet or <TT>NULL</TT> if a timeout occurs. If the timeout occurs, we simply loop and call <TT>pcap_next</TT> again. A pointer to the packet is the return value of the function and the second argument points to a <TT>pcap_pkthdr</TT> structure, which is also filled in on return.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig16"></A>Figure 29.16 <TT>next_pcap</TT> function: returns next packet.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/pcap.c</span></P>
+
+<PRE>
+38 char *
+39 next_pcap(int *len)
+40 {
+41     char *ptr;
+42     struct pcap_pkthdr hdr;
+
+43         /* keep looping until packet ready */
+44     while ( (ptr = (char *) pcap_next(pd, &amp;hdr)) == NULL) ;
+
+45     *len = hdr.caplen;          /* captured length */
+46     return (ptr);
+47 }
+</PRE>
+
+<pre>
+
+</pre><pre>
+struct pcap_pkthdr {
+  struct timeval  ts;     /* timestamp */
+  bpf_u_int32     caplen; /* length of portion captured */
+  bpf_u_int32     len;    /* length of this packet (off wire) */
+};
+</pre><pre>
+</pre>
+<P class="docText">The timestamp is when the packet capture device read the packet, as opposed to the actual delivery of the packet to the process, which could be sometime later. <TT>caplen</TT> is the amount of data that was captured (recall that we set our variable <TT>snaplen</TT> to 200 in <A class="docLink" HREF="#ch29fig06">Figure 29.6</A>, and then this was the second argument to <TT>pcap_open_live</TT> in <A class="docLink" HREF="#ch29fig09">Figure 29.9</A>). The purpose of the packet capture facility is to capture the packet headers and not all the data in each packet. <TT>len</TT> is the full length of the packet on the wire. <TT>caplen</TT> will always be less than or equal to <TT>len</TT>.</P>
+<p class="docText"><span class="docEmphasis"><TT>45–46</TT></span> The captured length is returned through the pointer argument and the return value of the function is the pointer to the packet. Keep in mind that the "pointer to the packet" points to the datalink header, which is the 14-byte Ethernet header in the case of an Ethernet frame, or a 4-byte pseudolink header in the case of the loopback interface.</p>
+<P class="docText">If we look at the implementation of <TT>pcap_next</TT> in the library, it shows the division of labor between the different functions. We show this in <A class="docLink" HREF="#ch29fig17">Figure 29.17</A>. Our application calls the <TT>pcap_</TT> functions, and some of these functions are device-independent, while others are dependent on the type of packet capture device. For example, we show that the BPF implementation calls <TT>read</TT>, while the DLPI implementation calls <TT>getmsg</TT> and the Linux implementation calls <TT>recvfrom</TT>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch29fig17"></A>Figure 29.17. Arrangement of function calls to read from packet capture library.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="301" HEIGHT="371" src="FILES/29fig17.gif" ALT="graphics/29fig17.gif"></p>
+
+</CENTER>
+<P class="docText">Our function <TT>udp_check</TT> verifies numerous fields in the IP and UDP headers. It is shown in <A class="docLink" HREF="#ch29fig19">Figure 29.19</A>. We must do these verifications because when the packet is passed to us by the packet capture device, the IP layer has not yet seen the packet. This differs from a raw socket.</P>
+<p class="docText"><span class="docEmphasis"><TT>44–61</TT></span> The packet length must include at least the IP and UDP headers. The IP version is verified along with the IP header length and the IP header checksum. If the protocol field indicates a UDP datagram, the function returns the pointer to the combined IP/UDP header. Otherwise, the program terminates since the packet capture filter that we specified in our call to <TT>pcap_setfilter</TT> in <A class="docLink" HREF="#ch29fig09">Figure 29.9</A> should not return any other type of packet.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig18"></A>Figure 29.18 <TT>cleanup</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/cleanup.c</span></P>
+
+<PRE>
+ 2 void
+ 3 cleanup(int signo)
+ 4 {
+ 5     struct pcap_stat stat;
+
+ 6     putc('\n', stdout);
+
+ 7     if(verbose) {
+ 8        if (pcap_stats(pd, &amp;stat) &lt; 0)
+ 9            err_quit("pcap_stats: %s\n", pcap_geterr(pd));
+10        printf("%d packets received by filter\n", stat.ps_recv);
+11        printf("%d packets dropped by kernel\n", stat.ps_drop);
+12     }
+
+13     exit(0);
+14 }
+</PRE>
+
+<P class="docText">The <TT>cleanup</TT> function shown in <A class="docLink" HREF="#ch29fig18">Figure 29.18</A> is called by the <TT>main</TT> function immediately before the program terminates, and also as the signal handler if the user aborts the program (<A class="docLink" HREF="#ch29fig08">Figure 29.8</A>).</P>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig19"></A>Figure 29.19 <TT>udp_check</TT> function: verifies fields in IP and UDP headers.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/udpread.c</span></P>
+
+<PRE>
+38 struct udpiphdr *
+39 udp_check(char *ptr, int len)
+40 {
+41     int     hlen;
+42     struct ip *ip;
+43     struct udpiphdr *ui;
+
+44     if (len &lt; sizeof(struct ip) + sizeof(struct udphdr))
+45         err_quit("len = %d", len);
+
+46         /* minimal verification of IP header */
+47     ip = (struct ip *) ptr;
+48     if (ip-&gt;ip_v != IPVERSION)
+49         err_quit("ip_v = %d", ip-&gt;ip_v);
+50     hlen = ip-&gt;ip_hl &lt;&lt; 2;
+51     if (hlen &lt; sizeof(struct ip))
+52         err_quit("ip_hl = %d", ip-&gt;ip_hl);
+53     if (len &lt; hlen + sizeof(struct udphdr))
+54         err_quit("len = %d, hlen = %d", len, hlen);
+
+55     if ( (ip-&gt;ip_sum = in_cksum((uint16_t *) ip, hlen)) != 0)
+56         err_quit("ip checksum error");
+
+57     if (ip-&gt;ip_p == IPPROTO_UDP) {
+58         ui = (struct udpiphdr *) ip;
+59         return (ui);
+60     } else
+61         err_quit("not a UDP packet");
+62 }
+</PRE>
+
+
+<A NAME="ch29lev3sec28"></A>
+<H4 class="docSection2Title"> Fetch and print packet capture statistics</H4>
+<p class="docText"><span class="docEmphasis"><TT>7–12</TT></span> <TT>pcap_stats</TT> fetches the packet capture statistics: the total number of packets received by the filter and the number of packets dropped by the kernel.</p>
+
+<A NAME="ch29lev2sec1"></A>
+<H4 class="docSection2Title"> Example</H4>
+<P class="docText">We first run our program with the <TT>-0</TT> command-line option to verify that the name server responds to datagrams that arrive with no checksum. We also specify the <TT>-v</TT> flag.</P>
+<pre>
+
+</pre><pre>
+macosx # <span class="docEmphStrong">udpcksum -i en1 -0 -v bridget.rudoff.com domain</span>
+device = en1
+localnet = 172.24.37.64, netmask = 255.255.255.224
+cmd = udp and src host 206.168.112.96 and src port 53
+datalink = 1
+sent: 36 bytes of data
+UDP checksums on
+received UDP checksum = 9d15
+
+3 packets received by filter
+0 packets dropped by kernel
+</pre><pre>
+</pre>
+<P class="docText">Next, we run our program to a local name server (our system <TT>freebsd4</TT>) that does not have UDP checksums enabled. (Note that it's increasingly rare to find a name server without UDP checksums enabled.)</P>
+<pre>
+
+</pre><pre>
+macosx # <span class="docEmphStrong">udpcksum -i en1 -v freebsd4.unpbook.com domain</span>
+device = en1
+localnet = 172.24.37.64, netmask = 255.255.255.224
+cmd = udp and src host 172.24.37.94 and src port 53
+datalink = 1
+sent: 36 bytes of data
+UDP checksums off
+received UDP checksum = 0
+
+3 packets received by filter
+0 packets dropped by kernel
+</pre><pre>
+</pre>
+
+<A NAME="ch29lev2sec2"></A>
+<H4 class="docSection2Title"> <TT>libnet</TT> Output Functions</H4>
+<P class="docText">We now show versions of <TT>open_output</TT> and <TT>send_dns_query</TT> that use <TT>libnet</TT> instead of raw sockets. As we will see, <TT>libnet</TT> takes care of many details for us, including the portability problems with checksums and IP header byte order that we mentioned. The <TT>open_output</TT> function for <TT>libnet</TT> is shown in <A class="docLink" HREF="#ch29fig20">Figure 29.20</A>.</P>
+<A NAME="ch29lev3sec29"></A>
+<H5 class="docSection3Title"> Declare <TT>libnet</TT> descriptor</H5>
+<p class="docText"><span class="docEmphasis"><TT>7</TT></span> <TT>libnet</TT> uses an opaque type, <TT>libnet_t</TT>, as a linkage to the library. The <TT>libnet_init</TT> function returns a <TT>libnet_t</TT> pointer, which is then passed to further <TT>libnet</TT> functions to indicate which instance is desired. In this way, it is similar to both socket and pcap descriptors.</p>
+
+<A NAME="ch29lev3sec30"></A>
+<H5 class="docSection3Title"> Initialize <TT>libnet</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>12–16</TT></span> We call the <TT>libnet_init</TT> function, asking it to open an IPv4 raw socket by supplying <TT>LIBNET_RAW4</TT> as its first argument. If an error is encountered, <TT>libnet_init</TT> returns an error in its <span class="docEmphasis">errbuf</span> argument, which we print if <TT>libnet_init</TT> returns <TT>NULL</TT>.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch29fig20"></A>Figure 29.20 <TT>open_output</TT> function: prepares to use <TT>libnet</TT>.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/senddnsquery-libnet.c</span></P>
+
+<PRE>
+ 7 static libnet_t *l;             /* libnet descriptor */
+
+ 8 void
+ 9 open_output(void)
+10 {
+11     char     errbuf[LIBNET_ERRBUF_SIZE];
+
+12     /* Initialize libnet with an IPv4 raw socket */
+13     l = libnet_init(LIBNET_RAW4, NULL, errbuf);
+14     if (l == NULL) {
+15         err_quit("Can't initialize libnet: %s", errbuf);
+16     }
+17 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch29fig21"></A>Figure 29.21 <TT>send_dns_query</TT> function using <TT>libnet</TT>: sends a query to a DNS server.</H5>
+<P class="docText"><span class="docEmphasis">udpcksum/senddnsquery-libnet.c</span></P>
+
+<PRE>
+18  void
+19 send_dns_query(void)
+20 {
+21     char    qbuf[24], *ptr;
+22     u_int16_t one;
+23     int     packet_size = LIBNET_UDP_H + LIBNET_DNSV4_H + 24;
+24     static libnet_ptag_t ip_tag, udp_tag, dns_tag;
+25     /* build query portion of DNS packet */
+26     ptr = qbuf;
+27     memcpy(ptr, "\001a\014root-servers\003net\000", 20);
+28     ptr += 20;
+29     one = htons(1);
+30     memcpy(ptr, &amp;one, 2);   /* query type = A */
+31     ptr += 2;
+32     memcpy(ptr, &amp;one, 2);   /* query class = 1 (IP addr) */
+33     /* build DNS packet */
+34     dns_tag = libnet_build_dnsv4(1234 /* identification */ ,
+35                                  0x0100 /* flags: recursion desired */ ,
+36                                  1 /* # questions */ , 0 /* # answer RRs */ ,
+37                                  0 /* # authority RRs */ ,
+38                                  0 /* # additional RRs */ ,
+39                                  qbuf /* query */ ,
+40                                  24 /* length of query */ , l, dns_tag);
+41     /* build UDP header */
+42     udp_tag = libnet_build_udp(((struct sockaddr_in *) local)-&gt;
+43                                sin_port /* source port */ ,
+44                                ((struct sockaddr_in *) dest)-&gt;
+45                                sin_port /* dest port */ ,
+46                                packet_size /* length */ , 0 /* checksum */ ,
+47                                NULL /* payload */ , 0 /* payload length */ ,
+48                                l, udp_tag);
+49     /* Since we specified the checksum as 0, libnet will automatically */
+50     /* calculate the UDP checksum. Turn it off if the user doesn't want it. */
+51     if (zerosum)
+52         if (libnet_toggle_checksum(l, udp_tag, LIBNET_OFF) &lt; 0)
+53             err_quit("turning off checksums: %s\n", libnet_geterror(l));
+54     /* build IP header */
+55     ip_tag = libnet_build_ipv4(packet_size + LIBNET_IPV4_H /* len */,
+56             0 /* tos */, 0 /* IP ID */, 0 /* fragment */,
+57             TTL_OUT /* ttl */, IPPROTO_UDP /* protocol */,
+58             0 /* checksum */,
+59             ((struct sockaddr_in *) local)-&gt;sin_addr.s_addr /* source */,
+60             ((struct sockaddr_in *) dest)-&gt;sin_addr.s_addr /* dest */,
+61             NULL /* payload */, 0 /* payload length */, l, ip_tag);
+62     if (libnet_write(l) &lt; 0) {
+63         err_quit("libnet_write: %s\n", libnet_geterror(l));
+64     }
+65     if (verbose)
+66         printf("sent: %d bytes of data\n", packet_size);
+67 }
+</PRE>
+
+<P class="docText">The <TT>send_dns_query</TT> function for <TT>libnet</TT> is shown in <A class="docLink" HREF="#ch29fig21">Figure 29.21</A>. Compare it against the <TT>send_dns_query</TT> (<A class="docLink" HREF="#ch29fig12">Figure 29.12</A>) and <TT>udp_write</TT> (<A class="docLink" HREF="#ch29fig14">Figure 29.14</A>) functions for raw sockets.</P>
+
+<A NAME="ch29lev3sec31"></A>
+<H5 class="docSection3Title"> Build DNS query</H5>
+<p class="docText"><span class="docEmphasis"><TT>25–32</TT></span> We build the query portion of the DNS packet first, just as in lines 25–30 of <A class="docLink" HREF="#ch29fig12">Figure 29.12</A>.</p>
+<p class="docText"><span class="docEmphasis"><TT>34–40</TT></span> We then call the <TT>libnet_build_dnsv4</TT> function, which accepts each field in the DNS packet as a separate function argument. We only need to know the layout of the query portion; the details of how to put together the DNS packet header are taken care of for us.</p>
+
+<A NAME="ch29lev3sec32"></A>
+<H5 class="docSection3Title"> Fill in UDP header and arrange for UDP checksum calculation</H5>
+<p class="docText"><span class="docEmphasis"><TT>42–48</TT></span> Similarly, we build the UDP header by calling <TT>libnet_build_udp</TT> function. This also accepts each header field as a separate function argument. When passing a checksum field in as 0, <TT>libnet</TT> automatically calculates the checksum for that field. This is comparable to lines 29–45 of <A class="docLink" HREF="#ch29fig14">Figure 29.14</A>.</p>
+<p class="docText"><span class="docEmphasis"><TT>49–52</TT></span> If the user requested that the checksum not be calculated, we must specifically turn checksum calculation off.</p>
+
+<A NAME="ch29lev3sec33"></A>
+<H5 class="docSection3Title"> Fill in IP header</H5>
+<p class="docText"><span class="docEmphasis"><TT>53–65</TT></span> To complete the packet, we build the IPv4 header using the <TT>libnet_build_ipv4</TT> function. As with other <TT>libnet_build</TT> functions, we supply only the field contents and <TT>libnet</TT> puts the header together for us. This is comparable to lines 46–58 of <A class="docLink" HREF="#ch29fig14">Figure 29.14</A>.</p>
+<BLOCKQUOTE><P><P class="docList">Note that <TT>libnet</TT> automatically takes care of whether or not the <TT>ip_len</TT> field is in network byte order. This is a sample of a portability improvement gained by using <TT>libnet</TT>.</P></P></BLOCKQUOTE>
+
+<A NAME="ch29lev3sec34"></A>
+<H5 class="docSection3Title"> Write UDP datagram</H5>
+<p class="docText"><span class="docEmphasis"><TT>66–70</TT></span> We call the function <TT>libnet_write</TT> to write the assembled datagram to the network.</p>
+<P class="docText">Note that the <TT>libnet</TT> version of <TT>send_dns_query</TT> is only 67 lines, while the raw socket version (<TT>send_dns_query</TT> and <TT>udp_write</TT> combined) is 96 lines and contains at least 2 portability "gotchas."</P>
+
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch29lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch29lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

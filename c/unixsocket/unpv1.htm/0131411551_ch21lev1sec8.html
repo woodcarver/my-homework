@@ -1,0 +1,40 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="21.8 'dg_cli' Function Using Multicasting"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch21lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch21lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch21lev1sec8"></A>
+<H3 class="docSection1Title">21.8 <TT>dg_cli</TT> Function Using Multicasting</H3>
+<P class="docText">We modify our <TT>dg_cli</TT> function from <A class="docLink" HREF="0131411551_ch20lev1sec4.html#ch20fig05">Figure 20.5</A> by just removing the call to <TT>setsockopt</TT>. As we said earlier, none of the multicast socket options needs to be set to send a multicast datagram if the default settings for the outgoing interface, TTL, and loopback option are acceptable. We run a modified UDP echo server that joins the allhosts group, then run our program specifying the all-hosts group as the destination address.</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>macosx %</TT> <span class="docEmphStrong"><TT>udpcli01 224.0.0.1</TT></span></P></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphStrong"><TT>hi there</TT></span></P></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>from 172.24.37.78: hi there</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">MacOS X</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>from 172.24.37.94: hi there</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">FreeBSD</span></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">We get a response from both systems on the subnet. They are each running the multicast echo server. Each reply is unicast because the source address of the request, which is used by each server as the destination address of the reply, is a unicast address.</P>
+<A NAME="ch21lev2sec16"></A>
+<H4 class="docSection2Title"> IP Fragmentation and Multicasts</H4>
+<P class="docText">We mentioned at the end of <A class="docLink" HREF="0131411551_ch20lev1sec4.html#ch20lev1sec4">Section 20.4</A> that most systems do not allow the fragmentation of a broadcast datagram as a policy decision. Fragmentation is fine to use with multicasting, as we can easily verify using the same file with a 2,000-byte line.</P>
+<pre>
+
+</pre><pre>
+     macosx % <span class="docEmphStrong">udpcli01 224.0.0.1 &lt; 2000line</span>
+     from 172.24.37.78: xxxxxxxxxx[...]
+     from 172.24.37.94: xxxxxxxxxx[...]
+</pre><pre>
+</pre>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch21lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch21lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

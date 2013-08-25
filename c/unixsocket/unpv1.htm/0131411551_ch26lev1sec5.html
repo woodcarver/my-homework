@@ -1,0 +1,258 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="26.5 Thread-Specific Data"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch26lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch26lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch26lev1sec5"></A>
+<H3 class="docSection1Title" id="162666-974">26.5 Thread-Specific Data</H3>
+<P class="docText">When converting existing functions to run in a threads environment, a common problem encountered is due to static variables. A function that keeps state in a private buffer, or one that returns a result in the form of a pointer to a static buffer, is not thread-safe because multiple threads cannot use the buffer to hold different things at the same time. When faced with this problem, there are various solutions:</P>
+<UL><LI><P class="docList">Use thread-specific data. This is nontrivial and then converts the function into one that works only on systems with threads support. The advantage to this approach is that the calling sequence does not change and all the changes go into the library function and not the applications that call the function. We show a version of <TT>readline</TT> that is thread-safe by using thread-specific data later in this section.</P></LI><LI><P class="docList">Change the calling sequence so that the caller packages all the arguments into a structure, and also store in that structure the static variables from <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03fig18">Figure 3.18</A>. This was also done, and <A class="docLink" HREF="#ch26fig06">Figure 26.6</A> shows the new structure and new function prototypes.</P></LI></UL>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig06"></A>Figure 26.6 Data structure and function prototype for re-entrant version of <TT>readline</TT>.</H5>
+
+<PRE>
+          typedef struct {
+            int       read_fd;        /* caller's descriptor to read from */
+            char     *read_ptr;       /* caller's buffer to read into */
+            size_t    read_maxlen;    /* caller's max # bytes to read */
+                          /* next three are used internally by the function */
+            int       rl_cnt;         /* initialize to 0 */
+            char     *rl_bufptr;      /* initialize to rl_buf */
+            char      rl_buf[MAXLINE];
+          } Rline;
+
+          void    readline_rinit(int, void *, size_t, Rline *);
+          ssize_t readline_r(Rline *);
+          ssize_t Readline_r(Rline *);
+</PRE>
+
+<P class="docText">These new functions can be used on threaded and nonthreaded systems, but all applications that call <TT>readline</TT> must change.</P>
+<UL><LI><P class="docList">Restructure the interface to avoid any static variables so that the function is thread-safe. For the <TT>readline</TT> example, this would be the equivalent of ignoring the speedups introduced in <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03fig18">Figure 3.18</A> and going back to the older version in <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03fig17">Figure 3.17</A>. Since we said the older version was "painfully slow," taking this option is not always viable.</P></LI></UL>
+<P class="docText">Thread-specific data is a common technique for making an existing function thread-safe. Before describing the Pthread functions that work with thread-specific data, we describe the concept and a <span class="docEmphasis">possible</span> implementation, because the functions appear more complicated than they really are.</P>
+<BLOCKQUOTE><P><P class="docList">Part of the complication in many texts on using threads is that their descriptions of thread-specific data read like the Pthreads standard, talking about key-value pairs and keys being opaque objects. We describe thread-specific data in terms of <span class="docEmphasis">indexes</span> and <span class="docEmphasis">pointers</span> because common implementations use a small integer index for the key, and the value associated with the index is just a pointer to a region that the thread <TT>malloc</TT>s.</P></P></BLOCKQUOTE>
+<P class="docText">Each system supports a limited number of thread-specific data items. POSIX requires this limit be no less than 128 (per process), and we assume this limit in the following example. The system (probably the threads library) maintains one array of structures per process, which we call <TT>key</TT> structures, as we show in <A class="docLink" HREF="#ch26fig07">Figure 26.7</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig07"></A>Figure 26.7. Possible implementation of thread-specific data.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="209" HEIGHT="172" src="FILES/26fig07.gif" ALT="graphics/26fig07.gif"></p>
+
+</CENTER>
+<P class="docText">The flag in the <TT>Key</TT> structure indicates whether this array element is currently in use, and all the flags are initialized to be "not in use." When a thread calls <TT>pthread_key_create</TT> to create a new thread-specific data item, the system searches through its array of <TT>Key</TT> structures and finds the first one not in use. Its index, 0 through 127, is called the <span class="docEmphasis">key</span>, and this index is returned to the calling thread. We will talk about the "destructor pointer," the other member of the <TT>Key</TT> structure, shortly.</P>
+<P class="docText">In addition to the process-wide array of <TT>Key</TT> structures, the system maintains numerous pieces of information about each thread within a process. We call this a <TT>Pthread</TT> structure and part of this information is a 128-element array of pointers, which we call the <TT>pkey</TT> array. We show this in <A class="docLink" HREF="#ch26fig08">Figure 26.8</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig08"></A>Figure 26.8. Information maintained by the system about each thread.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="209" src="FILES/26fig08.gif" ALT="graphics/26fig08.gif"></p>
+
+</CENTER>
+<P class="docText">All entries in the <TT>pkey</TT> array are initialized to null pointers. These 128 pointers are the "values" associated with each of the possible 128 "keys" in the process.</P>
+<P class="docText">When we create a key with <TT>pthread_key_create</TT>, the system tells us its key (index). Each thread can then store a value (pointer) for the key, and each thread normally obtains the pointer by calling <TT>malloc</TT>. Part of the confusion with thread-specific data is that the pointer is the value in the key-value pair, but the <span class="docEmphasis">real</span> thread-specific data is whatever this pointer points to.</P>
+<P class="docText">We now go through an example of how thread-specific data is used, assuming that our <TT>readline</TT> function uses thread-specific data to maintain the per-thread state across successive calls to the function. Shortly we will show the code for this, modifying our <TT>readline</TT> function to follow these steps:</P>
+<A NAME="ch26pro01"></A>
+
+
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">A process is started and multiple threads are created.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docList">One of the threads will be the first to call <TT>readline</TT>, and it in turn calls <TT>pthread_key_create</TT>. The system finds the first unused <TT>Key</TT> structure in <A class="docLink" HREF="#ch26fig07">Figure 26.7</A> and returns its index (0–127) to the caller. We assume an index of 1 in this example.</P>
+<P class="docText">We will use the <TT>pthread_once</TT> function to guarantee that <TT>pthread_key_create</TT> is called only by the first thread to call <TT>readline</TT>.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docList"><TT>readline</TT> calls <TT>pthread_getspecific</TT> to get the <TT>pkey[1]</TT> value (the "pointer" in <A class="docLink" HREF="#ch26fig08">Figure 26.8</A> for this key of 1) for this thread, and the returned value is a null pointer. Therefore, <TT>readline</TT> calls <TT>malloc</TT> to allocate the memory that it needs to keep the per-thread information across successive calls to <TT>readline</TT> for this thread. <TT>readline</TT> initializes this memory as needed and calls <TT>pthread_setspecific</TT> to set the thread-specific data pointer (<TT>pkey[1]</TT>) for this key to point to the memory it just allocated. We show this in <A class="docLink" HREF="#ch26fig09">Figure 26.9</A>, assuming that the calling thread is thread 0 in the process.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig09"></A>Figure 26.9. Associating <TT>malloc</TT>ed region with thread-specific data pointer.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="498" HEIGHT="300" src="FILES/26fig09.gif" ALT="graphics/26fig09.gif"></p>
+
+</CENTER>
+<P class="docText">In this figure, we note that the <TT>Pthread</TT> structure is maintained by the system (probably the thread library), but the actual thread-specific data that we <TT>malloc</TT> is maintained by our function (<TT>readline</TT>, in this case). All that <TT>pthread_setspecific</TT> does is set the pointer for this key in the <TT>Pthread</TT> structure to point to our allocated memory. Similarly, all that <TT>pthread_getspecific</TT> does is return that pointer to us.</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docList">Another thread, say thread <span class="docEmphasis">n</span>, calls <TT>readline</TT>, perhaps while thread 0 is still executing within <TT>readline</TT>.</P>
+<P class="docText"><TT>readline</TT> calls <TT>pthread_once</TT> to initialize the key for this thread-specific data item, but since it has already been called, it is not called again.</P>
+</span></LI><LI><span style="font-weight:normal" value="5"><P class="docText"><TT>readline</TT> calls <TT>pthread_getspecific</TT> to fetch the <TT>pkey [1]</TT> pointer for this thread, and a null pointer is returned. This thread then calls <TT>malloc</TT>, followed by <TT>pthread_setspecific</TT>, just like thread 0, initializing its thread-specific data for this key (1). We show this in <A class="docLink" HREF="#ch26fig10">Figure 26.10</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig10"></A>Figure 26.10. Data structures after thread <span class="docEmphasis">n</span> initializes its thread-specific data.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="351" src="FILES/26fig10.gif" ALT="graphics/26fig10.gif"></p>
+
+</CENTER>
+</span></LI><LI><span style="font-weight:normal" value="6"><P class="docText">Thread <span class="docEmphasis">n</span> continues executing in <TT>readline</TT>, using and modifying its own thread-specific data.</P>
+</span></LI></OL></span>
+<P class="docText">One item we have not addressed is: What happens when a thread terminates? If the thread has called our <TT>readline</TT> function, that function has allocated a region of memory that needs to be freed. This is where the "destructor pointer" from <A class="docLink" HREF="#ch26fig07">Figure 26.7</A> is used. When the thread that creates the thread-specific data item calls <TT>pthread_key_create</TT>, one argument to this function is a pointer to a <span class="docEmphasis">destructor</span> function. When a thread terminates, the system goes through that thread's <TT>pkey</TT> array, calling the corresponding destructor function for each non-null <TT>pkey</TT> pointer. What we mean by "corresponding destructor" is the function pointer stored in the <TT>Key</TT> array in <A class="docLink" HREF="#ch26fig07">Figure 26.7</A>. This is how the thread-specific data is freed when a thread terminates.</P>
+<P class="docText">The first two functions that are normally called when dealing with thread-specific data are <TT>pthread_once</TT> and <TT>pthread_key_create</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_once(pthread_once_t *</TT><span class="docEmphasis">onceptr</span><TT>, void (*</TT><span class="docEmphasis">init</span><TT>) (void));</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_key_create(pthread_key_t *</TT><span class="docEmphasis">keyptr</span><TT>, void (*</TT><span class="docEmphasis">destructor</span><TT>) (void *</TT><span class="docEmphasis">value</span><TT>));</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><TT>pthread_once</TT> is normally called every time a function that uses thread-specific data is called, but <TT>pthread_once</TT> uses the value in the variable pointed to by <span class="docEmphasis">onceptr</span> to guarantee that the <span class="docEmphasis">init</span> function is called only one time per process.</P>
+<P class="docText"><TT>pthread_key_create</TT> must be called only one time for a given key within a process. The key is returned through the <span class="docEmphasis">keyptr</span> pointer, and the <span class="docEmphasis">destructor</span> function, if the argument is a non-null pointer, will be called by each thread on termination if that thread has stored a value for this key.</P>
+<P class="docText">Typical usage of these two functions (ignoring error returns) is as follows:</P>
+<pre>
+
+</pre><pre>
+     pthread_key_t   rl_key;
+     pthread_once_t  rl_once = PTHREAD_ONCE_INIT;
+
+     void
+     readline_destructor(void *ptr)
+     {
+         free(ptr);
+     }
+
+     void
+     readline_once(void)
+     {
+         pthread_key_create(&amp;rl_key, readline_destructor);
+     }
+
+     ssize_t
+     readline( ... )
+     {
+         ...
+
+         pthread_once(&amp;rl_once, readline_once);
+
+         if ( (ptr = pthread_getspecific(rl_key)) == NULL) {
+             ptr = Malloc( ... );
+             pthread_setspecific(rl_key, ptr);
+             /* initialize memory pointed to by ptr */
+         }
+         ...
+         /* use values pointed to by ptr */
+     }
+</pre><pre>
+</pre>
+<P class="docText">Every time <TT>readline</TT> is called, it calls <TT>pthread_once</TT>. This function uses the value pointed to by its <span class="docEmphasis">onceptr</span> argument (the contents of the variable <TT>rl_once</TT>) to make certain that its <span class="docEmphasis">init</span> function is called only one time. This initialization function, <TT>readline_once</TT>, creates the thread-specific data key that is stored in <TT>rl_key</TT>, and which <TT>readline</TT> then uses in calls to <TT>pthread_getspecific</TT> and <TT>pthread_setspecific</TT>.</P>
+<P class="docText">The <TT>pthread_getspecific</TT> and <TT>pthread_setspecific</TT> functions are used to fetch and store the value associated with a key. This value is what we called the "pointer" in <A class="docLink" HREF="#ch26fig08">Figure 26.8</A>. What this pointer points to is up to the application, but normally, it points to dynamically allocated memory.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void *pthread_getspecific(pthread_key_t</TT> <span class="docEmphasis">key</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: pointer to thread-specific data (possibly a null pointer)</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_setspecific(pthread_key_t</TT> <span class="docEmphasis">key</span><TT>, const void *</TT><span class="docEmphasis">value</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Notice that the argument to <TT>pthread_key_create</TT> is a pointer to the key (because this function stores the value assigned to the key), while the arguments to the <TT>get</TT> and <TT>set</TT> functions are the key itself (probably a small integer index as discussed earlier).</P>
+<A NAME="ch26lev2sec8"></A>
+<H4 class="docSection2Title"> Example: <TT>readline</TT> Function Using Thread-Specific Data</H4>
+<P class="docText">We now show a complete example of thread-specific data by converting the optimized version of our <TT>readline</TT> function from <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03fig18">Figure 3.18</A> to be thread-safe, without changing the calling sequence.</P>
+<P class="docText"><A class="docLink" HREF="#ch26fig11">Figure 26.11</A> shows the first part of the function: the <TT>pthread_key_t</TT> variable, the <TT>pthread_once_t</TT> variable, the <TT>readline_destructor</TT> function, the <TT>readline_once</TT> function, and our <TT>Rline</TT> structure that contains all the information we must maintain on a per-thread basis.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig11"></A>Figure 26.11 First part of thread-safe <TT>readline</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">threads/readline.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+
+ 2 static pthread_key_t rl_key;
+ 3 static pthread_once_t rl_once = PTHREAD_ONCE_INIT;
+
+ 4 static void
+ 5 readline_destructor(void *ptr)
+ 6 {
+ 7     free(ptr);
+ 8 }
+
+ 9 static void
+10 readline_once(void)
+11 {
+12     Pthread_key_creat(&amp;rl_key, readline_destructor);
+13 }
+
+14 typedef struct {
+15     int     rl_cnt;                /* initialize to 0 */
+16     char   *rl_bufptr;             /* initialize to rl_buf */
+17     char    rl_buf[MAXLINE];
+18 } Rline;
+</PRE>
+
+<A NAME="ch26lev3sec9"></A>
+<H5 class="docSection3Title"> Destructor</H5>
+<p class="docText"><span class="docEmphasis"><TT>4–8</TT></span> Our destructor function just frees the memory that was allocated for this thread.</p>
+
+<A NAME="ch26lev3sec10"></A>
+<H5 class="docSection3Title"> One-time function</H5>
+<p class="docText"><span class="docEmphasis"><TT>9–13</TT></span> We will see that our one-time function is called one time by <TT>pthread_once</TT>, and it just creates the key that is used by <TT>readline</TT>.</p>
+
+<A NAME="ch26lev3sec11"></A>
+<H5 class="docSection3Title"> <TT>Rline</TT> structure</H5>
+<p class="docText"><span class="docEmphasis"><TT>14–18</TT></span> Our <TT>Rline</TT> structure contains the three variables that caused the problem by being declared <TT>static</TT> in <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03fig18">Figure 3.18</A>. One of these structures will be dynamically allocated per thread and then released by our destructor function.</p>
+<P class="docText"><A class="docLink" HREF="#ch26fig12">Figure 26.12</A> shows the actual <TT>readline</TT> function, plus the function <TT>my_read</TT> it calls. This figure is a modification of <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03fig18">Figure 3.18</A>.</P>
+
+<A NAME="ch26lev3sec12"></A>
+<H5 class="docSection3Title"> <TT>my_read</TT> function</H5>
+<p class="docText"><span class="docEmphasis"><TT>19–35</TT></span> The first argument to the function is now a pointer to the <TT>Rline</TT> structure that was allocated for this thread (the actual thread-specific data).</p>
+
+<A NAME="ch26lev3sec13"></A>
+<H5 class="docSection3Title"> Allocate thread-specific data</H5>
+<p class="docText"><span class="docEmphasis"><TT>42</TT></span> We first call <TT>pthread_once</TT> so that the first thread that calls <TT>readline</TT> in this process calls <TT>readline_once</TT> to create the thread-specific data key.</p>
+
+<A NAME="ch26lev3sec14"></A>
+<H5 class="docSection3Title"> Fetch thread-specific data pointer</H5>
+<p class="docText"><span class="docEmphasis"><TT>43–46</TT></span> <TT>pthread_getspecific</TT> returns the pointer to the <TT>Rline</TT> structure for this thread. But if this is the first time this thread has called <TT>readline</TT>, the return value is a null pointer. In this case, we allocate space for an <TT>Rline</TT> structure and the <TT>rl_cnt</TT> member is initialized to 0 by <TT>calloc</TT>. We then store the pointer for this thread by calling <TT>pthread_setspecific</TT>. The next time this thread calls <TT>readline</TT>, <TT>pthread_getspecific</TT> will return this pointer that was just stored.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig12"></A>Figure 26.12 Second part of thread-safe <TT>readline</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">threads/readline.c</span></P>
+
+<PRE>
+19 static ssize_t
+20 my_read(Rline *tsd, int fd, char *ptr)
+21 {
+22     if (tsd-&gt;rl_cnt &lt; = 0 {
+23       again:
+24         if ( (tsd-&gt;rl_cnt = read(fd, tsd-&gt;rl_buf, MAXLINE)) &lt; 0) {
+25             if (error == EINTR)
+26                 goto again;
+27             return (-1);
+28         } else if (tsd-&gt;rl_cnt == 0)
+29             return (0);
+30         tsd-&gt;rl_bufptr = tsd-&gt;rl_buf;
+31     }
+
+32     tsd-&gt;rl_cnt--;
+33     *ptr = *tsd-&gt;rl_bufptr++;
+34     return (1);
+35 }
+
+36 ssize_t
+37 readline(int fd, void *vptr, size_t maxlen)
+38 {
+39     size_t n, rc;
+40     char     c, *ptr;
+41     Rline *tsd;
+
+42     Pthread_once(&amp;rl_once, readline_once);
+43     if ( (tsd = pthread_getspecific(rl_key)) == NULL) {
+44         tsd = Calloc(1, sizeof(Rline)); /* init to 0 */
+45         Pthread_setspecific(rl_key, tsd);
+46     }
+47     ptr = vptr;
+48     for (n = 1; n &lt; maxlen; n++) {
+49         if ( (rc = my_read(tsd, fd, &amp;c)) == 1) {
+50             *ptr++ = c;
+51             if (c == '\n')
+52                 break;
+53         } else if (rc == 0) {
+54             *ptr = 0;
+55             return (n - 1);     /* EOF, n - 1 bytes read */
+56         } else
+57             return (-1);       /* error, errno set by read() */
+58     }
+59     *ptr = 0;
+60     return (n);
+61 }
+</PRE>
+
+
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch26lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch26lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

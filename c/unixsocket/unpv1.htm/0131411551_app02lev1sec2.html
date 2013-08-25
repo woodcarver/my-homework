@@ -1,0 +1,55 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="B.2 The MBone"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app02lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app02lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app02lev1sec2"></A>
+<H3 class="docSection1Title">B.2 The MBone</H3>
+<P class="docText">Our first example of a virtual network that is built using tunnels is the MBone, which started around 1992 [Eriksson 1994]. If two or more hosts on a LAN support multicasting, multicast applications can be run on all these hosts and communicate with each other. To connect this LAN to some other LAN that also has multicast-capable hosts, a tunnel is configured between one host on each of the LANs, as shown in <A class="docLink" HREF="#app02fig01">Figure B.1</A>. We show the following numbered steps in this figure:</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="app02fig01"></A>Figure B.1. IPv4-in-IPv4 encapsulation used on MBone.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="340" src="FILES/xbfig01.gif" ALT="graphics/xbfig01.gif"></p>
+
+</CENTER>
+<A NAME="app02pro01"></A>
+
+
+
+
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">An application on the source host, MH1, sends a multicast datagram to a class D address.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText">We show this as a UDP datagram, since most multicast applications use UDP. We talk more about multicasting and how to send and receive multicast datagrams in <A class="docLink" HREF="0131411551_ch21.html#ch21">Chapter 21</A>.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">The datagram is received by all the multicast-capable hosts on the LAN, including MR2. We note that MR2 is also functioning as a multicast router, running the <TT>mrouted</TT> program, which performs multicast routing.</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docText">MR2 prepends another IPv4 header at the front of the datagram with the destination IPv4 address of this new header set to the unicast address of the tunnel endpoint, MR5. This unicast address is configured by the administrator of MR2 and is read by the <TT>mrouted</TT> program when it starts up. Similarly, the unicast address of MR2 is configured for MR5, the other end of the tunnel. The protocol field in the new IPv4 header is set to 4, which is the value for IPv4-in-IPv4 encapsulation. The datagram is sent to the next-hop router, UR3, which we explicitly denote as a unicast router. That is, UR3 does not understand multicasting, which is the whole reason why we are using a tunnel. The shaded portion of the IPv4 datagram has not changed from what was sent in Step 1, other than the decrementing of the TTL field in the shaded IPv4 header.</P>
+</span></LI><LI><span style="font-weight:normal" value="5"><P class="docText">UR3 looks at the destination IPv4 address in the outermost IPv4 header and forwards the datagram to the next-hop router, UR4, another unicast router.</P>
+</span></LI><LI><span style="font-weight:normal" value="6"><P class="docText">UR4 delivers the datagram to its destination, MR5, the tunnel endpoint.</P>
+</span></LI><LI><span style="font-weight:normal" value="7"><P class="docText">MR5 receives the datagram, and since the protocol field indicates IPv4-in-IPv4 encapsulation, it removes the first IPv4 header and then outputs the remainder of the datagram (a copy of what was multicast on the top LAN) as a multicast datagram on its LAN.</P>
+</span></LI><LI><span style="font-weight:normal" value="8"><P class="docText">All the multicast-capable hosts on the lower LAN receive the multicast datagram.</P>
+</span></LI></OL></span>
+<P class="docText">The result is that the multicast datagram sent on the top LAN also gets transmitted as a multicast datagram on the lower LAN. This occurs even though the two routers that we show attached to these two LANs, and all the Internet routers between these two routers, are not multicast-capable.</P>
+<P class="docText">In this example, we show the multicast routing function being performed by the <TT>mrouted</TT> program running on one host on each LAN. This is how the MBone started. But around 1996, multicast routing functionality started appearing in the routers from most major router vendors. If the two unicast routers UR3 and UR4 in <A class="docLink" HREF="#app02fig01">Figure B.1</A> were multicast-capable, then we would not need to run <TT>mrouted</TT> at all, and UR3 and UR4 would function as multicast routers. But if there are still other routers between UR3 and UR4 that are not multicast-capable, then a tunnel is required. The tunnel endpoints would then be MR3 (a multicast-capable replacement for UR3) and MR4 (a multicast-capable replacement for UR4), not MR2 and MR5.</P>
+<BLOCKQUOTE><P><P class="docList">In the scenario that we show in <A class="docLink" HREF="#app02fig01">Figure B.1</A>, every multicast packet appears twice on the top LAN and twice on the bottom LAN: once as a multicast packet, and again as a unicast packet within the tunnel as the packet goes between the host running <TT>mrouted</TT> and the next-hop unicast router (e.g., between MR2 and UR3, and between UR4 and MR5). This extra copy is the cost of tunneling. The advantage in replacing the two unicast routers UR3 and UR4 in <A class="docLink" HREF="#app02fig01">Figure B.1</A> with multicast-capable routers (what we called MR3 and MR4) is to avoid this extra copy of every multicast packet from appearing on the LANs. Even if MR3 and MR4 must establish a tunnel between themselves because some intermediate routers between them (that we do not show) are not multicast-capable, this is still advantageous since it avoids the duplicate copies on each LAN.</P></P></BLOCKQUOTE>
+<P class="docText">In fact, the MBone is virtually nonexistent at this point, having been replaced with native multicast in this manner. There are probably still tunnels present in the Internet's multicast infrastructure, but they are commonly between native multicast routers inside a service provider's network and are invisible to the end-user.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app02lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app02lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

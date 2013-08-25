@@ -1,0 +1,128 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.14 'udp_client' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec13.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec15.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec14"></A>
+<H3 class="docSection1Title">11.14 <TT>udp_client</TT> Function</H3>
+<P class="docText">Our functions that provide a simpler interface to <TT>getaddrinfo</TT> change with UDP because we provide one client function that creates an unconnected UDP socket, and another in the next section that creates a connected UDP socket.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include "unp.h"</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int udp_client (const char</TT> *<span class="docEmphasis">hostname</span>, <TT>const char</TT> *<span class="docEmphasis">service</span>, <TT>struct sockaddr</TT> **<span class="docEmphasis">saptr</span>, <TT>socklen_t</TT> *<span class="docEmphasis">lenp</span>);</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: unconnected socket descriptor if OK, no return on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">This function creates an unconnected UDP socket, returning three items. First, the return value is the socket descriptor. Second, <span class="docEmphasis">saptr</span> is the address of a pointer (declared by the caller) to a socket address structure (allocated dynamically by <TT>udp_client</TT>), and in that structure, the function stores the destination IP address and port for future calls to <TT>sendto</TT>. The size of the socket address structure is returned in the variable pointed to by <span class="docEmphasis">lenp</span>. This final argument cannot be a null pointer (as we allowed for the final argument to <TT>tcp_listen</TT>) because the length of the socket address structure is required in any calls to <TT>sendto</TT> and <TT>recvfrom</TT>.</P>
+<P class="docText"><A class="docLink" HREF="#ch11fig15">Figure 11.15</A> shows the source code for this function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch11fig15"></A>Figure 11.15 <TT>udp_client</TT> function: creates an unconnected UDP socket.</H5>
+<P class="docText"><span class="docEmphasis">lib/udp_client.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 udp_client (const char *host, const char *serv, SA **saptr, socklen_t *lenp)
+ 4 {
+ 5     int     sockfd, n;
+ 6     struct addrinfo hints, *res, *ressave;
+
+ 7     bzero(&amp;hints, sizeof (struct addrinfo));
+ 8     hints.ai_family = AF_UNSPEC;
+ 9     hints.ai_socktype = SOCK_DGRAM;
+
+10     if ( (n = getaddrinfo (host, serv, &amp;hints, &amp;res)) ! = 0)
+11         err_quit ("udp_client error for %s, %s: %s",
+12                   host, serv, gai_strerror(n));
+13     ressave = res;
+
+14     do {
+15         sockfd = socket (res-&gt;ai_family, res-&gt;ai_socktype, res-&gt;ai_protocol);
+16         if (sockfd &gt;= 0)
+17             break;               /* success */
+18     } while ( (res = res-&gt;ai_next) ! = NULL);
+
+19     if (res == NULL)             /* errno set from final socket () */
+20         err_sys ("udp_client error for %s, %s", host, serv);
+
+21     *saptr = Malloc (res-&gt;ai_addrlen);
+22     memcpy (*saptr, res-&gt;ai_addr, res-&gt;ai_addrlen);
+23     *lenp = res-&gt;ai_addrlen;
+
+24     freeaddrinfo (ressave);
+
+25     return (sockfd);
+26 }
+</PRE>
+
+<P class="docText"><TT>getaddrinfo</TT> converts the <span class="docEmphasis">hostname</span> and <span class="docEmphasis">service</span> arguments. A datagram socket is created. Memory is allocated for one socket address structure, and the socket address structure corresponding to the socket that was created is copied into the memory.</P>
+<A NAME="ch11lev2sec9"></A>
+<H4 class="docSection2Title"> Example: Protocol-Independent Daytime Client</H4>
+<P class="docText">We now recode our daytime client from <A class="docLink" HREF="0131411551_ch11lev1sec12.html#ch11fig11">Figure 11.11</A> to use UDP and our <TT>udp_client</TT> function. <A class="docLink" HREF="#ch11fig16">Figure 11.16</A> shows the protocol-independent source code.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch11fig16"></A>Figure 11.16 UDP daytime client using our <TT>udp_client</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">names/daytimeudpcli1.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int       sockfd, n;
+ 6     char      recvline [MAXLINE + 1];
+ 7     socklen_t salen;
+ 8     struct sockaddr *sa;
+
+ 9     if (argc ! = 3)
+10         err_quit
+11             ("usage: daytimeudpclil &lt;hostname/IPaddress&gt; &lt;service/port#&gt;");
+
+12     sockfd = Udp_client (argv [1], argv [2], (void **) &amp;sa, &amp;salen);
+
+13     printf ("sending to %s\n", Sock_ntop_host (sa, salen));
+
+14     Sendto (sockfd, "", 1, 0, sa, salen);     /* send 1-byte datagram */
+
+15     n = Recvfrom (sockfd, recvline, MAXLINE, 0 NULL, NULL);
+16     recvline [n] = '\0';         /* null terminate */
+17     Fputs (recvline, stdout);
+
+18     exit (0);
+19 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>12–17</TT></span> We call our <TT>udp_client</TT> function and then print the IP address and port of the server to which we will send the UDP datagram. We send a one-byte datagram and then read and print the reply.</p>
+<BLOCKQUOTE><P><P class="docList">We need to send only a zero-byte UDP datagram, as what triggers the daytime server's response is just the arrival of a datagram, regardless of its length and contents. But, many SVR4 implementations do not allow a zero-length UDP datagram.</P></P></BLOCKQUOTE>
+<P class="docText">We run our client specifying a hostname that has a AAAA record and an A record. Since the structure with the AAAA record is returned first by <TT>getaddrinfo</TT>, an IPv6 socket is created.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimeudpcli1 aix daytime</span>
+sending to 3ffe:b80:1f8d:2:204:acff:fe17:bf38
+Sun Jul 27 23:21:12 2003
+</pre><pre>
+</pre>
+<P class="docText">Next, we specify the dotted-decimal address of the same host, resulting in an IPv4 socket.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimeudpclil 192.168.42.2 daytime</span>
+sending to 192.168.42.2
+Sun Jul 27 23:21:40 2003
+</pre><pre>
+</pre>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec13.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec15.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

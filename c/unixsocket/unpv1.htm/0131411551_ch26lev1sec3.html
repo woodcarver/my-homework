@@ -1,0 +1,101 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="26.3 'str_cli' Function Using Threads"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch26lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch26lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch26lev1sec3"></A>
+<H3 class="docSection1Title" id="162666-856">26.3 <TT>str_cli</TT> Function Using Threads</H3>
+<P class="docText">Our first example using threads is to recode the <TT>str_cli</TT> function from <A class="docLink" HREF="0131411551_ch16lev1sec2.html#ch16fig10">Figure 16.10</A>, which uses <TT>fork</TT>, to use threads. Recall that we have provided numerous other versions of this function: The original in <A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A> used a stop-and-wait protocol, which we showed was far from optimal for batch input; <A class="docLink" HREF="0131411551_ch06lev1sec7.html#ch06fig13">Figure 6.13</A> used blocking I/O and the <TT>select</TT> function; and the version starting with <A class="docLink" HREF="0131411551_ch16lev1sec2.html#ch16fig03">Figure 16.3</A> used nonblocking I/O. <A class="docLink" HREF="#ch26fig01">Figure 26.1</A> shows the design of our threads version.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig01"></A>Figure 26.1. Recoding <TT>str_cli</TT> to use threads.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="382" HEIGHT="134" src="FILES/26fig01.gif" ALT="graphics/26fig01.gif"></p>
+
+</CENTER>
+<P class="docText"><A class="docLink" HREF="#ch26fig02">Figure 26.2</A> shows the <TT>str_cli</TT> function using threads.</P>
+<A NAME="ch26lev3sec1"></A>
+<H4 class="docSection2Title"> <TT>unpthread.h</TT> header</H4>
+<p class="docText"><span class="docEmphasis"><TT>1</TT></span> This is the first time we have encountered the <TT>unpthread.h</TT> header. It includes our normal <TT>unp.h</TT> header, followed by the POSIX <TT>&lt;pthread.h&gt;</TT> header, and then defines the function prototypes for our wrapper versions of the <TT>pthread_</TT><span class="docEmphasis">XXX</span> functions (<A class="docLink" HREF="0131411551_ch01lev1sec4.html#ch01lev1sec4">Section 1.4</A>), which all begin with <TT>pthread_</TT>.</p>
+
+<A NAME="ch26lev3sec2"></A>
+<H4 class="docSection2Title"> Save arguments in externals</H4>
+<p class="docText"><span class="docEmphasis"><TT>10–11</TT></span> The thread that we are about to create needs the values of the two arguments to <TT>str_cli: fp</TT>, the standard I/O <TT>FILE</TT> pointer for the input file, and <TT>sockfd</TT>, the TCP socket connected to the server. For simplicity, we store these two values in external variables. An alternative technique is to put the two values into a structure and then pass a pointer to the structure as the argument to the thread we are about to create.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig02"></A>Figure 26.2 <TT>str_cli</TT> function using threads.</H5>
+<P class="docText"><span class="docEmphasis">threads/strclithread.c</span></P>
+
+<PRE>
+ 1 #include     "unpthread.h"
+
+ 2 void   *copyto (void *);
+
+ 3 static int sockfd;               /* global for both threads to access */
+ 4 static FILE *fp;
+
+ 5 void
+ 6 str_cli(FILE *fp_arg, int sockfd_arg)
+ 7 {
+ 8     char    recvline[MAXLINE];
+ 9     pthread_t tid;
+
+10     sockfd = sockfd_arg;        /* copy arguments to externals */
+11     fp = fp_arg;
+
+12     Pthread_create(&amp;tid, NULL, copyto, NULL);
+
+13     while (Readline(sockfd, recvline, MAXLINE) &gt; 0)
+14         Fputs(recvline, stdout);
+15 }
+
+16 void *
+17 copyto(void *arg)
+18 {
+19     char     sendline[MAXLINE];
+
+20     while (Fgets(sendline, MAXLINE, fp) ! = NULL)
+21         Writen(sockfd, sendline, strlen(sendline));
+
+22     Shutdown(sockfd, SHUT_WR); /* EOF on stdin, send FIN */
+
+23     return (NULL);
+24         /* return (i.e., thread terminates) when EOF on stdin */
+25 }
+</PRE>
+
+
+<A NAME="ch26lev3sec3"></A>
+<H4 class="docSection2Title"> Create new thread</H4>
+<p class="docText"><span class="docEmphasis"><TT>12</TT></span> The thread is created and the new thread ID is saved in <TT>tid</TT>. The function executed by the new thread is <TT>copyto</TT>. No arguments are passed to the thread.</p>
+
+<A NAME="ch26lev3sec4"></A>
+<H4 class="docSection2Title"> Main thread loop: copy socket to standard output</H4>
+<p class="docText"><span class="docEmphasis"><TT>13–14</TT></span> The main thread calls <TT>readline</TT> and <TT>fputs</TT>, copying from the socket to the standard output.</p>
+
+<A NAME="ch26lev3sec5"></A>
+<H4 class="docSection2Title"> Terminate</H4>
+<p class="docText"><span class="docEmphasis"><TT>15</TT></span> When the <TT>str_cli</TT> function returns, the <TT>main</TT> function terminates by calling <TT>exit</TT> (<A class="docLink" HREF="0131411551_ch05lev1sec4.html#ch05lev1sec4">Section 5.4</A>). When this happens, <span class="docEmphasis">all</span> threads in the process are terminated. Normally, the <TT>copyto</TT> thread will have already terminated by the time the server's <TT>main</TT> function completes. But in the case where the server terminates prematurely (<A class="docLink" HREF="0131411551_ch05lev1sec12.html#ch05lev1sec12">Section 5.12</A>), calling <TT>exit</TT> when the server's <TT>main</TT> function completes will terminate the <TT>copyto</TT> thread, which is what we want.</p>
+
+<A NAME="ch26lev3sec6"></A>
+<H4 class="docSection2Title"> <TT>copyto</TT> thread</H4>
+<p class="docText"><span class="docEmphasis"><TT>16–25</TT></span> This thread just copies from standard input to the socket. When it reads an EOF on standard input, a FIN is sent across the socket by <TT>shutdown</TT> and the thread returns. The <TT>return</TT> from this function (which started the thread) terminates the thread.</p>
+<P class="docText">At the end of <A class="docLink" HREF="0131411551_ch16lev1sec2.html#ch16lev1sec2">Section 16.2</A>, we provided measurements for the five different implementation techniques that we have used with our <TT>str_cli</TT> function. The threads version we just presented took 8.5 seconds, which is slightly faster than the version using <TT>fork</TT> (which we expect), but slower than the nonblocking I/O version. Nevertheless, comparing the complexity of the nonblocking I/O version (<A class="docLink" HREF="0131411551_ch16lev1sec2.html#ch16lev1sec2">Section 16.2</A>) versus the simplicity of the threads version, we still recommend using threads instead of nonblocking I/O.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch26lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch26lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,99 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="C.1 System Call Tracing"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app03.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app03lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app03lev1sec1"></A>
+<H3 class="docSection1Title">C.1 System Call Tracing</H3>
+<P class="docText">Many versions of Unix provide a system call tracing facility. This can often provide a valuable debugging technique.</P>
+<P class="docText">Working at this level, we need to differentiate between a <span class="docEmphasis">system call</span> and a <span class="docEmphasis">function</span>. The former is an entry point into the kernel, and that is what we are able to trace with the tools we will look at in this section. POSIX and most other standards use the term "function" to describe what appears to the user to be functions, even though on some implementations, they may be system calls. For example, on a Berkeley-derived kernel, <TT>socket</TT> is a system call even though it appears to be a normal C function to the application programmer. But under SVR4, we will see shortly that it is a library function in the sockets library that issues calls to <TT>putmsg</TT> and <TT>getmsg</TT>, these latter two being actual system calls.</P>
+<P class="docText">In this section, we will examine the system calls involved in running our daytime client. We showed this client in <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A>.</P>
+<A NAME="app03lev2sec1"></A>
+<H4 class="docSection2Title"> BSD Kernel Sockets</H4>
+<P class="docText">We start with FreeBSD, a Berkeley-derived kernel in which all the socket functions are system calls. The <TT>ktrace</TT> program is provided by FreeBSD to run a program and trace the system calls that are executed. This writes the trace information to a file (whose default name is <TT>ktrace.out</TT>), which we print with <TT>kdump</TT>. We execute our sockets client as</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">ktrace daytimetcpcli 192.168.42.2</span>
+Tue Aug 19 23:35:10 2003
+</pre><pre>
+</pre>
+<P class="docText">We then execute <TT>kdump</TT> to output the trace information to standard output.</P>
+<pre>
+
+</pre><pre>
+ 3211 daytimetcpcli CALL socket(0x2,0x1,0)
+ 3211 daytimetcpcli RET  socket 3
+
+ 3211 daytimetcpcli CALL connect(0x3,0x7fdffffe820,0x10)
+ 3211 daytimetcpcli RET  connect 0
+
+ 3211 daytimetcpcli CALL read(0x3,0x7fdffffe830,0x1000)
+ 3211 daytimetcpcli GIO  fd 3 read 26 bytes
+      "Tue Aug 19 23:35:10 2003
+      "
+ 3211 daytimetcpcli RET  read 26/0x1a
+
+...
+
+ 3211 daytimetcpcli CALL write(0x1,0x204000,0x1a)
+ 3211 daytimetcpcli GIO  fd 1 wrote 26 bytes
+      "Tue Aug 19 23:35:10 2003/r
+      "
+ 3211 daytimetcpcli RET  write 26/0x1a
+
+ 3211 daytimetcpcli CALL read(0x3,0x7fdffffe830,0x1000)
+ 3211 daytimetcpcli GIO  fd 3 read 0 bytes
+      ""
+ 3211 daytimetcpcli RET  read 0
+
+ 3211 daytimetcpcli CALL exit(0)
+</pre><pre>
+</pre>
+<P class="docText">3211 is the PID. <TT>CALL</TT> identifies a system call, <TT>RET</TT> is the return, and <TT>GIO</TT> stands for generic process I/O. We see the calls to <TT>socket</TT> and <TT>connect</TT>, followed by the call to <TT>read</TT> that returns 26 bytes. Our client writes these bytes to standard output and the next call to <TT>read</TT> returns 0 (EOF).</P>
+
+<A NAME="app03lev2sec2"></A>
+<H4 class="docSection2Title"> Solaris 9 Kernel Sockets</H4>
+<P class="docText">Solaris 2.x is based on SVR4 and all the releases before 2.6 have implemented sockets as shown in <A class="docLink" HREF="0131411551_ch31lev1sec2.html#ch31fig03">Figure 31.3</A>. One problem, however, with all SVR4 implementations that implement sockets in this fashion is that they rarely provide 100% compatibility with Berkeley-derived kernel sockets. To provide additional compatibility, versions starting with Solaris 2.6 changed the implementation technique and implemented sockets using a <TT>sockfs</TT> filesystem. This provides kernel sockets, as we can verify using <TT>truss</TT> on our sockets client.</P>
+<pre>
+
+</pre><pre>
+solaris % <span class="docEmphStrong">truss -v connect daytimetcpcli 127.0.0.1</span>
+Mon Sep  8 12:16:42 2003
+</pre><pre>
+</pre>
+<P class="docText">After the normal library linking, the first system call we see is to <TT>so_socket</TT>, a system call invoked by our call to <TT>socket</TT>.</P>
+<pre>
+
+</pre><pre>
+so_socket(PF_INET, SOCK_STREAM, IPPROTO_IP, "", 1) = 3
+connect(3, 0xFFBFDEF0, 16, 1)                   =0
+        AF_INET  name = 127.0.0.1  port = 13
+read(3, " M o n   S e p     8   1".., 4096)     = 26
+Mon Sep  8 12:48:06 2003
+write(1, " M o n   S e p     8   1".., 26)      = 26
+read(3, 0xFFBFDF03, 4096)                       = 0
+_exit(0)
+</pre><pre>
+</pre>
+<P class="docText">The first three arguments to <TT>so_socket</TT> are our three arguments to <TT>socket</TT>.</P>
+<P class="docText">We see that <TT>connect</TT> is a system call, and <TT>truss</TT>, when invoked with the <TT>-v connect</TT> flag, prints the contents of the socket address structure pointed to by the second argument (the IP address and port number). The only system calls that we have replaced with ellipses are a few dealing with standard input and standard output.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app03.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app03lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

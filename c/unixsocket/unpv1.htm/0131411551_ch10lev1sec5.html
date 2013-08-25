@@ -1,0 +1,230 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="10.5 Exploring Head-of-Line Blocking"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch10lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch10lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch10lev1sec5"></A>
+<H3 class="docSection1Title">10.5 Exploring Head-of-Line Blocking</H3>
+<P class="docText">Our simple server provides a method to send text messages to any of a number of streams. A <span class="docEmphasis">stream</span> in SCTP is not a stream of bytes (as in TCP), but a sequence of messages that is ordered within the association. These sub-ordered streams are used to avoid the head-of-line blocking found in TCP.</P>
+<P class="docText">Head-of-line blocking occurs when a TCP segment is lost and a subsequent TCP segment arrives out of order. That subsequent segment is held until the first TCP segment is retransmitted and arrives at the receiver. Delaying delivery of the subsequent segment assures that the receiving application sees all data in the order in which the sending application sent it. This delay to achieve complete ordering is quite useful, but it has a downside. Assume that semantically independent messages are being sent over a single TCP connection. For example, a server may send three different pictures for a Web browser to display. To make the pictures appear on the user's screen in parallel, a server sends a piece from the first picture, then a piece from the second picture, and finally a piece from the third picture. The server repeats this process until all three pictures are successfully transmitted to the browser. But what happens if a TCP packet holding a piece of the first picture is lost? The client will hold all data until that missing piece is retransmitted and arrives successfully, delaying all data for the second and third pictures, as well as data for the first picture. <A class="docLink" HREF="#ch10fig05">Figure 10.5</A> illustrates this problem.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch10fig05"></A>Figure 10.5. Sending three pictures over one TCP connection.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="401" HEIGHT="294" src="FILES/10fig05.gif" ALT="graphics/10fig05.gif"></p>
+
+</CENTER>
+<BLOCKQUOTE><P><P class="docList">Although this is not how HTTP works, several extensions, such as SCP [Spero 1996] and SMUX [Gettys and Nielsen 1998], have been proposed to permit this type of parallel functionality on top of TCP. These multiplexing protocols have been proposed to avoid the harmful behavior of multiple parallel TCP connections that do not share state [Touch 1997]. Although creating one TCP connection per picture (as HTTP clients normally do) avoids the head-of-line blocking problem, each connection has to discover the RTT and available bandwidth independently; a loss on one connection (a signal of congestion on the path) does not necessarily cause the other connections to slow down. This leads to lower aggregate utilization of congested networks.</P></P></BLOCKQUOTE>
+<P class="docText">This blocking is not really what the application would like to occur. Ideally, only later pieces of the first picture would be delayed while pieces of the second and third pictures that arrive in order would be delivered immediately to the user.</P>
+<P class="docText">Head-of-line blocking can be minimized by SCTP's multistream feature. In <A class="docLink" HREF="#ch10fig06">Figure 10.6</A>, we see the same three pictures being sent. This time, the server uses streams so that head-of-line blocking only occurs where it is desired, allowing delivery of the second and third pictures but holding the partially received first picture until in-order delivery is possible.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch10fig06"></A>Figure 10.6. Sending three pictures over three SCTP streams.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="416" HEIGHT="298" src="FILES/10fig06.gif" ALT="graphics/10fig06.gif"></p>
+
+</CENTER>
+<P class="docText">We now complete our client code, including the missing function <TT>sctpstr_cli_echoall</TT> (<A class="docLink" HREF="#ch10fig07">Figure 10.7</A>, p. 296), which we will use to demonstrate how SCTP minimizes head-of-line blocking. This function is similar to our previous <TT>sctpstr_cli</TT> function except the client no longer expects a stream number in brackets preceding each message. Instead, the function sends the user message to all <TT>SERV_MAX_SCTP_STRM</TT> streams. After sending the messages, the client waits for all the responses to arrive from the server. In running the code, we also pass an additional argument to the server so that the server responds on the same stream on which a message was received. This way, the user can better track the responses sent and their order of arrival.</P>
+<A NAME="ch10lev3sec20"></A>
+<H4 class="docSection2Title"> Initialize data structures and wait for input</H4>
+<p class="docText"><span class="docEmphasis"><TT>13–15</TT></span> As before, the client initializes the <TT>sri</TT> structure used to set up the stream it will be sending and receiving from. In addition, the client zeros out the data buffer from which it will collect user input. Then, the client enters the main loop, once again blocking on user input.</p>
+
+<A NAME="ch10lev3sec21"></A>
+<H4 class="docSection2Title"> Pre-process message</H4>
+<p class="docText"><span class="docEmphasis"><TT>16–20</TT></span> The client sets up the message size and then deletes the newline character that is at the end of the buffer (if any).</p>
+
+<A NAME="ch10lev3sec22"></A>
+<H4 class="docSection2Title"> Send message to each stream</H4>
+<p class="docText"><span class="docEmphasis"><TT>21–26</TT></span> The client sends the message using the <TT>sctp_sendmsg</TT> function, sending the whole buffer of <TT>SCTP_MAXLINE</TT> bytes. Before sending the message, it appends the string "<span class="docEmphStrong">.msg.</span>" and the stream number so that we can observe the order of the arriving messages. In this way, we can compare the arrival order to the order in which the client sent the actual messages. Note also the client sends the messages to a set number of streams without regard to how many were actually set up. It is possible that one or more of the sends may fail if the peer negotiates the number of streams downward.</p>
+<BLOCKQUOTE><P><P class="docList">This code has the potential to fail if the send or receive windows are too small. If the peer's receive window is too small, it is possible that the client will block. Since the client does not read any information until all of its sends are complete, the server could also potentially block while waiting for the client to finish reading the responses the server already sent. The result of such a scenario would be a deadlock of the two endpoints. This code is not meant to be scalable, but instead to illustrate streams and head-of-line blocking in a simple, straightforward manner.</P></P></BLOCKQUOTE>
+
+<H5 class="docExampleTitle"><A NAME="ch10fig07"></A>Figure 10.7 sctp_strcliecho.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctp_strcliecho.c</span></P>
+
+<PRE>
+ 1 #include     "unp . h"
+
+ 2 #define SCTP_MAXLINE     800
+
+ 3 void
+ 4 sctpstr_cli_echoall (FILE *fp, int sock_fd, struct sockaddr *to,
+ 5                      socklen_t tolen)
+ 6 {
+ 7     struct sockaddr_in peeraddr;
+ 8     struct sctp_sndrcvinfo sri;
+ 9     char    sendline [SCTP_MAXLINE], recvline [SCTP_MAXLINE];
+10     socklen_t len;
+11     int     rd_sz, i, strsz;
+12     int     msg_flags;
+
+13     bzero(sendline, sizeof (sendline));
+14     bzero(&amp;sri, sizeof (sri));
+15     while (fgets (sendline, SCTP_MAXLINE - 9, fp) ! = NULL) {
+16         strsz = strlen (sendline);
+17         if (sendline [strsz - 1] == '\n') {
+18             sendline [strsz - 1] = '\0';
+19             strsz--;
+20         }
+21         for (i = 0; i &lt; SERV_MAX_SCTP_STRM; i++) {
+22             snprintf (sendline + strsz, sizeof (sendline) - strsz,
+23                       ".msg. %d", i) ;
+24             Sctp_sendmsg (sock_fd, sendline, sizeof (sendline),
+25                           to, tolen, 0, 0, i, 0, 0) ;
+26         }
+27         for (i = 0; i &lt; SERV_MAX_SCTP_STRM; i++) {
+28             len = sizeof (peeraddr) ;
+29             rd_sz = Sctp_recvmsg (sock_fd, recvline, sizeof (recvline),
+30                                   (SA *) &amp;peeraddr, &amp;len, &amp;sri, &amp;msg_flags);
+31             printf ("From str:%d seq:%d (assoc: 0X%X) :",
+32                     sri . sinfo_stream, sri . sinfo_ssn,
+33                     (u_int) sri . sinfo_assoc_id) ;
+34             printf ("%.*s\n", rd_sz, recvline) ;
+35         }
+36     }
+37 }
+</PRE>
+
+
+<A NAME="ch10lev3sec23"></A>
+<H4 class="docSection2Title"> Read back echoed messages and display</H4>
+<p class="docText"><span class="docEmphasis"><TT>27–35</TT></span> We now block, reading all the response messages from our server and displaying each as we did before. After the last message is read, the client loops back for more user input.</p>
+
+<A NAME="ch10lev2sec2"></A>
+<H4 class="docSection2Title"> Running the Code</H4>
+<P class="docText">We execute the client and server on two separate FreeBSD machines, separated by a configurable router, as illustrated in <A class="docLink" HREF="#ch10fig08">Figure 10.8</A>. The router can be configured to insert both delay and loss. We execute the program first with no loss inserted by the router.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch10fig08"></A>Figure 10.8. SCTP client/server lab.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="480" HEIGHT="194" src="FILES/10fig08.gif" ALT="graphics/10fig08.gif"></p>
+
+</CENTER>
+<P class="docText">We start the server with an additional argument of "0", forcing the server to not increment the stream number on its replies.</P>
+<P class="docText">Next, we start the client, passing it the address of the echo server and an additional argument so that it will send a message to each stream.</P>
+<pre>
+
+</pre><pre>
+freebsd4% <span class="docEmphStrong">sctpclient01 10.1.4.1 echo</span>
+Echoing messages to all streams
+<span class="docEmphStrong">Hello</span>
+From str:0 seq:0 (assoc:0xc99e15a0):Hello.msg.0
+From str:1 seq:0 (assoc:0xc99e15a0):Hello.msg.1
+From str:2 seq:1 (assoc:0xc99e15a0):Hello.msg.2
+From str:3 seq:0 (assoc:0xc99e15a0):Hello.msg.3
+From str:4 seq:0 (assoc:0xc99e15a0):Hello.msg.4
+From str:5 seq:0 (assoc:0xc99e15a0):Hello.msg.5
+From str:6 seq:0 (assoc:0xc99e15a0):Hello.msg.6
+From str:7 seq:0 (assoc:0xc99e15a0):Hello.msg.7
+From str:8 seq:0 (assoc:0xc99e15a0):Hello.msg.8
+From str:9 seq:0 (assoc:0xc99e15a0):Hello.msg.9
+<span class="docEmphStrong">^D</span>
+freebsd4%
+</pre><pre>
+</pre>
+<P class="docText">With no loss, the client sees the responses arrive back in the order in which the client sent them. We now change the parameters of our router to lose 10% of all packets traveling in both directions and restart our client.</P>
+<pre>
+
+</pre><pre>
+freebsd4% <span class="docEmphStrong">sctpclient01 10.1.4.1 echo</span>
+Echoing messages to all streams
+<span class="docEmphStrong">Hello</span>
+From str:0 seq:0 (assoc:0xc99e15a0):Hello.msg.0
+From str:2 seq:0 (assoc:0xc99e15a0):Hello.msg.2
+From str:3 seq:0 (assoc:0xc99e15a0):Hello.msg.3
+From str:5 seq:0 (assoc:0xc99e15a0):Hello.msg.5
+From str:1 seq:0 (assoc:0xc99e15a0):Hello.msg.1
+From str:8 seq:0 (assoc:0xc99e15a0):Hello.msg.8
+From str:4 seq:0 (assoc:0xc99e15a0):Hello.msg.4
+From str:7 seq:0 (assoc:0xc99e15a0):Hello.msg.7
+From str:9 seq:0 (assoc:0xc99e15a0):Hello.msg.9
+From str:6 seq:0 (assoc:0xc99e15a0):Hello.msg.6
+<span class="docEmphStrong">^D</span>
+freebsd4%
+</pre><pre>
+</pre>
+<P class="docText">We can verify that the messages within a stream are properly being held for reordering by having the client send two messages to each stream. We also modify the client to add a suffix to its message number to help us identify each message duplicate. The modifications to the server are shown in <A class="docLink" HREF="#ch10fig09">Figure 10.9</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch10fig09"></A>Figure 10.9 sctp_strcliecho modifications.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctp_strcliecho2.c</span></P>
+
+<PRE>
+21          for (i = 0; i &lt; SERV_MAX_SCTP_STRM; i++) {
+22              snprintf (sendline + strsz, sizeof (sendline) - strsz,
+23                        ".msg.%d 1", i);
+24              Sctp_sendmsg (sock_fd, sendline, sizeof (sendline),
+25                            to, tolen, 0, 0, i, 0, 0);
+26              snprintf (sendline + strsz, sizeof (sendline) - strsz,
+27                        ".msg.%d 2", i);
+28              Sctp_sendmsg (sock_fd, sendline, sizeof (sendline),
+29                            to, tolen, 0, 0, i, 0, 0);
+30          }
+31          for (i = 0; i &lt; SERV_MAX_SCTP_STRM * 2; i++) {
+32              len = sizeof (peeraddr);
+</PRE>
+
+<A NAME="ch10lev3sec24"></A>
+<H5 class="docSection3Title"> Add additional message number and send</H5>
+<p class="docText"><span class="docEmphasis"><TT>22–25</TT></span> The client adds an additional message number, "1", to help us track which message is being sent. Then the client sends the message using the <TT>sctp_sendmsg</TT> function.</p>
+
+<A NAME="ch10lev3sec25"></A>
+<H5 class="docSection3Title"> Change message number and send it again</H5>
+<p class="docText"><span class="docEmphasis"><TT>26–29</TT></span> The client now changes the number from "1" to "2" and sends this updated message to the same stream.</p>
+
+<A NAME="ch10lev3sec26"></A>
+<H5 class="docSection3Title"> Read messages and display</H5>
+<p class="docText"><span class="docEmphasis"><TT>31</TT></span> Here the code requires only one small change: We double the number of messages the client expects to receive back from the echo server.</p>
+
+
+<A NAME="ch10lev2sec3"></A>
+<H4 class="docSection2Title"> Running the Modified Code</H4>
+<P class="docText">We start our server and modified client, as before, and obtain the following output from the client:</P>
+<pre>
+
+</pre><pre>
+freebsd4% <span class="docEmphStrong">sctpclient01 10.1.4.1 echo</span>
+Echoing messages to all streams
+<span class="docEmphStrong">Hello</span>
+From str:0 seq:0 (assoc:0xc99e15a0):Hello.msg.0 1
+From str:0 seq:1 (assoc:0xc99e15a0):Hello.msg.0 2
+From str:1 seq:0 (assoc:0xc99e15a0):Hello.msg.1 1
+From str:4 seq:0 (assoc:0xc99e15a0):Hello.msg.4 1
+From str:5 seq:0 (assoc:0xc99e15a0):Hello.msg.5 1
+From str:7 seq:0 (assoc:0xc99e15a0):Hello.msg.7 1
+From str:8 seq:0 (assoc:0xc99e15a0):Hello.msg.8 1
+From str:9 seq:0 (assoc:0xc99e15a0):Hello.msg.9 1
+From str:3 seq:0 (assoc:0xc99e15a0):Hello.msg.3 1
+From str:3 seq:1 (assoc:0xc99e15a0):Hello.msg.3 2
+From str:1 seq:1 (assoc:0xc99e15a0):Hello.msg.1 2
+From str:5 seq:1 (assoc:0xc99e15a0):Hello.msg.5 2
+From str:2 seq:0 (assoc:0xc99e15a0):Hello.msg.2 1
+From str:6 seq:0 (assoc:0xc99e15a0):Hello.msg.6 1
+From str:6 seq:1 (assoc:0xc99e15a0):Hello.msg.6 2
+From str:2 seq:1 (assoc:0xc99e15a0):Hello.msg.2 2
+From str:7 seq:1 (assoc:0xc99e15a0):Hello.msg.7 2
+From str:8 seq:1 (assoc:0xc99e15a0):Hello.msg.8 2
+From str:9 seq:1 (assoc:0xc99e15a0):Hello.msg.9 2
+From str:4 seq:1 (assoc:0xc99e15a0):Hello.msg.4 2
+<span class="docEmphStrong">^D</span>
+freebsd4%
+</pre><pre>
+</pre>
+<P class="docText">As we can see from the output, messages are lost, and yet only the messages in a particular stream are delayed. The other streams do not have their data delayed. SCTP streams can be a powerful mechanism to escape head-of-line blocking yet preserve order within a set of related messages.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch10lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch10lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

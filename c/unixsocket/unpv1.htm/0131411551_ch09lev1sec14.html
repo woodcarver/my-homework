@@ -1,0 +1,186 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="9.14 Notifications"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch09lev1sec13.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch09lev1sec15.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch09lev1sec14"></A>
+<H3 class="docSection1Title">9.14 Notifications</H3>
+<P class="docText">SCTP makes a variety of notifications available to the application programmer. The SCTP user can track the state of its association(s) via these notifications. Notifications communicate transport-level events, including network status change, association startups, remote operational errors, and undeliverable messages. For both the one-to-one and the one-to-many styles, all events are disabled by default with the exception of <TT>sctp_data_io_event</TT>. We will see an example of using notifications in <A class="docLink" HREF="0131411551_ch23lev1sec7.html#ch23lev1sec7">Section 23.7</A>.</P>
+<P class="docText">Eight events can be subscribed to using the <TT>SCTP_EVENTS</TT> socket option. Seven of these events generate additional data—termed a notification—that a user will receive via the normal socket descriptor. The notifications are added to the socket descriptor inline with data as the events that generate them occur. When reading from a socket with notification subscriptions, user data and notifications will be interleaved on the socket buffer. To differentiate between peer data and a notification, the user uses either the <TT>recvmsg</TT> function or the <TT>sctp_recvmsg</TT> function. When the data returned is an event notification, the <TT>msg_flags</TT> field of these two functions will contain the <TT>MSG_NOTIFICATION</TT> flag. This flag tells the application that the message just read is not data from the peer, but a notification from the local SCTP stack.</P>
+<P class="docText">Each type of notification is in tag-length-value form, where the first eight bytes of the message identify what type of notification has arrived and its total length. Enabling the <TT>sctp_data_io_event</TT> event causes the receipt of <TT>sctp_sndrcvinfo</TT> structures on every read of user data (this option is enabled by default for both interface styles). This information is normally received in ancillary data using the <TT>recvmsg</TT> call. An application can also use the <TT>sctp_recvmsg</TT> call, which will fill a pointer to the <TT>sctp_sndrcvinfo</TT> structure with this information.</P>
+<P class="docText">Two notifications contain an SCTP error cause code field. The values for this field are listed in Section 3.3.10 of RFC 2960 [Stewart et al. 2000] and in the "CAUSE CODES" section of <A class="docLink" target="_blank" HREF="http://www.iana.org/assignments/sctp-parameters">http://www.iana.org/assignments/sctp-parameters</A>.</P>
+<P class="docText">Notifications have the following form:</P>
+<pre>
+
+</pre><pre>
+struct sctp_tlv {
+  u_int16_t sn_type;
+  u_int16_t sn_flags;
+  u_int32_t sn_length;
+};
+
+/* notification event */
+union sctp_notification {
+  struct sctp_tlv sn_header;
+  struct sctp_assoc_change sn_assoc_change;
+  struct sctp_paddr_change sn_paddr_change;
+  struct sctp_remote_error sn_remote_error;
+  struct sctp_send_failed sn_send_failed;
+  struct sctp_shutdown_event sn_shutdown_event;
+  struct sctp_adaption_event sn_adaption_event;
+  struct sctp_pdapi_event sn_pdapi_event;
+};
+</pre><pre>
+</pre>
+<P class="docText">Note that the <TT>sn_header</TT> field is used to interpret the type value, to decode the actual message being sent. <A class="docLink" HREF="#ch09fig06">Figure 9.6</A> illustrates the value found in the <TT>sn_header. sn_type</TT> field and the corresponding subscription field used with the <TT>SCTP_EVENTS</TT> socket option.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch09fig06"></A>Figure 9.6. <span class="docEmphasis">sn_type</span> and event subscription field.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="394" HEIGHT="126" src="FILES/09fig06.gif" ALT="graphics/09fig06.gif"></p>
+
+</CENTER>
+<P class="docText">Each notification has its own structure that gives further information about the event that has occurred on the transport.</P>
+<A NAME="ch09lev2sec3"></A>
+<H4 class="docSection2Title"> <TT>SCTP_ASSOC_CHANGE</TT></H4>
+<BLOCKQUOTE><P><P class="docList">This notification informs an application that a change has occurred to an association; either a new association has begun or an existing association has ended. The information provided with this event is defined as follows:</P><pre>
+
+</pre><pre>
+struct sctp_assoc_change {
+  u_int16_t sac_type;
+  u_int16_t sac_flags;
+  u_int32_t sac_length;
+  u_int16_t sac_state;
+  u_int16_t sac_error;
+  u_int16_t sac_outbound_streams;
+  u_int16_t sac_inbound_streams;
+  sctp_assoc_t sac_assoc_id;
+  uint8_t sac_info[];
+};
+</pre><pre>
+</pre></P><P><P class="docList">The <span class="docEmphasis">sac_state</span> describes the type of event that has occurred on the association, and will take one of the following values:</P><P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="90%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SCTP_COMM_UP</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This state indicates that a new association has just been started. The inbound and outbound streams fields indicate how many streams are available in each direction. The association identification is filled with a unique value that can be used to communicate with the local SCTP stack regarding this association.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SCTP_COMM_LOST</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This state indicates that the association specified by the association identification has closed due to either an unreachability threshold being triggered (i.e., the SCTP endpoint timed out multiple times and hit its threshold, which indicates the peer is no longer reachable), or the peer performed an abortive close (usually with the <TT>SO_LINGER</TT> option or by using <TT>sendmsg</TT> with a <TT>MSG_ABORT</TT> flag) of the association. Any user-specific information will be found in the <TT>sac_info</TT> field of the notification.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SCTP_RESTART</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This state indicates that the peer has restarted. The most likely cause of this notification is a peer crash and restart. The application should verify the number of streams in each direction, since these values may change during a restart.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SCTP_SHUTDOWN_COMP</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This state indicates that a shutdown initiated by the local endpoint (via either a <TT>shutdown</TT> call or a <TT>sendmsg</TT> with a <TT>MSG_EOF</TT> flag) has completed. For the one-to-one style, after receiving this notification, the socket descriptor can be used again to connect to a different peer.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>SCTP_CANT_STR_ASSOC</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This state indicates that a peer did not respond to an association setup attempt (i.e., the INIT message).</P></TD></TR></COLGROUP></TABLE></P></P><P><P class="docList">The <span class="docEmphasis">sac_error</span> field holds any SCTP protocol error cause code that may have caused an association change. The <span class="docEmphasis">sac_outbound_streams</span> and <span class="docEmphasis">sac_inbound_streams</span> fields inform the application how many streams in each direction have been negotiated on the association. <span class="docEmphasis">sac_assoc_id</span> holds a unique handle for an association that can be used to identify the association in both socket options and future notifications. <span class="docEmphasis">sac_info</span> holds any other information available to the user. For example, if an association was aborted by the peer with a user-defined error, that error would be found in this field.</P></P></BLOCKQUOTE>
+
+<A NAME="ch09lev2sec4"></A>
+<H4 class="docSection2Title"> <TT>SCTP_PEER_ADDR_CHANGE</TT></H4>
+<BLOCKQUOTE><P><P class="docList">This notification indicates that one of the peer's addresses has experienced a change of state. This change may either be a failure, such as the destination is not responding when sent to, or a recovery, such as a destination that was in a failed state has recovered. The structure that accompanies an address change is as follows:</P><pre>
+
+</pre><pre>
+struct sctp_paddr_change {
+  u_int16_t spc_type;
+  u_int16_t spc_flags;
+  u_int32_t spc_length;
+  struct sockaddr_storage spc_aaddr;
+  u_int32_t spc_state;
+  u_int32_t spc_error;
+  sctp_assoc_t spc_assoc_id;
+};
+</pre><pre>
+</pre></P><P><P class="docList">The <span class="docEmphasis">spc_aaddr</span> field holds the address of the peer affected by this event. The <TT>spc_state</TT> field holds one of the values described in <A class="docLink" HREF="#ch09fig07">Figure 9.7</A>.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch09fig07"></A>Figure 9.7. SCTP peer address state notifications.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="433" HEIGHT="111" src="FILES/09fig07.gif" ALT="graphics/09fig07.gif"></p>
+
+</CENTER></P><P><P class="docList">When an address is declared <TT>SCTP_ADDR_UNREACHABLE</TT>, any data sent to that address will be rerouted to an alternate address. Note also that some of the states will only be available on SCTP implementations that support the dynamic address option (e.g., <TT>SCTP_ADDR_ADDED</TT> and <TT>SCTP_ADDR_REMOVED</TT>).</P><P class="docList">The <span class="docEmphasis">spc_error</span> field contains any notification error code to provide more information about the event, and <span class="docEmphasis">spc_assoc_id</span> holds the association identification.</P></P></BLOCKQUOTE>
+
+<A NAME="ch09lev2sec5"></A>
+<H4 class="docSection2Title"> <TT>SCTP_REMOTE_ERROR</TT></H4>
+<BLOCKQUOTE><P><P class="docList">A remote peer may send an operational error message to the local endpoint. These messages can indicate a variety of error conditions for the association. The entire error chunk will be passed to the application in wire format when this notification is enabled. The format of the message will be as follows:</P><pre>
+
+</pre><pre>
+struct sctp_remote_error {
+  u_int16_t sre_type;
+  u_int16_t sre_flags;
+  u_int32_t sre_length;
+  u_int16_t sre_error;
+  sctp_assoc_t sre_assoc_id;
+  u_int8_t sre_data[];
+};
+</pre><pre>
+</pre></P><P><P class="docList">The <span class="docEmphasis">sre_error</span> will hold one of the SCTP protocol error cause codes, <span class="docEmphasis">sre_assoc_id</span> will contain the association identification, and <span class="docEmphasis">sre_data</span> will hold the complete error in wire format.</P></P></BLOCKQUOTE>
+
+<A NAME="ch09lev2sec6"></A>
+<H4 class="docSection2Title"> <TT>SCTP_SEND_FAILED</TT></H4>
+<BLOCKQUOTE><P><P class="docList">When a message cannot be delivered to a peer, the message is sent back to the user through this notification. This notification is usually soon followed by an association failure notification. In most cases, the only way a message will not be delivered is if the association has failed. The only time a message failure will occur without an association failure is when the partial reliability extension of SCTP is being used.</P></P><P><P class="docList">When an error notification is sent, the following format will be read by the application:</P><pre>
+
+</pre><pre>
+struct sctp_send_failed {
+ u_int16_t ssf_type;
+ u_int16_t ssf_flags;
+ u_int32_t ssf_length;
+ u_int32_t ssf_error;
+ struct sctp_sndrcvinfo ssf_info;
+ sctp_assoc_t ssf_assoc_id;
+ u_int8_t ssf_data[];
+};
+</pre><pre>
+</pre></P></BLOCKQUOTE>
+<P class="docText"><span class="docEmphasis">ssf_flags</span> will be set to one of two values:</P>
+<UL><LI><P class="docList"><TT>SCTP_DATA_UNSENT</TT>, which indicates that the message could never be transmitted to the peer (e.g., flow control prevented the message from being sent before its lifetime expired), so the peer never received it</P></LI><LI><P class="docList"><TT>SCTP_DATA_SENT</TT>, which indicates that the data was transmitted to the peer at least once, but was never acknowledged. In this case, the peer <span class="docEmphasis">may</span> have received the message, but it was unable to acknowledge it.</P></LI></UL>
+<P class="docText">This distinction may be important to a transaction protocol, which might perform different actions to recover from a broken connection based on whether or not a given message might have been received. <span class="docEmphasis">ssf_error</span>, if not zero, holds an error code specific to this notification. The <span class="docEmphasis">ssf_info</span> field provides the information passed (if any) to the kernel when the data was sent (e.g., stream number, context, etc.). <span class="docEmphasis">ssf_assoc_id</span> holds the association identification, and <span class="docEmphasis">ssf_data</span> holds the undelivered message.</P>
+
+<A NAME="ch09lev2sec7"></A>
+<H4 class="docSection2Title"> <TT>SCTP_SHUTDOWN_EVENT</TT></H4>
+<BLOCKQUOTE><P><P class="docList">This notification is passed to an application when a peer sends a SHUTDOWN chunk to the local endpoint. This notification informs the application that no new data will be accepted on the socket. All currently queued data will be transmitted, and at the completion of that transmission, the association will be shut down. The notification format is as follows:</P><pre>
+
+</pre><pre>
+struct sctp_shutdown_event {
+  uint16_t sse_type;
+  uint16_t sse_flags;
+  uint32_t sse_length;
+  sctp_assoc_t sse_assoc_id;
+};
+</pre><pre>
+</pre></P><P><P class="docList"><span class="docEmphasis">sse_assoc_id</span> holds the association identification for the association that is shutting down and can no longer accept data.</P></P></BLOCKQUOTE>
+
+<A NAME="ch09lev2sec8"></A>
+<H4 class="docSection2Title"> <TT>SCTP_ADAPTION_INDICATION</TT></H4>
+<BLOCKQUOTE><P><P class="docList">Some implementations support an adaption layer indication parameter. This parameter is exchanged in the INIT and INIT-ACK to inform each peer what type of application adaption is being performed. The notification will have the following form:</P><pre>
+
+</pre><pre>
+struct sctp_adaption_event {
+  u_int16_t sai_type;
+  u_int16_t sai_flags;
+  u_int32_t sai_length;
+  u_int32_t sai_adaption_ind;
+  sctp_assoc_t sai_assoc_id;
+};
+</pre><pre>
+</pre></P><P><P class="docList">The <span class="docEmphasis">sai_assoc_id</span> identifies of association that this adaption layer notification. <span class="docEmphasis">sai_adaption_ind</span> is the 32-bit integer that the peer communicates to the local host in the INIT or INIT-ACK message. The outgoing adaption layer is set with the <TT>SCTP_ADAPTION_LAYER</TT> socket option (<A class="docLink" HREF="0131411551_ch07lev1sec10.html#ch07lev1sec10">Section 7.10</A>). The adaption layer INIT/INIT-ACK option is described in [Stewart et al. 2003b], and a sample usage of the option for remote direct memory access/direct data placement is described in [Stewart et al. 2003a].</P></P></BLOCKQUOTE>
+
+<A NAME="ch09lev2sec9"></A>
+<H4 class="docSection2Title"> <TT>SCTP_PARTIAL_DELIVERY_EVENT</TT></H4>
+<BLOCKQUOTE><P><P class="docList">The partial delivery application interface is used to transport large messages to the user via the socket buffer. Consider a user writing a single message of 4MB. A message of this size would tax or exhaust system resources. An SCTP implementation would fail to handle such a message unless the implementation had a mechanism to begin delivering the message before all of it arrived. When an implementation does this form of delivery, it is termed "<span class="docEmphasis">the partial delivery API</span>." The partial delivery API is invoked by the SCTP implementation sending data with the <TT>msg_flags</TT> field remaining clear until the last piece of the message is ready to be delivered. The last piece of the message will have the <TT>msg_flags</TT> set to <TT>MSG_EOR</TT>. Note that if an application is going to receive large messages, it should use either <TT>recvmsg</TT> or <TT>sctp_recvmsg</TT> so that the <TT>msg_flags</TT> field can be examined for this condition.</P></P></BLOCKQUOTE>
+<P class="docText">In some instances, the partial delivery API will need to communicate a status to the application. For example, if the partial delivery API needs to be aborted, the <TT>SCTP_PARTIAL_DELIVERY_EVENT</TT> notification must be sent to the receiving application. This notification has the following format:</P>
+<pre>
+
+</pre><pre>
+struct sctp_pdapi_event {
+  uint16_t pdapi_type;
+  uint16_t pdapi_flags;
+  uint32_t pdapi_length;
+  uint32_t pdapi_indication;
+  sctp_assoc_t pdapi_assoc_id;
+};
+</pre><pre>
+</pre>
+<P class="docText">The <span class="docEmphasis">pdapi_assoc_id</span> field identifies the association upon which the partial delivery API event has occurred. The <span class="docEmphasis">pdapi_indication</span> holds the event that has occurred. Currently, the only valid value found in this field is <TT>SCTP_PARTIAL_DELIVERY_ABORTED</TT>, which indicates that the currently active partial delivery has been aborted.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch09lev1sec13.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch09lev1sec15.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

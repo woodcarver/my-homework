@@ -1,0 +1,40 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="17.2 'ioctl' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch17lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch17lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch17lev1sec2"></A>
+<H3 class="docSection1Title">17.2 <TT>ioctl</TT> Function</H3>
+<P class="docText">This function affects an open file referenced by the <span class="docEmphasis">fd</span> argument.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;unistd.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int ioctl(int</TT> <span class="docEmphasis">fd</span>, <TT>int</TT> <span class="docEmphasis">request</span>, <TT>... /* void *</TT><span class="docEmphasis">arg</span> <TT>*/ );</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns:0 if OK, -1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The third argument is always a pointer, but the type of pointer depends on the <span class="docEmphasis">request</span>.</P>
+<BLOCKQUOTE><P><P class="docList">4.4BSD defines the second argument to be an <TT>unsigned long</TT> instead of an <TT>int</TT>, but that is not a problem since header files define the constants that are used for this argument. As long as the prototype is in scope (i.e., the program using <TT>ioctl</TT> has included <TT>&lt;unistd.h&gt;</TT>), the correct type for the system will be used.</P></P><P><P class="docList">Some implementations specify the third argument as a <TT>void *</TT> pointer instead of the ANSI C ellipsis notation.</P></P><P><P class="docList">There is no standard for the header to include to define the function prototype for <TT>ioctl</TT> since it is not standardized by POSIX. Many systems define it in <TT>&lt;unistd.h&gt;</TT>, as we show, but traditional BSD systems define it in <TT>&lt;sys/ioctl.h&gt;</TT>.</P></P></BLOCKQUOTE>
+<P class="docText">We can divide the <span class="docEmphasis">requests</span> related to networking into six categories:</P>
+<UL><LI><P class="docList">Socket operations</P></LI><LI><P class="docList">File operations</P></LI><LI><P class="docList">Interface operations</P></LI><LI><P class="docList">ARP cache operations</P></LI><LI><P class="docList">Routing table operations</P></LI><LI><P class="docList">STREAMS system (<A class="docLink" HREF="0131411551_ch31.html#ch31">Chapter 31</A>)</P></LI></UL>
+<P class="docText">Recall from <A class="docLink" HREF="0131411551_ch07lev1sec11.html#ch07fig20">Figure 7.20</A> that not only do some of the <TT>ioctl</TT> operations overlap some of the <TT>fcntl</TT> operations (e.g., setting a socket to nonblocking), but there are also some operations that can be specified more than one way using <TT>ioctl</TT> (e.g., setting the process group ownership of a socket).</P>
+<P class="docText"><A class="docLink" HREF="#ch17fig01">Figure 17.1</A> lists the <span class="docEmphasis">requests</span>, along with the datatype of what the <span class="docEmphasis">arg</span> address must point to. The following sections describe these requests in more detail.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch17fig01"></A>Figure 17.1. Summary of networking <TT>ioctl</TT> requests.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="429" src="FILES/17fig01.gif" ALT="graphics/17fig01.gif"></p>
+
+</CENTER>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch17lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch17lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

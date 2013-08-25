@@ -1,0 +1,30 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="22.3 Datagram Truncation"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch22lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch22lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch22lev1sec3"></A>
+<H3 class="docSection1Title">22.3 Datagram Truncation</H3>
+<P class="docText">On BSD-derived systems, when a UDP datagram arrives that is larger than the application's buffer, <TT>recvmsg</TT> sets the <TT>MSG_TRUNC</TT> flag in the <TT>msg_flags</TT> member of the <TT>msghdr</TT> structure (<A class="docLink" HREF="0131411551_ch14lev1sec5.html#ch14fig07">Figure 14.7</A>). All Berkeley-derived implementations that support the <TT>msghdr</TT> structure with the <TT>msg_flags</TT> member provide this notification.</P>
+<BLOCKQUOTE><P><P class="docList">This is an example of a flag that must be returned from the kernel to the process. We mentioned in <A class="docLink" HREF="0131411551_ch14lev1sec3.html#ch14lev1sec3">Section 14.3</A> that one design problem with the <TT>recv</TT> and <TT>recvfrom</TT> functions is that their <span class="docEmphasis">flags</span> argument is an integer, which allows flags to be passed from the process to the kernel, but not vice versa.</P></P></BLOCKQUOTE>
+<P class="docText">Unfortunately, not all implementations handle a larger-than-expected UDP datagram in this fashion. There are three possible scenarios:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">Discard the excess bytes and return the <TT>MSG_TRUNC</TT> flag to the application. This requires that the application call <TT>recvmsg</TT> to receive the flag.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Discard the excess bytes, but do not tell the application.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Keep the excess bytes and return them in subsequent read operations on the socket.</P><BLOCKQUOTE><P><P class="docList">The POSIX specification specifies the first type of behavior: discarding the excess bytes and setting the <TT>MSG_TRUNC</TT> flag. Early releases of SVR4 exhibited the third type of behavior.</P></P></BLOCKQUOTE></span></LI></OL></span>
+<P class="docText">Since there are such variations in how implementations handle datagrams that are larger than the application's receive buffer, one way to detect the problem is to always allocate an application buffer that is one byte greater than the largest datagram the application should ever receive. If a datagram is ever received whose length equals this buffer, consider it an error.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch22lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch22lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

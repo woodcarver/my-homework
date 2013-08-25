@@ -1,0 +1,285 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="19.4 Creating a Static Security Association (SA)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch19lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch19lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch19lev1sec4"></A>
+<H3 class="docSection1Title">19.4 Creating a Static Security Association (SA)</H3>
+<P class="docText">The most straightforward method of adding an SA is to send an <TT>SADB_ADD</TT> message with all parameters filled in, presumably manually specified. Although manual specification of keying material does not lead easily to key changes, which are crucial to avoid cryptanalysis attacks, it is quite easy to configure: Alice and Bob agree on a key and algorithms to use out-of-band, and proceed to use them. We show the steps needed to create and send an <TT>SADB_ADD</TT> message.</P>
+<P class="docText">The <TT>SADB_ADD</TT> message requires three extensions: SA, address and key. It can also optionally contain other extensions: lifetime, identity, and sensitivity. We describe the required extensions first. The SA extension is described by the <TT>sadb_sa</TT> structure, shown in <A class="docLink" HREF="#ch19fig06">Figure 19.6</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch19fig06"></A>Figure 19.6 SA Extension.</H5>
+
+<PRE>
+struct sadb_sa {
+  u_int16_t sadb_sa_len;      /* length of extension / 8 */
+  u_int16_t sadb_sa_exttype;  /* SADB_EXT_SA */
+  u_int32_t sadb_sa_spi;      /* Security Parameters Index (SPI) */
+  u_int8_t  sadb_sa_replay;   /* replay window size, or zero */
+  u_int8_t  sadb_sa_state;    /* SA state, see <A class="docLink" HREF="#ch19fig07">Figure 19.7</A> */
+  u_int8_t  sadb_sa_auth;     /* authentication algorithm, see <A class="docLink" HREF="#ch19fig08">Figure 19.8</A> */
+  u_int8_t  sadb_sa_encrypt;  /* encryption algorithm, see <A class="docLink" HREF="#ch19fig08">Figure 19.8</A> */
+  u_int32_t sadb_sa_flags;    /* bitmask of flags */
+};
+</PRE>
+
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch19fig07"></A>Figure 19.7. Possible states for SAs.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="463" HEIGHT="103" src="FILES/19fig07.gif" ALT="graphics/19fig07.gif"></p>
+
+</CENTER>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch19fig08"></A>Figure 19.8. Authentication and Encryption algorithms.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="379" HEIGHT="156" src="FILES/19fig08.gif" ALT="graphics/19fig08.gif"></p>
+
+</CENTER>
+<P class="docText">The <TT>sadb_sa_spi</TT> field contains the <span class="docEmphasis">Security Parameters Index</span>, or SPI. This value, combined with the destination address and protocol in use (e.g., IPsec AH), uniquely identifies an SA. When receiving a packet, this value is used to look up the SA for that packet; when sending a packet, this value is inserted into the packet for the other end to use. It has no other meaning, so these values can be allocated sequentially, randomly, or using any method the destination system prefers. The <TT>sadb_sa_reply</TT> field specifies the window size for replay protection. Since static keying prevents replay protection, we will set this to zero. The <TT>sadb_sa_state</TT> field varies during the life cycle of a dynamically created SA, using the values in <A class="docLink" HREF="#ch19fig07">Figure 19.7</A>. However, manually created SAs spend all their time in the <TT>SADB_SASTATE_MATURE</TT> state. We will see the other states in <A class="docLink" HREF="0131411551_ch19lev1sec5.html#ch19lev1sec5">Section 19.5</A>.</P>
+<P class="docText">The <TT>sadb_sa_auth</TT> and <TT>sadb_sa_encrypt</TT> fields specify the authentication and encryption algorithms for this SA. Possible values for these fields are listed in <A class="docLink" HREF="#ch19fig08">Figure 19.8</A>. There is only one flag value currently defined for the <TT>sadb_sa_flags</TT> field, <TT>SADB_SAFLAGS_PFS</TT>. This flag requests <span class="docEmphasis">perfect forward security</span>, that is, the value of this key must not be dependent on any previous keys or some master key. This flag value is used when requesting keys from a key management application and is not used when adding static associations.</P>
+<P class="docText">The next required extensions for an <TT>SADB_ADD</TT> command are the addresses. Source and destination addresses, specified with <TT>SADB_EXT_ADDRESS_SRC</TT> and <TT>SADB_EXT_ADDRESS_DST</TT>, respectively, are required. A proxy address, specified with <TT>SADB_EXT_ADDRESS_PROXY</TT>, is optional. For more details on proxy addresses, see RFC 2367 [McDonald, Metz, and Phan 1998]. Addresses are specified using a <TT>sadb_address</TT> extension, shown in <A class="docLink" HREF="#ch19fig09">Figure 19.9</A>. The <TT>sadb_address_exttype</TT> field determines what type of address this extension is supplying. The <TT>sadb_address_proto</TT> field specifies the IP protocol to be matched for this SA, or 0 to match all protocols. The <TT>sadb_address_prefixlen</TT> field describes the prefix of the address that is significant. This permits an SA to match more than one address. A <TT>sockaddr</TT> of the appropriate family (e.g., <TT>sockaddr_in</TT>, <TT>sockaddr_in6</TT>) follows the <TT>sadb_address</TT> structure. The port number in this <TT>sockaddr</TT> is significant only if the <TT>sadb_address_proto</TT> specifies a protocol that supports port numbers (e.g., <TT>IPPROTO_TCP</TT>).</P>
+
+<H5 class="docExampleTitle"><A NAME="ch19fig09"></A>Figure 19.9 Address extension.</H5>
+
+<PRE>
+struct sadb_address {
+  u_int16_t sadb_address_len;        /* length of extension + address / 8 */
+  u_int16_t sadb_address_exttype;    /* SADB_EXT_ADDRESS_{SRC,DST,PROXY} */
+  u_int8_t  sadb_address_proto;      /* IP protocol, or 0 for all */
+  u_int8_t  sadb_address_prefixlen;  /* # significant bits in address */
+  u_int16_t sadb_address_reserved;   /* reserved for extension */
+};
+                                     /* followed by appropriate sockaddr */
+</PRE>
+
+<P class="docText">The final required extensions for the <TT>SADB_ADD</TT> message are the authentication and encryption keys, specified with the <TT>SADB_EXT_KEY_AUTH</TT> and <TT>SADB_EXT_KEY_ ENCRYPT</TT> extensions, which are represented by a <TT>sadb_key</TT> structure (<A class="docLink" HREF="#ch19fig10">Figure 19.10</A>). The key extension is very straightforward; the <TT>sadb_key_exttype</TT> member defines whether it is an authentication or encryption key, the <TT>sadb_key_bits</TT> member specifies the number of bits in the key, and the key itself follows the <TT>sadb_key</TT> structure.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch19fig10"></A>Figure 19.10 Key extension.</H5>
+
+<PRE>
+struct sadb_key {
+  u_int16_t sadb_key_len;       /* length of extension + key / 8 */
+  u_int16_t sadb_key_exttype;   /* SADB_EXT_KEY_{AUTH, ENCRYPT} */
+  u_int16_t sadb_key_bits;      /* # bits in key */
+  u_int16_t sadb_key_reserved;  /* reserved for extension */
+};
+                                /* followed by key data */
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch19fig11"></A>Figure 19.11 Program to issue <TT>SADB_ADD</TT> command on key management socket.</H5>
+<P class="docText"><span class="docEmphasis">key/add.c</span></P>
+
+<PRE>
+ 33 void
+ 34 sadb_add(struct sockaddr *src, struct sockaddr *dst, int type, int alg,
+ 35          int spi, int keybits, unsigned char *keydata)
+ 36 {
+ 37     int     s;
+ 38     char    buf[4096], *p;     /* XXX */
+ 39     struct sadb_msg *msg;
+ 40     struct sadb_sa *saext;
+ 41     struct sadb_address *addrext;
+ 42     struct sadb_key *keyext;
+ 43     int     len;
+ 44     int     mypid;
+
+ 45     s = Socket(PF_KEY, SOCK_RAW, PF_KEY_V2);
+
+ 46     mypid = getpid();
+
+ 47     /* Build and write SADB_ADD request */
+ 48     bzero(&amp;buf, sizeof(buf));
+ 49     p = buf;
+ 50     msg = (struct sadb_msg *) p;
+ 51     msg-&gt;sadb_msg_version = PF_KEY_V2;
+ 52     msg-&gt;sadb_msg_type = SADB_ADD;
+ 53     msg-&gt;sadb_msg_satype = type;
+ 54     msg-&gt;sadb_msg_pid = getpid();
+ 55     len = sizeof(*msg);
+ 56     p += sizeof(*msg);
+
+ 57     saext = (struct sadb_sa *) p;
+ 58     saext-&gt;sadb_sa_len = sizeof(*saext) / 8;
+ 59     saext-&gt;sadb_sa_exttype = SADB_EXT_SA;
+ 60     saext-&gt;sadb_sa_spi = htonl(spi);
+ 61     saext-&gt;sadb_sa_replay = 0; /* no replay protection with static keys */
+ 62     saext-&gt;sadb_sa_state = SADB_SASTATE_MATURE;
+ 63     saext-&gt;sadb_sa_auth = alg;
+ 64     saext-&gt;sadb_sa_encrypt = SADB_EALG_NONE;
+ 65     saext-&gt;sadb_sa_flags = 0;
+ 66     len += saext-&gt;sadb_sa_len * 8;
+ 67     p += saext-&gt;sadb_sa_len * 8;
+
+ 68     addrext = (struct sadb_address *) p;
+ 69     addrext-&gt;sadb_address_len = (sizeof(*addrext) + salen(src) + 7) / 8;
+ 70     addrext-&gt;sadb_address_exttype = SADB_EXT_ADDRESS_SRC;
+ 71     addrext-&gt;sadb_address_proto = 0;     /* any protocol */
+ 72     addrext-&gt;sadb_address_prefixlen = prefix_all(src);
+ 73     addrext-&gt;sadb_address_reserved = 0;
+ 74     memcpy(addrext + 1, src, salen(src));
+ 75     len += addrext-&gt;sadb_address_len * 8;
+ 76     p += addrext-&gt;sadb_address_len * 8;
+
+ 77     addrext = (struct sadb_address *) p;
+ 78     addrext-&gt;sadb_address_len = (sizeof(*addrext) + salen(dst) + 7) / 8;
+ 79     addrext-&gt;sadb_address_exttype = SADB_EXT_ADDRESS_DST;
+ 80     addrext-&gt;sadb_address_proto = 0;     /* any protocol */
+ 81     addrext-&gt;sadb_address_prefixlen = prefix_all(dst);
+ 82     addrext-&gt;sadb_address_reserved = 0;
+ 83     memcpy(addrext + 1, dst, salen(dst));
+ 84     len += addrext-&gt;sadb_address_len * 8;
+ 85     p += addrext-&gt;sadb_address_len * 8;
+
+ 86     keyext = (struct sadb_key *) p;
+ 87     /* "+7" handles alignment requirements */
+ 88     keyext-&gt;sadb_key_len = (sizeof(*keyext) + (keybits / 8) + 7) / 8;
+ 89     keyext-&gt;sadb_key_exttype = SADB_EXT_KEY_AUTH;
+ 90     keyext-&gt;sadb_key_bits = keybits;
+ 91     keyext-&gt;sadb_key_reserved = 0;
+ 92     memcpy(keyext + 1, keydata, keybits / 8);
+ 93     len += keyext-&gt;sadb_key_len * 8;
+ 94     p += keyext-&gt;sadb_key_len * 8;
+
+ 95     msg-&gt;sadb_msg_len = len / 8;
+ 96     printf("Sending add message:\n");
+ 97     print_sadb_msg(buf, len);
+ 98     Write(s, buf, len);
+
+ 99     printf("\nReply returned:\n");
+100     /* Read and print SADB_ADD reply, discarding any others */
+101     for ( ; ; ) {
+102         int     msglen;
+103         struct sadb_msg *msgp;
+
+104         msglen = Read(s, &amp;buf, sizeof(buf));
+105         msgp = (struct sadb_msg *) &amp;buf;
+106         if (msgp-&gt;sadb_msg_pid == mypid &amp;&amp; msgp-&gt;sadb_msg_type == SADB_ADD) {
+107             print_sadb_msg(msgp, msglen);
+108             break;
+109         }
+110     }
+111     close(s);
+112 }
+</PRE>
+
+<P class="docText">We show our program to add a static SADB entry in <A class="docLink" HREF="#ch19fig11">Figure 19.11</A>.</P>
+<A NAME="ch19lev3sec8"></A>
+<H4 class="docSection2Title"> Open <TT>PF_KEY</TT> socket and save PID</H4>
+<p class="docText"><span class="docEmphasis"><TT>55–56</TT></span> As before, we open a <TT>PF_KEY</TT> socket and save our PID for later.</p>
+
+<A NAME="ch19lev3sec9"></A>
+<H4 class="docSection2Title"> Build common message header</H4>
+<p class="docText"><span class="docEmphasis"><TT>47–56</TT></span> We build the common message header for the <TT>SADB_ADD</TT> message. We don't set the <TT>sadb_msg_len</TT> element until just before writing the message since it must reflect the entire length of the message. The <TT>len</TT> variable keeps a running length of the message, and the <TT>p</TT> pointer always points to the first unused byte in the buffer.</p>
+
+<A NAME="ch19lev3sec10"></A>
+<H4 class="docSection2Title"> Append SA extension</H4>
+<p class="docText"><span class="docEmphasis"><TT>57–67</TT></span> Next, we add the required SA extension (<A class="docLink" HREF="#ch19fig06">Figure 19.6</A>). The <TT>sadb_sa_spi</TT> field must be in network byte order, so we call <TT>htonl</TT> on the host order value that was passed to the function. We turn off replay protection and set the SA state (<A class="docLink" HREF="#ch19fig07">Figure 19.7</A>) to <TT>SADB_SASTATE_MATURE</TT>. We set the authentication algorithm to the algorithm value specified on the command line, and specify no encryption with <TT>SADB_EALG_NONE</TT>.</p>
+
+<A NAME="ch19lev3sec11"></A>
+<H4 class="docSection2Title"> Append source address</H4>
+<p class="docText"><span class="docEmphasis"><TT>68–76</TT></span> We add the source address to the message as an <TT>SADB_EXT_ADDRESS_SRC</TT> extension. We set the protocol to 0, meaning that this association applies to all protocols. We set the prefix length to the appropriate length for the IP version, that is, 32 bits for IPv4 and 128 bits for IPv6. The calculation of the length field adds 7 before dividing by 8, which ensures that the length reflects the padding required to pad out to a 64-bit boundary as required for all <TT>PF_KEY</TT> extensions. The <TT>sockaddr</TT> is copied after the extension header.</p>
+
+<A NAME="ch19lev3sec12"></A>
+<H4 class="docSection2Title"> Append destination address</H4>
+<p class="docText"><span class="docEmphasis"><TT>77–85</TT></span> The destination address is added as an <TT>SADB_EXT_ADDRESS_DST</TT> extension in exactly the same way as the source address.</p>
+
+<A NAME="ch19lev3sec13"></A>
+<H4 class="docSection2Title"> Append key</H4>
+<p class="docText"><span class="docEmphasis"><TT>86–94</TT></span> We add the authentication key to the message as an <TT>SADB_EXT_KEY_AUTH</TT> extension. We calculate the length field the same way as for the addresses, to add the required padding for the variable-length key. We set the number of bits and copy the key data to follow the extension header.</p>
+
+<A NAME="ch19lev3sec14"></A>
+<H4 class="docSection2Title"> Write message</H4>
+<p class="docText"><span class="docEmphasis"><TT>95–98</TT></span> We print out the message with our <TT>print_sadb_msg</TT> function, and write it to the socket.</p>
+
+<A NAME="ch19lev3sec15"></A>
+<H4 class="docSection2Title"> Read reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>99–111</TT></span> We read messages from the socket until we receive one that is addressed to our PID and is an <TT>SADB_ADD</TT> message. We then print that message with the <TT>print_sadb_msg</TT> function and exit.</p>
+
+<A NAME="ch19lev2sec2"></A>
+<H4 class="docSection2Title"> Example</H4>
+<P class="docText">We run our program to send an <TT>SADB_ADD</TT> message for traffic between 127.0.0.1 and 127.0.0.1; in other words, on the local system.</P>
+<pre>
+
+</pre><pre>
+macosx % <span class="docEmphStrong">add 127.0.0.1 127.0.0.1 HMAC-SHA-1-96 160 \ 
+                               0123456789abcdef0123456789abcdef01234567</span>
+Sending add message:
+SADB Message Add, errno 0, satype IPsec AH, seq 0, pid 6246
+ SA: SPI=39030 Replay Window=0 State=Mature
+  Authentication Algorithm: HMAC-SHA-1
+  Encryption Algorithm: None
+ Source address:     127.0.0.1/32
+ Dest address:     127.0.0.1/32
+ Authentication key, 160 bits: 0x0123456789abcdef0123456789abcdef01234567
+
+Reply returned:
+SADB Message Add, errno 0, satype IPsec AH, seq 0, pid 6246
+ SA: SPI=39030 Replay Window=0 State=Mature
+  Authentication Algorithm: HMAC-SHA-1
+  Encryption Algorithm: None
+ Source address:     127.0.0.1/32
+ Dest address:     127.0.0.1/32
+</pre><pre>
+</pre>
+<P class="docText">Note that the reply echoes the request without the key. This is because the reply is sent to all <TT>PF_KEY</TT> sockets, but different <TT>PF_KEY</TT> sockets may belong to sockets in different protection domains, and keying data should not cross protection domains. After adding the SA to the database, we ping 127.0.0.1 to cause the SA to be used, then dump the database to see what was added.</P>
+<pre>
+
+</pre><pre>
+macosx % <span class="docEmphStrong">dump</span>
+Sending dump message:
+SADB Message Dump, errno 0, satype Unspecified, seq 0, pid 6283
+
+Messages returned:
+SADB Message Dump, errno 0, satype IPsec AH, seq 0, pid 6283
+ SA: SPI=39030 Replay Window=0 State=Mature
+  Authentication Algorithm: HMAC-SHA-1
+  Encryption Algorithm: None
+ [unknown extension 19]
+ Current lifetime:
+  36 allocations, 0 bytes
+  added at Thu Jun  5 21:01:31 2003, first used at Thu Jun 5 21:15:07 2003
+ Source address:   127.0.0.1/128 (IP proto 255)
+ Dest address:   127.0.0.1/128 (IP proto 255)
+ Authentication key, 160 bits: 0x0123456789abcdef0123456789abcdef01234567
+</pre><pre>
+</pre>
+<P class="docText">We see from this dump that the kernel has changed our IP protocol zero to 255. This is an artifact of this implementation, not a general property of <TT>PF_KEY</TT> sockets. In addition, we see that the kernel changed the prefix length from 32 to 128. This appears to be a confusing issue between IPv4 and IPv6 within the kernel. The kernel returns an extension (numbered 19) that our dump program doesn't understand. Unknown extensions are skipped using the length field. A lifetime extension (<A class="docLink" HREF="#ch19fig12">Figure 19.12</A>) is returned containing the current lifetime information of the SA.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch19fig12"></A>Figure 19.12 Lifetime extension.</H5>
+
+<PRE>
+struct sadb_lifetime {
+  u_int16_t sadb_lifetime_len;         /* length of extension / 8 */
+  u_int16_t sadb_lifetime_exttype;     /* SADB_EXT_LIFETIME_{SOFT, HARD, CURRENT} */
+  u_int32_t sadb_lifetime_allocations; /* # connections, endpoints, or flows */
+  u_int64_t sadb_lifetime_bytes;       /* # bytes */
+  u_int64_t sadb_lifetime_addtime;     /* time of creation, or time from
+                                          creation to expiration */
+  u_int64_t sadb_lifetime_usetime;     /* time first used, or time from
+                                          first use to expiration */
+};
+</PRE>
+
+<P class="docText">There are three different lifetime extensions. The <TT>SADB_LIFETIME_SOFT</TT> and <TT>SADB_LIFETIME_HARD</TT> extensions specify soft and hard lifetimes for an SA, respectively. The kernel sends an <TT>SADB_EXPIRE</TT> message when the soft lifetime has been reached; the SA will not be used after its hard lifetime has been reached. The <TT>SADB_LIFETIME_CURRENT</TT> extension is returned in <TT>SADB_DUMP</TT>, <TT>SADB_EXPIRE</TT>, and <TT>SADB_GET</TT> responses to describe the values for the current association.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch19lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch19lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

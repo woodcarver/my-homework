@@ -1,0 +1,85 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="14.5 'recvmsg' and 'sendmsg' Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch14lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch14lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch14lev1sec5"></A>
+<H3 class="docSection1Title">14.5 <TT>recvmsg</TT> and <TT>sendmsg</TT> Functions</H3>
+<P class="docText">These two functions are the most general of all the I/O functions. Indeed, we could replace all calls to <TT>read</TT>, <TT>readv</TT>, <TT>recv</TT>, and <TT>recvfrom</TT> with calls to <TT>recvmsg</TT>. Similarly all calls to the various output functions could be replaced with calls to <TT>sendmsg</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t recvmsg(int</TT> <span class="docEmphasis">sockfd</span>, <TT>struct msghdr *</TT><span class="docEmphasis">msg</span>, <TT>int</TT> <span class="docEmphasis">flags</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t sendmsg(int</TT> <span class="docEmphasis">sockfd</span>, <TT>struct msghdr *</TT><span class="docEmphasis">msg</span>, <TT>int</TT> <span class="docEmphasis">flags</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: number of bytes read or written if OK, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Both functions package most arguments into a <TT>msghdr</TT> structure.</P>
+<pre>
+
+</pre><pre>
+struct msghdr {
+  void         *msg_name;        /* protocol address */
+  socklen_t     msg_namelen;     /* size of protocol address */
+  struct iovec *msg_iov;         /* scatter/gather array */
+  int           msg_iovlen;      /* # elements in msg_iov */
+  void         *msg_control;     /* ancillary data (cmsghdr struct) */
+  socklen_t     msg_controllen;  /* length of ancillary data */
+  int           msg_flags;       /* flags returned by recvmsg() */
+};
+</pre><pre>
+</pre>
+<BLOCKQUOTE><P><P class="docList">The <TT>msghdr</TT> structure that we show is the one specified in POSIX. Some systems still use an older <TT>msghdr</TT> structure that originated with 4.2BSD. This older structure does not have the <TT>msg_flags</TT> member, and the <TT>msg_control</TT> and <TT>msg_controllen</TT> members are named <TT>msg_accrights</TT> and <TT>msg_accrightslen</TT>. The newer form of the <TT>msghdr</TT> structure is often available using conditional compilation flags. The only form of ancillary data supported by the older structure is the passing of file descriptors (called access rights).</P></P></BLOCKQUOTE>
+<P class="docText">The <TT>msg_name</TT> and <TT>msg_namelen</TT> members are used when the socket is not connected (e.g., an unconnected UDP socket). They are similar to the fifth and sixth arguments to <TT>recvfrom</TT> and <TT>sendto: msg_name</TT> points to a socket address structure in which the caller stores the destination's protocol address for <TT>sendmsg</TT>, or in which <TT>recvmsg</TT> stores the sender's protocol address. If a protocol address does not need to be specified (e.g., a TCP socket or a connected UDP socket), <TT>msg_name</TT> should be set to a null pointer. <TT>msg_namelen</TT> is a value for <TT>sendmsg</TT>, but a value-result for <TT>recvmsg</TT>.</P>
+<P class="docText">The <TT>msg_iov</TT> and <TT>msg_iovlen</TT> members specify the array of input or output buffers (the array of <TT>iovec</TT> structures), similar to the second and third arguments for <TT>readv</TT> or <TT>writev</TT>. The <TT>msg_control</TT> and <TT>msg_controllen</TT> members specify the location and size of the optional ancillary data. <TT>msg_controllen</TT> is a value-result argument for <TT>recvmsg</TT>. We will describe ancillary data in <A class="docLink" HREF="0131411551_ch14lev1sec6.html#ch14lev1sec6">Section 14.6</A>.</P>
+<P class="docText">With <TT>recvmsg</TT> and <TT>sendmsg</TT>, we must distinguish between two flag variables: the <span class="docEmphasis">flags</span> argument, which is passed by value, and the <TT>msg_flags</TT> member of the <TT>msghdr</TT> structure, which is passed by reference (since the address of the structure is passed to the function).</P>
+<UL><LI><P class="docList">The <TT>msg_flags</TT> member is used only by <TT>recvmsg</TT>. When <TT>recvmsg</TT> is called, the <span class="docEmphasis">flags</span> argument is copied into the <TT>msg_flags</TT> member (p. 502 of TCPv2) and this value is used by the kernel to drive its receive processing. This value is then updated based on the result of <TT>recvmsg</TT>.</P></LI><LI><P class="docList">The <TT>msg_flags</TT> member is ignored by <TT>sendmsg</TT> because this function uses the <span class="docEmphasis">flags</span> argument to drive its output processing. This means if we want to set the <TT>MSG_DONTWAIT</TT> flag in a call to <TT>sendmsg</TT>, we set the <span class="docEmphasis">flags</span> argument to this value; setting the <TT>msg_flags</TT> member to this value has no effect.</P></LI></UL>
+<P class="docText"><A class="docLink" HREF="#ch14fig07">Figure 14.7</A> summarizes the flags that are examined by the kernel for both the input and output functions, as well as the <TT>msg_flags</TT> that might be returned by <TT>recvmsg</TT>. There is no column for <TT>sendmsg msg_flags</TT> because, as we mentioned, it is not used.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig07"></A>Figure 14.7. Summary of input and output flags by various I/O functions.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="440" HEIGHT="240" src="FILES/14fig07.gif" ALT="graphics/14fig07.gif"></p>
+
+</CENTER>
+<P class="docText">The first four flags are only examined and never returned; the next two are both examined and returned; and the last four are only returned. The following comments apply to the six flags returned by <TT>recvmsg</TT>:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_BCAST</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is relatively new, supported by at least BSD, and is returned if the datagram was received as a link-layer broadcast or with a destination IP address that is a broadcast address. This flag is a better way of determining if a UDP datagram was sent to a broadcast address, compared to the <TT>IP_RECVDSTADDR</TT> socket option.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_MCAST</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is also a fairly recent addition, supported by at least BSD, and is returned if the datagram was received as a link-layer multicast.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_TRUNC</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is returned if the datagram was truncated; in other words, the kernel has more data to return than the process has allocated room for (the sum of all the <TT>iov_len</TT> members). We will discuss this more in <A class="docLink" HREF="0131411551_ch22lev1sec3.html#ch22lev1sec3">Section 22.3</A>.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_CTRUNC</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is returned if the ancillary data was truncated; in other words, the kernel has more ancillary data to return than the process has allocated room for (<TT>msg_controllen</TT>).</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_EOR</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is cleared if the returned data does not end a logical record; the flag is turned on if the returned data ends a logical record. TCP does <span class="docEmphasis">not</span> use this flag since it is a byte-stream protocol.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_OOB</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is <span class="docEmphasis">never</span> returned for TCP out-of-band data. This flag is returned by other protocol suites (e.g., the OSI protocols).</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>MSG_NOTIFICATON</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">This flag is returned for SCTP receivers to indicate that the message read is an event notification, not a data message.</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Implementations might return some of the input <span class="docEmphasis">flags</span> in the <TT>msg_flags</TT> member, so we should examine only those flag values we are interested in (e.g., the last six in <A class="docLink" HREF="#ch14fig07">Figure 14.7</A>).</P>
+<P class="docText"><A class="docLink" HREF="#ch14fig08">Figure 14.8</A> shows a <TT>msghdr</TT> structure and the various information it points to. We assume in this figure that the process is about to call <TT>recvmsg</TT> for a UDP socket.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig08"></A>Figure 14.8. Data structures when <TT>recvmsg</TT> is called for a UDP socket.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="254" src="FILES/14fig08.gif" ALT="graphics/14fig08.gif"></p>
+
+</CENTER>
+<P class="docText">Sixteen bytes are allocated for the protocol address and 20 bytes are allocated for the ancillary data. An array of three <TT>iovec</TT> structures is initialized: The first specifies a 100-byte buffer, the second a 60-byte buffer, and the third an 80-byte buffer. We also assume that the <TT>IP_RECVDSTADDR</TT> socket option has been set for the socket, to receive the destination IP address from the UDP datagram.</P>
+<P class="docText">We next assume that a 170-byte UDP datagram arrives from 192.6.38.100, port 2000, destined for our UDP socket with a destination IP address of 206.168.112.96. <A class="docLink" HREF="#ch14fig09">Figure 14.9</A> shows all the information in the <TT>msghdr</TT> structure when <TT>recvmsg</TT> returns.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig09"></A>Figure 14.9. Update of <A class="docLink" HREF="#ch14fig08">Figure 14.8</A> when <TT>recvmsg</TT> returns.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="263" src="FILES/14fig09.gif" ALT="graphics/14fig09.gif"></p>
+
+</CENTER>
+<P class="docText">The shaded fields are modified by <TT>recvmsg</TT>. The following items have changed from <A class="docLink" HREF="#ch14fig08">Figure 14.8</A> to <A class="docLink" HREF="#ch14fig09">Figure 14.9</A>:</P>
+<UL><LI><P class="docList">The buffer pointed to by <TT>msg_name</TT> has been filled in as an Internet socket address structure, containing the source IP address and source UDP port from the received datagram.</P></LI><LI><P class="docList"><TT>msg_namelen</TT>, a value-result argument, is updated with the amount of data stored in <TT>msg_name</TT>. Nothing changes since its value before the call was 16 and its value when <TT>recvmsg</TT> returns is also 16.</P></LI><LI><P class="docList">The first 100 bytes of data are stored in the first buffer; the next 60 bytes are stored in the second buffer; and the final 10 bytes are stored in the third buffer. The last 70 bytes of the final buffer are not modified. The return value of the <TT>recvmsg</TT> function is the size of the datagram, 170.</P></LI><LI><P class="docList">The buffer pointed to by <TT>msg_control</TT> is filled in as a <TT>cmsghdr</TT> structure. (We will say more about ancillary data in <A class="docLink" HREF="0131411551_ch14lev1sec6.html#ch14lev1sec6">Section 14.6</A> and more about this particular socket option in <A class="docLink" HREF="0131411551_ch22lev1sec2.html#ch22lev1sec2">Section 22.2</A>.) The <TT>cmsg_len</TT> is 16; <TT>cmsg_level</TT> is <TT>IPPROTO_IP</TT>; <TT>cmsg_type</TT> is <TT>IP_RECVDSTADDR</TT>; and the next 4 bytes contain the destination IP address from the received UDP datagram. The final 4 bytes of the 20-byte buffer we supplied to hold the ancillary data are not modified.</P></LI><LI><P class="docList">The <TT>msg_controllen</TT> member is updated with the actual amount of ancillary data that was stored. It is also a value-result argument and its result on return is 16.</P></LI><LI><P class="docList">The <TT>msg_flags</TT> member is updated by <TT>recvmsg</TT>, but there are no flags to return to the process.</P></LI></UL>
+<P class="docText"><A class="docLink" HREF="#ch14fig10">Figure 14.10</A> summarizes the differences among the five groups of I/O functions we described.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig10"></A>Figure 14.10. Comparison of the five groups of I/O functions.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="115" src="FILES/14fig10.gif" ALT="graphics/14fig10.gif"></p>
+
+</CENTER>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch14lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch14lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

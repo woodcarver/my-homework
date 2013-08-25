@@ -1,0 +1,182 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="26.4 TCP Echo Server Using Threads"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch26lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch26lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch26lev1sec4"></A>
+<H3 class="docSection1Title">26.4 TCP Echo Server Using Threads</H3>
+<P class="docText">We now redo our TCP echo server from <A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05fig02">Figure 5.2</A> using one thread per client instead of one child process per client. We also make it protocol-independent, using our <TT>tcp_listen</TT> function. <A class="docLink" HREF="#ch26fig03">Figure 26.3</A> shows the server.</P>
+<A NAME="ch26lev3sec7"></A>
+<H4 class="docSection2Title"> Create thread</H4>
+<p class="docText"><span class="docEmphasis"><TT>17–21</TT></span> When <TT>accept</TT> returns, we call <TT>pthread_create</TT> instead of <TT>fork</TT>. The single argument that we pass to the <TT>doit</TT> function is the connected socket descriptor, <TT>connfd</TT>.</p>
+<BLOCKQUOTE><P><P class="docList">We cast the integer descriptor <TT>connfd</TT> to be a <TT>void</TT> pointer. ANSI C does not guarantee that this works. It works only on systems on which the size of an integer is less than or equal to the size of a pointer. Fortunately, most Unix implementations have this property (<A class="docLink" HREF="0131411551_ch01lev1sec11.html#ch01fig17">Figure 1.17</A>). We will talk more about this shortly.</P></P></BLOCKQUOTE>
+
+<A NAME="ch26lev3sec8"></A>
+<H4 class="docSection2Title"> Thread function</H4>
+<p class="docText"><span class="docEmphasis"><TT>23–30</TT></span> <TT>doit</TT> is the function executed by the thread. The thread detaches itself since there is no reason for the main thread to wait for each thread it creates. The function <TT>str_echo</TT> does not change from <A class="docLink" HREF="0131411551_ch05lev1sec4.html#ch05fig03">Figure 5.3</A>. When this function returns, we must <TT>close</TT> the connected socket since the thread shares all descriptors with the main thread. With <TT>fork</TT>, the child did not need to <TT>close</TT> the connected socket because when the child terminated, all open descriptors were closed on process termination (see <A class="docLink" HREF="0131411551_ch26lev1sec11.html#ch26lev1sec11">Exercise 26.2</A>).</p>
+<P class="docText">Also notice that the main thread does not close the connected socket, which we always did with a concurrent server that calls <TT>fork</TT>. This is because all threads within a process share the descriptors, so if the main thread called <TT>close</TT>, it would terminate the connection. Creating a new thread does not affect the reference counts for open descriptors, which is different from <TT>fork</TT>.</P>
+<P class="docText">There is a subtle error in this program, which we will describe in detail in <A class="docLink" HREF="0131411551_ch26lev1sec5.html#ch26lev1sec5">Section 26.5</A>. Can you spot the error (see <A class="docLink" HREF="0131411551_ch26lev1sec11.html#ch26lev1sec11">Exercise 26.5</A>)?</P>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig03"></A>Figure 26.3 TCP echo server using threads (see also <A class="docLink" HREF="0131411551_ch26lev1sec11.html#ch26lev1sec11">Exercise 26.5</A>).</H5>
+<P class="docText"><span class="docEmphasis">threads/tcpserv01.c</span></P>
+
+<PRE>
+ 1 #include     "unpthread.h"
+
+ 2 static void *doit(void *);      /* each thread executes this function */
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     listenfd, connfd;
+ 7     pthread_t tid;
+ 8     socklen_t addrlen, len;
+ 9     struct sockaddr *cliaddr;
+
+10     if (argc == 2)
+11         listenfd = Tcp_listen(NULL, argv[1], &amp;addrlen);
+12     else if (argc == 3)
+13         listenfd = Tcp_listen(argv[1], argv[2], &amp;addrlen);
+14     else
+15         err_quit("usage: tcpserv01 [ &lt;host&gt; ] &lt;service or port&gt;");
+
+16     cliaddr = Malloc(addrlen);
+17     for (; ; ) {
+18         len = addrlen;
+19         connfd = Accept(listenfd, cliaddr, &amp;len);
+20         Pthread_create(&amp;tid, NULL, &amp;doit, (void *) connfd);
+21     }
+22 }
+
+23 static void *
+24 doit(void *arg)
+25 {
+26     Pthread_detach(pthread_self());
+27     str_echo((int) arg);        /* same function as before */
+28     Close((int) arg);           /* done with connected socket */
+29     return (NULL);
+30 }
+</PRE>
+
+
+<A NAME="ch26lev2sec6"></A>
+<H4 class="docSection2Title"> Passing Arguments to New Threads</H4>
+<P class="docText">We mentioned that in <A class="docLink" HREF="#ch26fig03">Figure 26.3</A>, we cast the integer variable <TT>connfd</TT> to be a <TT>void</TT> pointer, but this is not guaranteed to work on all systems. To handle this correctly requires additional work.</P>
+<P class="docText">First, notice that we cannot just pass the address of <TT>connfd</TT> to the new thread. That is, the following does not work:</P>
+<pre>
+
+</pre><pre>
+     int
+     main(int argc, char **argv)
+     {
+         int   listenfd, connfd;
+         ...
+
+         for ( ; ; ) {
+             len = addrlen;
+             connfd = Accept(listenfd, cliaddr, &amp;len);
+
+             Pthread_create(&amp;tid, NULL, &amp;doit, &amp;connfd);
+         }
+    }
+    static void *
+    doit(void *arg)
+    {
+        int     connfd;
+
+        connfd = * ((int *) arg);
+        pthread_detach (pthread_self());
+        str_echo (connfd);    /* same function as before */
+        Close (connfd);       /* done with connected socket */
+        return (NULL);
+    }
+</pre><pre>
+</pre>
+<P class="docText">From an ANSI C perspective this is acceptable: We are guaranteed that we can cast the integer pointer to be a <TT>void *</TT> and then cast this pointer back to an integer pointer. The problem is what this pointer points to.</P>
+<P class="docText">There is one integer variable, <TT>connfd</TT> in the main thread, and each call to <TT>accept</TT> overwrites this variable with a new value (the connected descriptor). The following scenario can occur:</P>
+<UL><LI><P class="docList"><TT>accept</TT> returns, <TT>connfd</TT> is stored into (say the new descriptor is 5), and the main thread calls <TT>pthread_create</TT>. The pointer to <TT>connfd</TT> (not its contents) is the final argument to <TT>pthread_create</TT>.</P></LI><LI><P class="docList">A thread is created and the <TT>doit</TT> function is scheduled to start executing.</P></LI><LI><P class="docList">Another connection is ready and the main thread runs again (before the newly created thread). <TT>accept</TT> returns, <TT>connfd</TT> is stored into (say the new descriptor is now 6), and the main thread calls <TT>pthread_create</TT>.</P></LI></UL>
+<P class="docText">Even though two threads are created, both will operate on the final value stored in <TT>connfd</TT>, which we assume is 6. The problem is that multiple threads are accessing a shared variable (the integer value in <TT>connfd</TT>) with no synchronization. In <A class="docLink" HREF="#ch26fig03">Figure 26.3</A>, we solved this problem by passing the <span class="docEmphasis">value</span> of <TT>connfd</TT> to <TT>pthread_create</TT> instead of a pointer to the value. This is fine, given the way that C passes integer values to a called function (a copy of the value is pushed onto the stack for the called function).</P>
+<P class="docText"><A class="docLink" HREF="#ch26fig04">Figure 26.4</A> shows a better solution to this problem.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch26fig04"></A>Figure 26.4 TCP echo server using threads with more portable argument passing.</H5>
+<P class="docText"><span class="docEmphasis">threads/tcpserv02.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+
+ 2 static void *doit(void *);          /* each thread executes this function */
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     listenfd, *iptr;
+ 7     thread_t tid;
+ 8     socklen_t addrlen, len;
+ 9     struct sockaddr *cliaddr;
+
+10     if (argc == 2)
+11         listenfd = Tcp_listen(NULL, argv[1], &amp;addrlen);
+12     else if (argc == 3)
+13         listenfd = Tcp_listen(argv[1], argv[2], &amp;addrlen);
+14     else
+15         err_quit("usage: tcpserv01 [ &lt;host&gt; ] &lt;service or port&gt;");
+
+16     cliaddr = Malloc(addrlen);
+17     for ( ; ; ) {
+18         len = addrlen;
+19         iptr = Malloc(sizeof(int));
+20         *iptr = Accept(listenfd, cliaddr, &amp;len);
+21         Pthread_create(&amp;tid, NULL, &amp;doit, iptr);
+22     }
+23 }
+
+24 static void *
+25 doit(void *arg)
+26 {
+27     int     connfd;
+
+28     connfd = *((int *) arg);
+29     free(arg);
+
+30     Pthread_detach(pthread_self());
+31     str_echo(confd);            /* same function as before */
+32     Close(confd);               /* done with connected socket */
+33     return (NULL);
+34 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>17–22</TT></span> Each time we call <TT>accept</TT>, we first call <TT>malloc</TT> and allocate space for an integer variable, the connected descriptor. This gives each thread its own copy of the connected descriptor.</p>
+<p class="docText"><span class="docEmphasis"><TT>28–29</TT></span> The thread fetches the value of the connected descriptor and then calls <TT>free</TT> to release the memory.</p>
+<P class="docText">Historically, the <TT>malloc</TT> and <TT>free</TT> functions have been nonre-entrant. That is, calling either function from a signal handler while the main thread is in the middle of one of these two functions has been a recipe for disaster, because of static data structures that are manipulated by these two functions. How can we call these two functions in <A class="docLink" HREF="#ch26fig04">Figure 26.4</A>? POSIX requires that these two functions, along with many others, be <span class="docEmphasis">thread-safe</span>. This is normally done by some form of synchronization performed within the library functions that is transparent to us.</P>
+
+<A NAME="ch26lev2sec7"></A>
+<H4 class="docSection2Title"> Thread-Safe Functions</H4>
+<P class="docText">POSIX.1 requires that all the functions defined by POSIX.1 and by the ANSI C standard be thread-safe, with the exceptions listed in <A class="docLink" HREF="#ch26fig05">Figure 26.5</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch26fig05"></A>Figure 26.5. Thread-safe functions.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="497" HEIGHT="446" src="FILES/26fig05.gif" ALT="graphics/26fig05.gif"></p>
+
+</CENTER>
+<P class="docText">Unfortunately, POSIX says nothing about thread safety with regard to the networking API functions. The last five lines in this table are from Unix 98. We talked about the nonre-entrant property of <TT>gethostbyname</TT> and <TT>gethostbyaddr</TT> in <A class="docLink" HREF="0131411551_ch11lev1sec18.html#ch11lev1sec18">Section 11.18</A>. We mentioned that even though some vendors have defined thread-safe versions whose names end in <TT>_r</TT>, there is no standard for these functions and they should be avoided. All of the nonre-entrant <TT>get</TT><span class="docEmphasis">XXX</span> functions were summarized in <A class="docLink" HREF="0131411551_ch11lev1sec21.html#ch11fig21">Figure 11.21</A>.</P>
+<P class="docText">We see from <A class="docLink" HREF="#ch26fig05">Figure 26.5</A> that the common technique for making a function thread-safe is to define a new function whose name ends in <TT>_r</TT>. Two of the functions are thread-safe only if the caller allocates space for the result and passes that pointer as the argument to the function.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch26lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch26lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

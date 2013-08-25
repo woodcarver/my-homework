@@ -1,0 +1,631 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="28.5 'ping' Program"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch28lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch28lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch28lev1sec5"></A>
+<H3 class="docSection1Title">28.5 <TT>ping</TT> Program</H3>
+<P class="docText">In this section, we will develop and present a version of the ping program that works with both IPv4 and IPv6. We will develop our own program instead of presenting the publicly available source code for two reasons. First, the publicly available ping program suffers from a common programming disease known as <span class="docEmphasis">creeping featurism</span>: It supports a dozen different options. Our goal in examining a <TT>ping</TT> program is to understand the network programming concepts and techniques without being distracted by all these options. Our version of <TT>ping</TT> supports only one option and is about five times smaller than the public version. Second, the public version works only with IPv4 and we want to show a version that also supports IPv6.</P>
+<P class="docText">The operation of <TT>ping</TT> is extremely simple: An ICMP echo request is sent to some IP address and that node responds with an ICMP echo reply. These two ICMP messages are supported under both IPv4 and IPv6. <A class="docLink" HREF="#ch28fig01">Figure 28.1</A> shows the format of the ICMP messages.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch28fig01"></A>Figure 28.1. Format of ICMPv4 and ICMPv6 echo request and echo reply messages.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="174" src="FILES/28fig01.gif" ALT="graphics/28fig01.gif"></p>
+
+</CENTER>
+<P class="docText"><A class="docLink" HREF="0131411551_app01lev1sec6.html#app01fig15">Figure A.15</A> and <A class="docLink" HREF="0131411551_app01lev1sec6.html#app01fig16">A.16</A> show the <span class="docEmphasis">type</span> values for these messages and also show that the <span class="docEmphasis">code</span> is 0. We will see that we set the <span class="docEmphasis">identifier</span> to the PID of the <TT>ping</TT> process and we increment the <span class="docEmphasis">sequence number</span> by one for each packet we send. We store the 8-byte timestamp of when the packet is sent as the <span class="docEmphasis">optional data</span>. The rules of ICMP require that the <span class="docEmphasis">identifier, sequence number</span>, and any <span class="docEmphasis">optional data</span> be returned in the echo reply. Storing the timestamp in the packet lets us calculate the RTT when the reply is received.</P>
+<P class="docText"><A class="docLink" HREF="#ch28fig02">Figure 28.2</A> shows some examples of our program. The first uses IPv4 and the second uses IPv6. Note that we made our <TT>ping</TT> program set-user-ID, as it takes superuser privileges to create a raw socket.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig02"></A>Figure 28.2 Sample output from our ping program.</H5>
+
+<PRE>
+freebsd % <span class="docEmphStrong">ping www.google.com</span>
+PING www.google.com (216.239.57.99): 56 data bytes
+64 bytes from 216.239.57.99: seq=0, ttl=53, rtt=5.611 ms
+64 bytes from 216.239.57.99: seq=1, ttl=53, rtt=5.562 ms
+64 bytes from 216.239.57.99: seq=2, ttl=53, rtt=5.589 ms
+64 bytes from 216.239.57.99: seq=3, ttl=53, rtt=5.910 ms
+
+freebsd % <span class="docEmphStrong">ping www.kame.net</span>
+PING orange.kame.net (2001:200:0:4819:203:47ff:fea5:3085): 56 data bytes
+64 bytes from 2001:200:0:4819:203:47ff:fea5:3085: seq=0, hlim=52, rtt=422.066 ms
+64 bytes from 2001:200:0:4819:203:47ff:fea5:3085: seq=1, hlim=52, rtt=417.398 ms
+64 bytes from 2001:200:0:4819:203:47ff:fea5:3085: seq=2, hlim=52, rtt=416.528 ms
+64 bytes from 2001:200:0:4819:203:47ff:fea5:3085: seq=3, hlim=52, rtt=429.192 ms
+</PRE>
+
+<P class="docText"><A class="docLink" HREF="#ch28fig03">Figure 28.3</A> is an overview of the functions that comprise our ping program.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch28fig03"></A>Figure 28.3. Overview of the functions in our <TT>ping</TT> program.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="283" src="FILES/28fig03.gif" ALT="graphics/28fig03.gif"></p>
+
+</CENTER>
+<P class="docText">The program operates in two parts: One half reads everything received on a raw socket, printing the ICMP echo replies, and the other half sends an ICMP echo request once per second. The second half is driven by a <TT>SIGALRM</TT> signal once per second.</P>
+<P class="docText"><A class="docLink" HREF="#ch28fig04">Figure 28.4</A> shows our <TT>ping.h</TT> header that is included by all our program files.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig04"></A>Figure 28.4 <TT>ping.h</TT> header.</H5>
+<P class="docText"><span class="docEmphasis">ping/ping.h</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+ 2 #include    &lt;netinet/in_systm.h&gt;
+ 3 #include    &lt;netinet/ip.h&gt;
+ 4 #include    &lt;netinet/ip_icmp.h&gt;
+
+ 5 #define BUFSIZE     1500
+
+ 6             /* globals */
+ 7 char    sendbuf[BUFSIZE];
+
+ 8 int     datalen;                /* #bytes of data following ICMP header */
+ 9 char   *host;
+10 int     nsent;                  /* add 1 for each sendto() */
+11 pid_t   pid;                    /* our PID */
+12 int     sockfd;
+13 int     verbose;
+
+14             /* function prototypes */
+15 void    init_v6(void);
+16 void    proc_v4(char *, ssize_t, struct msghdr *, struct timeval *);
+17 void    proc_v6(char *, ssize_t, struct msghdr *, struct timeval *);
+18 void    send_v4(void);
+19 void    send_v6(void);
+20 void    readloop(void);
+21 void    sig_alrm(int);
+22 void    tv_sub(struct timeval *, struct timeval *);
+
+23 struct proto {
+24     void    (*fproc) (char *, ssize_t, struct msghdr *, struct timeval *);
+25     void    (*fsend) (void);
+26     void    (*finit) (void);
+27     struct sockaddr *sasend;    /* sockaddr{} for send, from getaddrinfo */
+28     struct sockaddr *sarecv;    /* sockaddr{} for receiving */
+29     socklen_t salen;            /* length of sockaddr {}s */
+30     int     icmpproto;          /* IPPROTO_xxx value for ICMP */
+31 } *pr;
+
+32 #ifdef IPV6
+
+33 #include    &lt;netinet/ip6.h&gt;
+34 #include    &lt;netinet/icmp6.h&gt;
+
+35 #endif
+</PRE>
+
+<A NAME="ch28lev3sec1"></A>
+<H4 class="docSection2Title"> Include IPv4 and ICMPv4 headers</H4>
+<p class="docText"><span class="docEmphasis"><TT>1–22</TT></span> We include the basic IPv4 and ICMPv4 headers, define some global variables, and our function prototypes.</p>
+
+<A NAME="ch28lev3sec2"></A>
+<H4 class="docSection2Title"> Define <TT>proto</TT> structure</H4>
+<p class="docText"><span class="docEmphasis"><TT>23–31</TT></span> We use the <TT>proto</TT> structure to handle the difference between IPv4 and IPv6. This structure contains two function pointers, two pointers to socket address structures, the size of the socket address structures, and the protocol value for ICMP. The global pointer pr will point to one of the structures that we will initialize for either IPv4 or IPv6.</p>
+
+<A NAME="ch28lev3sec3"></A>
+<H4 class="docSection2Title"> Include IPv6 and ICMPv6 headers</H4>
+<p class="docText"><span class="docEmphasis"><TT>32–35</TT></span> We include two headers that define the IPv6 and ICMPv6 structures and constants (RFC 3542 [Stevens et al. 2003]).</p>
+<P class="docText">The main function is shown in <A class="docLink" HREF="#ch28fig05">Figure 28.5</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig05"></A>Figure 28.5 <TT>main</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">ping/main.c</span></P>
+
+<PRE>
+ 1 #include     "ping.h"
+
+ 2 struct proto proto_v4 =
+ 3     { proc_v4, send_v4, NULL, NULL, NULL, 0, IPPROTO_ICMP };
+
+ 4 #ifdef  IPV6
+ 5 struct proto proto_v6 =
+ 6     { proc_v6, send_v6, NULL, NULL, 0, IPPROTO_ICMPV6 };
+ 7 #endif
+
+ 8 int     datalen = 56;   /* data that goes with ICMP echo request */
+
+ 9 int
+10 main(int argc, char **argv)
+11 {
+12     int     c;
+13     struct addrinfo *ai;
+14     char   *h;
+
+15     opterr = 0;                  /* don't want getopt() writing to stderr */
+16     while ( (c = getopt (argc, argv, "v") ) != -1) {
+17         switch (c) {
+18         case 'v':
+19             verbose++;
+20             break;
+
+21          case '?':
+22              err_quit ("unrecognized option: %c", c);
+23          }
+24     }
+
+25     if  (optind != argc - 1)
+26         err_quit ("usage: ping [ -v ] &lt;hostname&gt;");
+27     host = argv [optind];
+
+28     pid = getpid() &amp; Oxffff;     /* ICMP ID field is 16 bits */
+29     Signal(SIGALRM, sig_alrm);
+
+30     ai = Host_serv (host, NULL, 0, 0);
+
+31     h = Sock_ntop_host(ai-&gt;ai_addr, ai-&gt;ai_addrlen);
+32     printf ("PING %s (%s): %d data bytes\n",
+33             ai-&gt;ai_canonname ? ai-&gt;ai_canonname : h, h, datalen);
+
+34         /* initialize  according to protocol */
+35     if (ai-&gt;ai_family == AF_INET) {
+36          pr = &amp;proto_v4;
+37 #ifdef   IPV6
+38     } else if (ai-&gt;ai_family == AF_INET6) {
+39         pr = &amp;proto_v6;
+40         if (IN6_IS_ADDR_V4MAPPED (&amp;(((struct sockaddr_in6 *)
+41                             ai-&gt;ai_addr)-&gt;sin6_addr)))
+42             err_quit ("cannot ping IPv4-mapped IPv6 address");
+43 #endif
+44     } else
+45         err_quit ("unknown address family %d", ai-&gt;ai_family);
+
+46     pr-&gt;sasend = ai-&gt;ai_addr;
+47     pr-&gt;sacrecv = Calloc (1, ai-&gt;ai_addrlen);
+48     pr-&gt;salen = ai-&gt;ai_addrlen);
+
+49     readloop();
+
+50     exit(0);
+51 }
+</PRE>
+
+
+<A NAME="ch28lev3sec4"></A>
+<H4 class="docSection2Title"> Define <TT>proto</TT> structures for IPv4 and IPv6</H4>
+<p class="docText"><span class="docEmphasis"><TT>2–7</TT></span> We define a <TT>proto</TT> structure for IPv4 and IPv6. The socket address structure pointers are initialized to null pointers, as we do not yet know whether we will use IPv4 or IPv6.</p>
+
+<A NAME="ch28lev3sec5"></A>
+<H4 class="docSection2Title"> Length of optional data</H4>
+<p class="docText"><span class="docEmphasis"><TT>8</TT></span> We set the amount of optional data that gets sent with the ICMP echo request to 56 bytes. This will yield an 84-byte IPv4 datagram (20-byte IPv4 header and 8-byte ICMP header) or a 104-byte IPv6 datagram. Any data that accompanies an echo request must be sent back in the echo reply. We will store the time at which we send an echo request in the first 8 bytes of this data area and then use this to calculate and print the RTT when the echo reply is received.</p>
+
+<A NAME="ch28lev3sec6"></A>
+<H4 class="docSection2Title"> Handle command-line options</H4>
+<p class="docText"><span class="docEmphasis"><TT>15–24</TT></span> The only comman-line option we support is <TT>-v</TT>, which will cause us to print most received ICMP messages. (We do not print echo replies belonging to another copy of <TT>ping</TT> that is running.) A signal handler is established for <TT>SIGALRM</TT>, and we will see that this signal is generated once per second and causes an ICMP echo request to be sent.</p>
+
+<A NAME="ch28lev3sec7"></A>
+<H4 class="docSection2Title"> Process hostname argument</H4>
+<p class="docText"><span class="docEmphasis"><TT>31–48</TT></span> A hostname or IP address string is a required argument and it is processed by our <TT>host_serv</TT> function. The returned <TT>addrinfo</TT> structure contains the protocol family, either <TT>AF_INET</TT> or <TT>AF_INET6</TT>. We initialize the pr global to the correct <TT>proto</TT> structure. We also make certain that an IPv6 address is not really an IPv4-mapped IPv6 address by calling <TT>IN6_IS_ADDR_V4MAPPED</TT>, because even though the returned address is an IPv6 address, IPv4 packets will be sent to the host. (We could switch and use IPv4 when this happens.) The socket address structure that has already been allocated by the <TT>getaddrinfo</TT> function is used as the one for sending, and another socket address structure of the same size is allocated for receiving.</p>
+<p class="docText"><span class="docEmphasis"><TT>49</TT></span> The function <TT>readloop</TT> is where the processing takes place. We will show this in <A class="docLink" HREF="#ch28fig06">Figure 28.6</A>.</p>
+
+<A NAME="ch28lev3sec8"></A>
+<H4 class="docSection2Title"> Create socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>12–13</TT></span> A raw socket of the appropriate protocol is created. The call to <TT>setuid</TT> sets our effective user ID to our real user ID, in case the program was set-user-ID instead of being run by root. The program must have superuser privileges to create the raw socket, but now that the socket is created, we can give up the extra privileges. It is always best to give up an extra privilege when it is no longer needed, just in case the program has a latent bug that someone could exploit.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig06"></A>Figure 28.6 <TT>readloop</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">ping/readloop.c</span></P>
+
+<PRE>
+ 1 #include     "ping.h"
+
+ 2 void
+ 3 readloop(void)
+ 4 {
+ 5     int     size;
+ 6     char    recvbuf[BUFSIZE];
+ 7     char    controlbuf[BUFSIZE];
+ 8     struct msghdr msg;
+ 9     struct iovec iov;
+10     ssize_t n;
+11     struct timeval tval;
+
+12     sockfd = Socket(pr-&gt;sasend-&gt;sa_family, SOCK_RAW, pr-&gt;icmpproto);
+13     setuid(getuid());           /* don't need special permissions any more */
+14     if (pr-&gt;finit)
+15         (*pr-&gt;finit) ();
+
+16     size = 60 * 1024;           /* OK if setsockopt fails */
+17     setsockopt (sockfd, SOL_SOCKET, SO_RCVBUF, &amp;size, sizeof (size));
+
+18     sig_alrm (SIGALRM);         /* send first packet */
+
+19     iov.iov_base = recvbuf;
+20     iov.iov_len = sizeof (recvbuf);
+21     msg.msg_name = pr-&gt;sarecv;
+22     msg.msg_iov = &amp;iov;
+23     msg.msg_iovlen = 1;
+24     msg.msg_control = controlbuf;
+25     for ( ; ; ) {
+26         msg.msg_namelen = pr-&gt;salen;
+27         msg.msg_controllen = sizeof (controlbuf);
+28         n = recvmsg (sockfd, &amp;msg, 0);
+29         if (n &lt; o) {
+30             if (errno == EINTR)
+31                 continue;
+32             else
+33                 err_sys("recvmsg error");
+34         }
+35         Gettimeofday (&amp;tval, NULL);
+36         (*pr-&gt;fproc) (recvbuf, n, &amp;msg, &amp;tval);
+37    }
+38 }
+</PRE>
+
+
+<A NAME="ch28lev3sec9"></A>
+<H4 class="docSection2Title"> Perform protocol-specific initialization</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–15</TT></span> If the protocol specified an initialization function, we call it. We show the IPv6 initialization function in <A class="docLink" HREF="#ch28fig10">Figure 28.10</A>.</p>
+
+<A NAME="ch28lev3sec10"></A>
+<H4 class="docSection2Title"> Set socket receive buffer size</H4>
+<p class="docText"><span class="docEmphasis"><TT>16–17</TT></span> We try to set the socket receive buffer size to 61,440 bytes (60 x 1024), which should be larger than the default. We do this in case the user <TT>pings</TT> either the IPv4 broadcast address or a multicast address, either of which can generate lots of replies. By making the buffer larger, there is a smaller chance that the socket receive buffer will overflow.</p>
+
+<A NAME="ch28lev3sec11"></A>
+<H4 class="docSection2Title"> Send first packet</H4>
+<p class="docText"><span class="docEmphasis"><TT>18</TT></span> We call our signal handler, which we will see sends a packet and schedules a <TT>SIGALRM</TT> for one second in the future. It is not common to see a signal handler called directly, as we do here, but it is acceptable. A signal handler is just a C function, even though it is normally called asynchronously.</p>
+
+<A NAME="ch28lev3sec12"></A>
+<H4 class="docSection2Title"> Set up <TT>msghdr</TT> for <TT>recvmsg</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>19–24</TT></span> We set up the unchanging fields in the <TT>msghdr</TT> and <TT>iovec</TT> structs that we will pass to <TT>recvmsg</TT>.</p>
+
+<A NAME="ch28lev3sec13"></A>
+<H4 class="docSection2Title"> Infinite loop reading all ICMP messages</H4>
+<p class="docText"><span class="docEmphasis"><TT>25–37</TT></span> The main loop of the program is an infinite loop that reads all packets returned on the raw ICMP socket. We call <TT>gettimeofday</TT> to record the time that the packet was received and then call the appropriate protocol function (<TT>proc_v4</TT> or <TT>proc_v6</TT>) to process the ICMP message.</p>
+<P class="docText"><A class="docLink" HREF="#ch28fig07">Figure 28.7</A> shows the <TT>tv_sub</TT> function, which subtracts two <TT>timeval</TT> structures, storing the result in the first structure.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig07"></A>Figure 28.7 <TT>tv_sub</TT> function: subtracts two <TT>timeval</TT> structures.</H5>
+<P class="docText"><span class="docEmphasis">lib/tv_sub.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 void
+ 3 tv_sub (struct timeval *out, struct timeval *in)
+ 4 {
+ 5     if ((out-&gt;tv_usec -= in-&gt;tv_usec) &lt; 0) {     /* out -= in */
+ 6         --out-&gt;tv_sec;
+ 7         out-&gt;tv_usec += 1000000;
+ 8     }
+ 9     out-&gt;tv_sec -= in-&gt;tv_sec;
+10 }
+</PRE>
+
+<P class="docText"><A class="docLink" HREF="#ch28fig08">Figure 28.8</A> shows the <TT>proc_v4</TT> function, which processes all received ICMPv4 messages. You may want to refer to <A class="docLink" HREF="0131411551_app01lev1sec2.html#app01fig01">Figure A.1</A>, which shows the format of the IPv4 header. Also realize that when the ICMPv4 message is received by the process on the raw socket, the kernel has already verified that the basic fields in the IPv4 header and in the ICMPv4 header are valid (pp. 214 and 311 of TCPv2).</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig08"></A>Figure 28.8 <TT>proc_v4</TT> function: processes ICMPv4 message.</H5>
+<P class="docText"><span class="docEmphasis">ping/proc_v4.c</span></P>
+
+<PRE>
+ 1 #include     "ping.h"
+
+ 2 void
+ 3 proc_v4 (char *ptr, ssize_t len, struct msghdr *msg, struct timeval *tvrecv)
+ 4 {
+ 5     int     hlenl, icmplen;
+ 6     double  rtt;
+ 7     struct ip *ip;
+ 8     struct icmp *icmp;
+ 9     struct timeval *tvsend;
+
+10     ip = (struct ip *) ptr;      /* start of IP header */
+11     hlenl = ip-&gt;ip_hl &lt;&lt; 2;      /* length of IP header */
+12     if (ip-&gt;ip_p != IPPROTO_ICMP)
+13         return;                  /* not ICMP */
+
+14     icmp = (struct icmp *) (ptr + hlenl);   /* start of ICMP header */
+15     if ( (icmplen = len - hlenl) &lt; 8)
+16         return;                  /* malformed packet */
+
+17     if (icmp-&gt;icmp_type == ICMP_ECHOREPLY) {
+18         if (icmp-&gt;icmp_id != pid)
+19             return;                /* not a response to our ECHO_REQUEST */
+20         if (icmplen &lt; 16)
+21             return;                /* not enough data to use */
+
+22         tvsend = (struct  timeval  *) icmp-&gt;icmp_data;
+23         tv_sub (tvrecv, tvsend);
+24         rtt = tvrecv-&gt;tv_sec * 1000.0 + tvrecv-&gt;tv_usec / 1000.0;
+
+25         printf ("%d bytes from %s: seq=%u, ttl=%d, rtt=%.3f ms\n",
+26                 icmplen, Sock_ntop_host (pr-&gt;sarecv, pr-&gt;salen),
+27                 icmp-&gt;icmp_seq, ip-&gt;ip_ttl, rtt);
+
+28     } else if  (verbose) {
+29         printf (" %d bytes from %s: type = %d, code = %d\n",
+30                 icmplen, Sock_ntop_host (pr-&gt;sarecv, pr-&gt;salen),
+31                 icmp-&gt;icmp_type, icmp-&gt;icmp_code);
+32     }
+33 }
+</PRE>
+
+
+<A NAME="ch28lev3sec14"></A>
+<H4 class="docSection2Title"> Get pointer to ICMP header</H4>
+<p class="docText"><span class="docEmphasis"><TT>10–16</TT></span> The IPv4 header length field is multiplied by 4, giving the size of the IPv4 header in bytes. (Remember that an IPv4 header can contain options.) This lets us set <TT>icmp</TT> to point to the beginning of the ICMP header. We make sure that the IP protocol is ICMP and that there is enough data echoed to look at the timestamp we included in the echo request. <A class="docLink" HREF="#ch28fig09">Figure 28.9</A> shows the various headers, pointers, and lengths used by the code.</p>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch28fig09"></A>Figure 28.9. Headers, pointers, and lengths in processing ICMPv4 reply.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="398" HEIGHT="149" src="FILES/28fig09.gif" ALT="graphics/28fig09.gif"></p>
+
+</CENTER>
+
+<A NAME="ch28lev3sec15"></A>
+<H4 class="docSection2Title"> Check for ICMP echo reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>17–21</TT></span> If the message is an ICMP echo reply, then we must check the identifier field to see if this reply is in response to a request our process sent. If the <TT>ping</TT> program is running multiple times on this host, each process gets a copy of all received ICMP messages.</p>
+<p class="docText"><span class="docEmphasis"><TT>22–27</TT></span> We calculate the RTT by subtracting the time the message was sent (contained in the optional data portion of the ICMP reply) from the current time (pointed to by the <TT>tvrecv</TT> function argument). The RTT is converted from microseconds to milliseconds and printed, along with the sequence number field and the received TTL. The sequence number field lets the user see if packets were dropped, reordered, or duplicated, and the TTL gives an indication of the number of hops between the two hosts.</p>
+
+<A NAME="ch28lev3sec16"></A>
+<H4 class="docSection2Title"> Print all received ICMP messages if verbose option specified</H4>
+<p class="docText"><span class="docEmphasis"><TT>28–32</TT></span> If the user specified the <TT>-v</TT> command-line option, we print the type and code fields from all other received ICMP messages.</p>
+<P class="docText">The processing of ICMPv6 messages is handled by the <TT>proc_v6</TT> function, shown in <A class="docLink" HREF="#ch28fig12">Figure 28.12</A> (p. 751). It is similar to the <TT>proc_v4</TT> function; however, since IPv6 raw sockets do not return the IPv6 header, it receives the hop limit as ancillary data. This was set up using the <TT>init_v6</TT> function, shown in <A class="docLink" HREF="#ch28fig10">Figure 28.10</A>.</P>
+<P class="docText">The <TT>init_v6</TT> function prepares the socket for use.</P>
+
+<A NAME="ch28lev3sec17"></A>
+<H4 class="docSection2Title"> Set ICMPv6 receive filter</H4>
+<p class="docText"><span class="docEmphasis"><TT>6–14</TT></span> If the <TT>-v</TT> command-line option was not specified, install a filter that blocks all ICMP message types except for the expected echo reply. This reduces the number of packets received on the socket.</p>
+
+<A NAME="ch28lev3sec18"></A>
+<H4 class="docSection2Title"> Request <TT>IPV6_HOPLIMIT</TT> ancillary data</H4>
+<p class="docText"><span class="docEmphasis"><TT>15–22</TT></span> The API to request reception of the hop limit with incoming packets has changed over time. We prefer the newer API: setting the <TT>IPV6_RECVHOPLIMIT</TT> socket option. However, if the constant for this option is not defined, we can try the older API: setting <TT>IPV6_HOPLIMIT</TT> as an option. We don't check the return value from <TT>setsockopt</TT>, since the program can still do useful work without receiving the hop limit.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig10"></A>Figure 28.10 <TT>init_v6</TT> function: initializes ICMPv6 socket.</H5>
+<P class="docText"><span class="docEmphasis">ping/init_v6.c</span></P>
+
+<PRE>
+ 1 void
+ 2 init_v6()
+ 3 {
+ 4 #ifdef IPV6
+ 5     int     on = 1;
+
+ 6     if (verbose == 0) {
+ 7         /* install a filter that only passes ICMP6_ECHO_REPLY unless verbose */
+ 8         struct icmp6_filter myfilt;
+ 9         ICMP6_FILTER_SETBLOCKALL (&amp;myfilt);
+10         ICMP6_FILTER_SETPASS (ICMP6_ECHO_REPLY, &amp;myfilt);
+11         setsockopt (sockfd, IPPROTO_IPV6, ICMP6_FILTER, &amp;myfilt,
+12                     sizeof (myfilt));
+13         /* ignore error return; the filter is an optimization */
+14     }
+
+15     /* ignore error returned below; we just won't receive the hop limit */
+16 #ifdef IPV6_RECVHOPLIMIT
+17     /* RFC 3542 */
+18     setsockopt (sockfd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &amp;on, sizeof(on));
+19 #else
+20     /* RFC 2292 */
+21     setsockopt (sockfd, IPPROTO_IPV6, IPV6_HOPLIMIT, &amp;on, sizeof(on));
+22 #endif
+23 #endif
+24 }
+</PRE>
+
+<P class="docText">The <TT>proc_v6</TT> function (<A class="docLink" HREF="#ch28fig12">Figure 28.12</A>) processes incoming packets.</P>
+
+<A NAME="ch28lev3sec19"></A>
+<H4 class="docSection2Title"> Get pointer to ICMPv6 header</H4>
+<p class="docText"><span class="docEmphasis"><TT>11–13</TT></span> The ICMPv6 header is the data returned by the receive operation. (Recall that the IPv6 header and extension headers, if any, are never returned as normal data, but as ancillary data.) <A class="docLink" HREF="#ch28fig11">Figure 28.11</A> shows the various headers, pointers, and lengths used by the code.</p>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch28fig11"></A>Figure 28.11. Headers, pointers, and lengths in processing ICMPv6 reply.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="183" HEIGHT="129" src="FILES/28fig11.gif" ALT="graphics/28fig11.gif"></p>
+
+</CENTER>
+
+<A NAME="ch28lev3sec20"></A>
+<H4 class="docSection2Title"> Check for ICMP echo reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–37</TT></span> If the ICMP message type is an echo reply, we check the identifier field to see if the reply is for us. If so, we calculate the RTT and then print it along with the sequence number and IPv6 hop limit. We obtain the hop limit from the <TT>IPV6_HOPLIMIT</TT> ancillary data.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig12"></A>Figure 28.12 <TT>proc_v6</TT> function: processes received ICMPv6 message.</H5>
+<P class="docText"><span class="docEmphasis">ping/proc_v6.c</span></P>
+
+<PRE>
+ 1 #include     "ping.h"
+
+ 2 void
+ 3 proc_v6 (char *ptr, ssize_t len, struct msghdr *msg, struct timeval *tvrecv)
+ 4 {
+ 5 #ifdef IPV6
+ 6     double rtt;
+ 7     struct icmp6_hdr *icmp6;
+ 8     struct timeval *tvsend;
+ 9     struct cmsghdr *cmsg;
+10     int     hlim;
+
+11     icmp6 = (struct icmp6_hdr *) ptr;
+12     if (len &lt; 8)
+13         return;                 /* malformed packet */
+
+14     if (icmp6-&gt;icmp6_type == ICMP6_ECHO_REPLY) {
+15         if (icmp6-&gt;icmp6_id != pid)
+16             return;             /* not a response to our ECHO_REQUEST */
+17         if (len &lt; 16)
+18             return;             /* not enough data to use */
+
+19         tvsend = (struct timeval *) (icmp6 + 1);
+20         tv_sub (tvrecv, tvsend);
+21         rtt = tvrecv-&gt;tv_sec * 1000.0 + tvrecv-&gt;tv_usec / 1000.0;
+
+22         hlim = -1;
+23         for (cmsg = CMSG_FIRSTHDR (msg); cmsg != NULL;
+24              cmsg = CMSG_NXTHDR (msg, cmsg)) {
+25             if (cmsg-&gt;cmsg_level == IPPROTO_IPV6
+26                 &amp;&amp; cmsg-&gt;cmsg_type == IPV6_HOPLIMIT) {
+27                 hlim = * (u_int32_t *) CMSG_DATA (cmsg);
+28                 break;
+29             }
+30         }
+31         printf("%d bytes from %s: seq=%u, hlim=",
+32                len, Sock_ntop_host (pr-&gt;sarecv, pr-&gt;salen), icmp6-&gt;icmp6_seq);
+33         if (hlim == -1)
+34             printf("???");     /* ancillary data missing */
+35         else
+36             printf("%d", hlim);
+37         printf(", rtt=%.3f ms\n", rtt);
+38     } else if (verbose) {
+39         printf(" %d bytes from %s: type = %d, code = %d\n",
+40                len, Sock_ntop_host (pr-&gt;sarecv, pr-&gt;salen),
+41                icmp6-&gt;icmp6_type, icmp6-&gt;icmp6_code);
+42     }
+43 #endif /* IPV6 */
+44 }
+</PRE>
+
+
+<A NAME="ch28lev3sec21"></A>
+<H4 class="docSection2Title"> Print all received ICMP messages if verbose option specified</H4>
+<p class="docText"><span class="docEmphasis"><TT>38–41</TT></span> If the user specified the <TT>-v</TT> command-line option, we print the type and code fields from all other received ICMP messages.</p>
+<P class="docText">Our signal handler for the <TT>SIGALRM</TT> signal is the <TT>sig_alrm</TT> function, shown in <A class="docLink" HREF="#ch28fig13">Figure 28.13</A>. We saw in <A class="docLink" HREF="#ch28fig06">Figure 28.6</A> that our <TT>readloop</TT> function calls this signal handler once at the beginning to send the first packet. This function just calls the protocol-dependent function to send an ICMP echo request (<TT>send_v4</TT> or <TT>send_v6</TT>) and then schedules another <TT>SIGALRM</TT> for one second in the future.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig13"></A>Figure 28.13 <TT>sig_alrm</TT> function: <TT>SIGALRM</TT> signal handler.</H5>
+<P class="docText"><span class="docEmphasis">ping/sig_alrm.c</span></P>
+
+<PRE>
+1 #include     "ping.h"
+
+2 void
+3 sig_alrm (int signo)
+4 {
+5     (*pr-&gt;fsend) ();
+
+6     alarm(1);
+7     return;
+8 }
+</PRE>
+
+<P class="docText">The function <TT>send_v4</TT>, shown in <A class="docLink" HREF="#ch28fig14">Figure 28.14</A>, builds an ICMPv4 echo request message and writes it to the raw socket.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig14"></A>Figure 28.14 <TT>send_v4</TT> function: builds an ICMPv4 echo request message and sends it.</H5>
+<P class="docText"><span class="docEmphasis">ping/send_v4.c</span></P>
+
+<PRE>
+ 1 #include     "ping.h"
+
+ 2 void
+ 3 send_v4 (void)
+ 4 {
+ 5     int     len;
+ 6     struct icmp *icmp;
+
+ 7     icmp = (struct icmp *) sendbuf;
+ 8     icmp-&gt;icmp_type = ICMP_ECHO;
+ 9     icmp-&gt;icmp_code = 0;
+10     icmp-&gt;icmp_id = pid;
+11     icmp-&gt;icmp-seq = nsent++;
+12     memset (icmp-&gt;icmp_data, 0xa5, datalen); /* fill with pattern */
+13     Gettimeofday ((struct timeval *) icmp-&gt;icmp_data, NULL);
+
+14     len = 8 + datalen;           /* checksum ICMP header and data */
+15     icmp-&gt;icmp_cksum = 0;
+16     icmp-&gt;icmp_cksum = in_cksum ((u_short *) icmp, len);
+
+17     Sendto (sockfd, sendbuf, len, 0, pr-&gt;sasend, pr-&gt;salen);
+18 }
+</PRE>
+
+
+<A NAME="ch28lev3sec22"></A>
+<H4 class="docSection2Title"> Build ICMPv4 message</H4>
+<p class="docText"><span class="docEmphasis"><TT>7–13</TT></span> The ICMPv4 message is built. The identifier field is set to our PID and the sequence number field is set to the global <TT>nsent</TT>, which is then incremented for the next packet. We store a pattern of 0xa5 in the data portion of the ICMP message. The current time-of-day is then stored in the beginning of the data portion.</p>
+
+<A NAME="ch28lev3sec23"></A>
+<H4 class="docSection2Title"> Calculate ICMP checksum</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–16</TT></span> To calculate the ICMP checksum, we set the checksum field to 0 and call the function <TT>in_cksum</TT>, storing the result in the checksum field. The ICMPv4 checksum is calculated from the ICMPv4 header and any data that follows.</p>
+
+<A NAME="ch28lev3sec24"></A>
+<H4 class="docSection2Title"> Send datagram</H4>
+<p class="docText"><span class="docEmphasis"><TT>17</TT></span> The ICMP message is sent on the raw socket. Since we have not set the <TT>IP_HDRINCL</TT> socket option, the kernel builds the IPv4 header and prepends it to our buffer.</p>
+<P class="docText">The Internet checksum is the one's complement of the one's complement sum of the 16-bit values to be checksummed. If the data length is an odd number, then 1 byte of 0 is logically appended to the end of the data, just for the checksum computation. Before computing the checksum, the checksum field itself is set to 0. This algorithm is used for the IPv4, ICMPv4, IGMPv4, ICMPv6, UDP, and TCP checksums. RFC 1071 [Braden, Borman, and Partridge 1988] contains additional information and some numeric examples. Section 8.7 of TCPv2 talks about this algorithm in more detail and shows a more efficient implementation. Our <TT>in_cksum</TT> function, shown in <A class="docLink" HREF="#ch28fig15">Figure 28.15</A>, calculates the checksum.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig15"></A>Figure 28.15 <TT>in_cksum</TT> function: calculate the Internet checksum.</H5>
+<P class="docText"><span class="docEmphasis">libfree/in_cksum.c</span></P>
+
+<PRE>
+ 1 uint16_t
+ 2 in_cksum (uint16_t * addr, int len)
+ 3 {
+ 4     int     nleft = len;
+ 5     uint32_t sum = 0;
+ 6     uint16_t *w = addr;
+ 7     uint16_t answer = 0;
+
+ 8     /*
+ 9      * Our algorithm is simple, using a 32 bit accumulator (sum), we add
+10      * sequential 16 bit words to it, and at the end, fold back all the
+11      * carry bits from the top 16 bits into the lower 16 bits.
+12      */
+13     while (nleft &gt; 1) {
+14         sum += *w++;
+15         nleft -= 2;
+16     }
+17         /* mop up an odd byte, if necessary */
+18     if (nleft == 1) {
+19         * (unsigned char *) (&amp;answer) = * (unsigned char *) w;
+20         sum += answer;
+21     }
+
+22         /* add back carry outs from top 16 bits to low 16 bits */
+23     sum = (sum &gt;&gt; 16) + (sum &amp; 0xffff); /* add hi 16 to low 16 */
+24     sum += (sum &gt;&gt; 16);     /* add carry */
+25     answer = ~sum;     /* truncate to 16 bits */
+26     return (answer);
+27 }
+</PRE>
+
+
+<A NAME="ch28lev3sec25"></A>
+<H4 class="docSection2Title"> Internet checksum algorithm</H4>
+<p class="docText"><span class="docEmphasis"><TT>1–27</TT></span> The first <TT>while</TT> loop calculates the sum of all the 16-bit values. If the length is odd, then the final byte is added in with the sum. The algorithm we show in <A class="docLink" HREF="#ch28fig15">Figure 28.15</A> is the simple algorithm. The kernel often has a specially optimized checksum algorithm due to the high volume of checksum computations performed by the kernel.</p>
+<BLOCKQUOTE><P><P class="docList">This function is taken from the public domain version of <TT>ping</TT> by Mike Muuss.</P></P></BLOCKQUOTE>
+<P class="docText">The final function for our <TT>ping</TT> program is <TT>send_v6</TT>, shown in <A class="docLink" HREF="#ch28fig16">Figure 28.16</A>, which builds and sends an ICMPv6 echo request.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch28fig16"></A>Figure 28.16 <TT>send_v6</TT> function: builds and sends an ICMPv6 echo request message.</H5>
+<P class="docText"><span class="docEmphasis">ping/send_v6.c</span></P>
+
+<PRE>
+ 1 #include     "ping.h"
+
+ 2 void
+ 3 send_v6 ()
+ 4 {
+ 5 #ifdef IPV6
+ 6     int     len;
+ 7     struct icmp6_hdr *icmp6;
+
+ 8     icmp6 = (struct icmp6_hdr *) sendbuf;
+ 9     icmp6-&gt;icmp6_type = ICMP6_ECHO_REQUEST;
+10     icmp6-&gt;icmp6_code = 0;
+11     icmp6-&gt;icmp6_id = pid;
+12     icmp6-&gt;icmp6_seq = nsent++;
+13     memset ((icmp6 + 1), 0xa5, datalen); /* fill with pattern */
+14     Gettimeofday ((struct timeval *) (icmp6 + 1), NULL);
+
+15     len = 8 + datalen;           /* 8-byte ICMPv6 header */
+
+16     Sendto (sockfd, sendbuf, len, 0, pr-&gt;sasend, pr-&gt;salen);
+17         /* kernel calculates and stores checksum for us */
+18 #endif  /* IPV6 */
+19 }
+</PRE>
+
+<P class="docText">The <TT>send_v6</TT> function is similar to <TT>send_v4</TT>, but notice that it does not compute the ICMPv6 checksum. As we mentioned earlier in the chapter, since the ICMPv6 checksum uses the source address from the IPv6 header in its computation, this checksum is calculated by the kernel for us, after the kernel chooses the source address.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch28lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch28lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

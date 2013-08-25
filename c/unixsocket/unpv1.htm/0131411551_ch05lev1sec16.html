@@ -1,0 +1,27 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="5.16 Shutdown of Server Host"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch05lev1sec15.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch05lev1sec17.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch05lev1sec16"></A>
+<H3 class="docSection1Title">5.16 Shutdown of Server Host</H3>
+<P class="docText">The previous two sections discussed the crashing of the server host, or the server host being unreachable across the network. We now consider what happens if the server host is shut down by an operator while our server process is running on that host.</P>
+<P class="docText">When a Unix system is shut down, the <TT>init</TT> process normally sends the <TT>SIGTERM</TT> signal to all processes (we can catch this signal), waits some fixed amount of time (often between 5 and 20 seconds), and then sends the <TT>SIGKILL</TT> signal (which we cannot catch) to any processes still running. This gives all running processes a short amount of time to clean up and terminate. If we do not catch <TT>SIGTERM</TT> and terminate, our server will be terminated by the <TT>SIGKILL</TT> signal. When the process terminates, all open descriptors are closed, and we then follow the same sequence of steps discussed in <A class="docLink" HREF="0131411551_ch05lev1sec12.html#ch05lev1sec12">Section 5.12</A>. As stated there, we must use the <TT>select</TT> or <TT>poll</TT> function in our client to have the client detect the termination of the server process as soon as it occurs.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch05lev1sec15.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch05lev1sec17.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

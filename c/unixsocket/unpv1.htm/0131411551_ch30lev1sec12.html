@@ -1,0 +1,158 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.12 TCP Prethreaded Server, Main Thread 'accept'"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec12"></A>
+<H3 class="docSection1Title">30.12 TCP Prethreaded Server, Main Thread <TT>accept</TT></H3>
+<P class="docText">Our final server design using threads has the main thread create a pool of threads when it starts, and then only the main thread calls <TT>accept</TT> and passes each client connection to one of the available threads in the pool. This is similar to the descriptor passing version in <A class="docLink" HREF="0131411551_ch30lev1sec9.html#ch30lev1sec9">Section 30.9</A>.</P>
+<P class="docText">The design problem is how does the main thread "pass" the connected socket to one of the available threads in the pool? There are various ways to implement this. We could use descriptor passing, as we did earlier, but there's no need to pass a descriptor from one thread to another since all the threads and all the descriptors are in the same process. All the receiving thread needs to know is the descriptor number. <A class="docLink" HREF="#ch30fig30">Figure 30.30</A> shows the <TT>pthread08.h</TT> header that defines a <TT>Thread</TT> structure, which is identical to <A class="docLink" HREF="0131411551_ch30lev1sec11.html#ch30fig27">Figure 30.27</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig30"></A>Figure 30.30 <TT>pthread08.h</TT> header.</H5>
+<P class="docText"><span class="docEmphasis">server/pthread08.h</span></P>
+
+<PRE>
+1 typedef struct {
+2     pthread_t thread_tid;       /* thread ID */
+3     long    thread_count;       /* # connections handled */
+4 } Thread;
+5 Thread *tptr;                   /* array of Thread structures; calloc'ed */
+
+6 #define MAXNCLI 32
+7 int     clifd[MAXNCLI], iget, iput;
+8 pthread_mutex_t clifd_mutex;
+9 pthread_cond_t clifd_cond;
+</PRE>
+
+<A NAME="ch30lev3sec9"></A>
+<H4 class="docSection2Title"> Define shared array to hold connected sockets</H4>
+<p class="docText"><span class="docEmphasis"><TT>6–9</TT></span> We also define a <TT>clifd</TT> array in which the main thread will store the connected socket descriptors. The available threads in the pool take one of these connected sockets and service the corresponding client. <TT>iput</TT> is the index into this array of the next entry to be stored into by the main thread and <TT>iget</TT> is the index of the next entry to be fetched by one of the threads in the pool. Naturally, this data structure that is shared between all the threads must be protected and we use a mutex along with a condition variable.</p>
+<P class="docText"><A class="docLink" HREF="#ch30fig31">Figure 30.31</A> is the <TT>main</TT> function.</P>
+
+<A NAME="ch30lev3sec10"></A>
+<H4 class="docSection2Title"> Create pool of threads</H4>
+<p class="docText"><span class="docEmphasis"><TT>23–25</TT></span> <TT>thread_make</TT> creates each of the threads.</p>
+
+<A NAME="ch30lev3sec11"></A>
+<H4 class="docSection2Title"> Wait for each client connection</H4>
+<p class="docText"><span class="docEmphasis"><TT>27–38</TT></span> The main thread blocks in the call to <TT>accept</TT>, waiting for each client connection to arrive. When one arrives, the connected socket is stored in the next entry in the <TT>clifd</TT> array, after obtaining the mutex lock on the array. We also check that the <TT>iput</TT> index has not caught up with the <TT>iget</TT> index, which indicates that our array is not big enough. The condition variable is signaled and the mutex is released, allowing one of the threads in the pool to service this client.</p>
+<P class="docText">The <TT>thread_make</TT> and <TT>thread_main</TT> functions are shown in <A class="docLink" HREF="#ch30fig32">Figure 30.32</A>. The former is identical to the version in <A class="docLink" HREF="0131411551_ch30lev1sec11.html#ch30fig29">Figure 30.29</A>.</P>
+
+<A NAME="ch30lev3sec12"></A>
+<H4 class="docSection2Title"> Wait for client descriptor to service</H4>
+<p class="docText"><span class="docEmphasis"><TT>17–26</TT></span> Each thread in the pool tries to obtain a lock on the mutex that protects the <TT>clifd</TT> array. When the lock is obtained, there is nothing to do if the <TT>iget</TT> and <TT>iput</TT> indexes are equal. In that case, the thread goes to sleep by calling <TT>pthread_cond_wait</TT>. It will be awakened by the call to <TT>pthread_cond_signal</TT> in the main thread after a connection is accepted. When the thread obtains a connection, it calls <TT>web_child</TT>.</p>
+<P class="docText">The times in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A> show that this server is slower than the one in the previous section, in which each thread called <TT>accept</TT> after obtaining a mutex lock. The reason is that this section's example requires both a mutex and a condition variable, compared to just a mutex in <A class="docLink" HREF="0131411551_ch30lev1sec11.html#ch30fig29">Figure 30.29</A>.</P>
+<P class="docText">If we examine the histogram of the number of clients serviced by each thread in the pool, it is similar to the final column in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A>. This means the threads library cycles through all the available threads when doing the wakeup based on the condition variable when the main thread calls <TT>pthread_cond_signal</TT>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig31"></A>Figure 30.31 <TT>main</TT> function for prethreaded server.</H5>
+<P class="docText"><span class="docEmphasis">server/serv08.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+ 2 #include    "pthread08.h"
+
+ 3 static int nthreads;
+ 4 pthread_mutex_t clifd_mutex = PTHREAD_MUTEX_INITIALIZER;
+ 5 pthread_cond_t clifd_cond = PTHREAD_COND_INITIALIZER;
+
+ 6 int
+ 7 main(int argc, char **argv)
+ 8 {
+ 9     int     i, listenfd, connfd;
+10     void    sig_int(int), thread_make(int);
+11     socklen_t addrlen, clilen;
+12     struct sockaddr *cliaddr;
+
+13     if (argc == 3)
+14         listenfd = Tcp_listen(NULL, argv[1], &amp;addrlen);
+15     else if (argc == 4)
+16         listenfd = Tcp_listen(argv[1], argv[2], &amp;addrlen);
+17     else
+18         err_quit("usage: serv08 [ &lt;host&gt; ] &lt;port#&gt; &lt;#threads&gt;");
+19     cliaddr = Malloc(addrlen);
+
+20     nthreads = atoi(argv[argc - 1]);
+21     tptr = Calloc(nthreads, sizeof(Thread));
+22     iget = iput = 0;
+
+23         /* create all the threads */
+24     for (i = 0; i &lt; nthreads; i++)
+25         thread_make(i);         /* only main thread returns */
+
+26     Signal(SIGINT, sig_int);
+
+27     for ( ; ; ) {
+28         clilen = addrlen;
+29         connfd = Accept(listenfd, cliaddr, &amp;clilen);
+
+30         Pthread_mutex_lock(&amp;clifd_mutex);
+31         clifd[iput] = connfd;
+32         if (++iput == MAXNCLI)
+33             iput = 0;
+34         if (iput == iget)
+35             err_quit("iput = iget = %d", iput);
+36         Pthread_cond_signal(&amp;clifd_cond);
+37         Pthread_mutex_unlock(&amp;clifd_mutex);
+38     }
+39 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch30fig32"></A>Figure 30.32 <TT>thread_make</TT> and <TT>thread_main</TT> functions.</H5>
+<P class="docText"><span class="docEmphasis">server/pthread08.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+ 2 #include    "pthread08.h"
+
+ 3 void
+ 4 thread_make(int i)
+ 5 {
+ 6     void   *thread_main(void *);
+
+ 7     Pthread_create(&amp;tptr[i].thread_tid, NULL, &amp;thread_main, (void *) i);
+ 8     return;                    /* main thread returns */
+ 9 }
+
+10 void *
+11 thread_main(void *arg)
+12 {
+13     int     connfd;
+14     void    web_child(int);
+
+15     printf("thread %d starting\n", (int) arg);
+16     for ( ; ; ) {
+17         Pthread_mutex_lock(&amp;clifd_mutex);
+18         while (iget == iput)
+19             Pthread_cond_wait(&amp;clifd_cond, &amp;clifd_mutex);
+20         connfd = clifd[iget];   /* connected socket to service */
+21         if (++iget == MAXNCLI)
+22             iget = 0;
+23         Pthread_mutex_unlock(&amp;clifd_mutex);
+24         tptr[(int) arg].thread_count++;
+
+25         web_child(connfd);      /* process request */
+26         Close(connfd);
+27     }
+28 }
+</PRE>
+
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

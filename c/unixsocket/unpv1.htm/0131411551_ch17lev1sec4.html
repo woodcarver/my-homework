@@ -1,0 +1,27 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="17.4 File Operations"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch17lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch17lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch17lev1sec4"></A>
+<H3 class="docSection1Title">17.4 File Operations</H3>
+<P class="docText">The next group of requests begin with <TT>FIO</TT> and may apply to certain types of files, in addition to sockets. We cover only the requests that apply to sockets (p. 553 of TCPv2). The following five requests all require that the third argument to <TT>ioctl</TT> point to an integer:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>FIONBIO</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">The nonblocking flag for the socket is cleared or turned on, depending on whether the third argument to <TT>ioctl</TT> points to a zero or nonzero value, respectively. This request has the same effect as the <TT>O_NONBLOCK</TT> file status flag, which can be set and cleared with the <TT>F_SETFL</TT> command to the <TT>fcntl</TT> function.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>FIOASYNC</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">The flag that governs the receipt of asynchronous I/O signals (<TT>SIGIO</TT>) for the socket is cleared or turned on, depending on whether the third argument to <TT>ioctl</TT> points to a zero or nonzero value, respectively. This flag has the same effect as the <TT>O_ASYNC</TT> file status flag, which can be set and cleared with the <TT>F_SETFL</TT> command to the <TT>fcntl</TT> function.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>FIONREAD</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">Return in the integer pointed to by the third argument to <TT>ioctl</TT> the number of bytes currently in the socket receive buffer. This feature also works for files, pipes, and terminals. We said more about this request in <A class="docLink" HREF="0131411551_ch14lev1sec7.html#ch14lev1sec7">Section 14.7</A>.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>FIOSETOWN</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">Equivalent to <TT>SIOCSPGRP</TT> for a socket.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>FIOGETOWN</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText">Equivalent to <TT>SIOCGPGRP</TT> for a socket.</P></TD></TR></COLGROUP></TABLE></P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch17lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch17lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,33 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.12 Summary"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec12"></A>
+<H3 class="docSection1Title" id="225793-995">6.12 Summary</H3>
+<P class="docText">There are five different models for I/O provided by Unix:</P>
+<UL><LI><P class="docList">Blocking</P></LI><LI><P class="docList">Nonblocking</P></LI><LI><P class="docList">I/O multiplexing</P></LI><LI><P class="docList">Signal-driven I/O</P></LI><LI><P class="docList">Asynchronous I/O</P></LI></UL>
+<P class="docText">The default is blocking I/O, which is also the most commonly used. We will cover nonblocking I/O and signal-driven I/O in later chapters and have covered I/O multiplexing in this chapter. True asynchronous I/O is defined by the POSIX specification, but few implementations exist.</P>
+<P class="docText">The most commonly used function for I/O multiplexing is <TT>select</TT>. We tell the <TT>select</TT> function what descriptors we are interested in (for reading, writing, and exceptions), the maximum amount of time to wait, and the maximum descriptor number (plus one). Most calls to <TT>select</TT> specify readability, and we noted that the only exception condition when dealing with sockets is the arrival of out-of-band data (<A class="docLink" HREF="0131411551_ch24.html#ch24">Chapter 24</A>). Since <TT>select</TT> provides a time limit on how long a function blocks, we will use this feature in <A class="docLink" HREF="0131411551_ch14lev1sec2.html#ch14fig03">Figure 14.3</A> to place a time limit on an input operation.</P>
+<P class="docText">We used our echo client in a batch mode using <TT>select</TT> and discovered that even though the end of the user input is encountered, data can still be in the pipe to or from the server. To handle this scenario requires the <TT>shutdown</TT> function, and it lets us take advantage of TCP's half-close feature.</P>
+<P class="docText">The dangers of mixing stdio buffering (as well as our own <TT>readline</TT> buffering) with <TT>select</TT> caused us to produce versions of the echo client and server that operated on buffers instead of lines.</P>
+<P class="docText">POSIX defines the function <TT>pselect</TT>, which increases the time precision from microseconds to nanoseconds and takes a new argument that is a pointer to a signal set. This lets us avoid race conditions when signals are being caught and we talk more about this in <A class="docLink" HREF="0131411551_ch20lev1sec5.html#ch20lev1sec5">Section 20.5</A>.</P>
+<P class="docText">The <TT>poll</TT> function from System V provides functionality similar to <TT>select</TT> and provides additional information on STREAMS devices. POSIX requires both <TT>select</TT> and <TT>poll</TT>, but the former is used more often.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

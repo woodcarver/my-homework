@@ -1,0 +1,130 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.11 TCP Prethreaded Server, per-Thread 'accept'"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec11"></A>
+<H3 class="docSection1Title">30.11 TCP Prethreaded Server, per-Thread <TT>accept</TT></H3>
+<P class="docText">We found earlier in this chapter that it is faster to prefork a pool of children than to create one child for every client. On a system that supports threads, it is reasonable to expect a similar speedup by creating a pool of threads when the server starts, instead of creating a new thread for every client. The basic design of this server is to create a pool of threads and then let each thread call <TT>accept</TT>. Instead of having each thread block in the call to <TT>accept</TT>, we will use a mutex lock (similar to <A class="docLink" HREF="0131411551_ch30lev1sec8.html#ch30lev1sec8">Section 30.8</A>) that allows only one thread at a time to call <TT>accept</TT>. There is no reason to use file locking to protect the call to <TT>accept</TT> from all the threads, because with multiple threads in a single process, we know that a mutex lock can be used.</P>
+<P class="docText"><A class="docLink" HREF="#ch30fig27">Figure 30.27</A> shows the <TT>pthread07.h</TT> header that defines a <TT>Thread</TT> structure that maintains some information about each thread.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig27"></A>Figure 30.27 <TT>pthread07.h</TT> header.</H5>
+<P class="docText"><span class="docEmphasis">server/pthread07.h</span></P>
+
+<PRE>
+1 typedef struct {
+2     pthread_t thread_tid;      /* thread ID */
+3     long    thread_count;      /* # connections handled */
+4 } Thread;
+5 Thread *tptr;                  /* array of Thread structures; calloc'ed */
+
+6 int     listenfd, nthreads;
+7 socklen_t addrlen;
+8 pthread_mutex_t mlock;
+</PRE>
+
+<P class="docText">We also declare a few globals, such as the listening socket descriptor and a mutex variable that all the threads need to share.</P>
+<P class="docText"><A class="docLink" HREF="#ch30fig28">Figure 30.28</A> shows the <TT>main</TT> function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig28"></A>Figure 30.28 <TT>main</TT> function for prethreaded TCP server.</H5>
+<P class="docText"><span class="docEmphasis">server/serv07.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+ 2 #include    "pthread07.h"
+
+ 3 pthread_mutex_t mlock = PTHREAD_MUTEX_INITIALIZER;
+
+ 4 int
+ 5 main(int argc, char **argv)
+ 6 {
+ 7     int     i;
+ 8     void    sig_int(int), thread_make(int); 
+
+ 9     if (argc == 3)
+10         listenfd = Tcp_listen(NULL, argv[1], &amp;addrlen);
+11     else if (argc == 4)
+12         listenfd = Tcp_listen(argv[1], argv[2], &amp;addrlen);
+13     else
+14         err_quit("usage: serv07 [ &lt;host&gt; ] &lt;port#&gt; &lt;#threads&gt;");
+15     nthreads = atoi(argv[argc - 1]);
+16     tptr = Calloc(nthreads, sizeof(Thread));
+
+17     for (i = 0;  i &lt; nthreads; i++)
+18         thread_make(i);          /* only main thread returns */
+
+19     Signal(SIGINT, sig_int);
+
+20     for ( ; ; )
+21         pause();                 /* everything done by threads */
+22 }
+</PRE>
+
+<P class="docText">The <TT>thread_make</TT> and <TT>thread_main</TT> functions are shown in <A class="docLink" HREF="#ch30fig29">Figure 30.29</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig29"></A>Figure 30.29 <TT>thread_make</TT> and <TT>thread_main</TT> functions.</H5>
+<P class="docText"><span class="docEmphasis">server/pthread07.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+ 2 #include    "pthread07.h"
+
+ 3 void
+ 4 thread_make(int i)
+ 5 {
+ 6     void     *thread_main(void *);
+
+ 7     Pthread_create(&amp;tptr[i].thread_tid, NULL, &amp;thread_main, (void *) i);
+ 8     return;                     /* main thread returns */
+ 9 }
+
+10 void *
+11 thread_main(void *arg)
+12 {
+13     int     connfd;
+14     void    web_child(int);
+15     socklen_t clilen;
+16     struct sockaddr *cliaddr;
+
+17     cliaddr = Malloc(addrlen);
+
+18     printf("thread %d starting\n", (int) arg);
+19     for ( ; ; ) {
+20         clilen = addrlen;
+21         Pthread_mutex_lock(&amp;mlock);
+22         connfd = Accept(listenfd, cliaddr, &amp;clilen);
+23         Pthread_mutex_unlock(&amp;mlock);
+24         tptr[(int) arg].thread_count++;
+
+25         web_child(connfd);      /* process request */
+26         Close(connfd);
+27     }
+28 }
+</PRE>
+
+<A NAME="ch30lev3sec8"></A>
+<H4 class="docSection2Title"> Create thread</H4>
+<p class="docText"><span class="docEmphasis"><TT>7</TT></span> Each thread is created and executes the <TT>thread_main</TT> function. The only argument is the index number of the thread.</p>
+<p class="docText"><span class="docEmphasis"><TT>21–23</TT></span> The <TT>thread_main</TT> function calls the functions <TT>pthread_mutex_lock</TT> and <TT>pthread_mutex_unlock</TT> around the call to <TT>accept</TT>.</p>
+<P class="docText">Comparing rows 6 and 7 in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A>, we see that this latest version of our server is faster than the create-one-thread-per-client version. We expect this, since we create the pool of threads only once, when the server starts, instead of creating one thread per client. Indeed, this version of our server is the fastest on these two hosts.</P>
+<P class="docText"><A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A> shows the distribution of the <TT>thread_count</TT> counters in the <TT>Thread</TT> structure, which we print in the <TT>SIGINT</TT> handler when the server is terminated. The uniformity of this distribution is caused by the thread scheduling algorithm that appears to cycle through all the threads in order when choosing which thread receives the mutex lock.</P>
+<BLOCKQUOTE><P><P class="docList">On a Berkeley-derived kernel, we do not need any locking around the call to <TT>accept</TT> and can make a version of <A class="docLink" HREF="#ch30fig29">Figure 30.29</A> without any mutex locking and unlocking. Doing so, however, increases the process control CPU time. If we look at the two components of the CPU time, the user time and the system time, without any locking, the user time decreases (because the locking is done in the threads library, which executes in user space), but the system time increases (the kernel's thundering herd as all threads blocked in <TT>accept</TT> are awakened when a connection arrives). Since some form of mutual exclusion is required to return each connection to a single thread, it is faster for the threads to do this themselves than for the kernel.</P></P></BLOCKQUOTE>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

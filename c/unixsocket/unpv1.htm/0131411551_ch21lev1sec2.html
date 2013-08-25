@@ -1,0 +1,78 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="21.2 Multicast Addresses"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch21lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch21lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch21lev1sec2"></A>
+<H3 class="docSection1Title">21.2 Multicast Addresses</H3>
+<P class="docText">When describing multicast addresses, we must distinguish between IPv4 and IPv6.</P>
+<A NAME="ch21lev2sec1"></A>
+<H4 class="docSection2Title"> IPv4 Class D Addresses</H4>
+<P class="docText">Class D addresses, in the range 224.0.0.0 through 239.255.255.255, are the multicast addresses in IPv4 (<A class="docLink" HREF="0131411551_app01lev1sec4.html#app01fig03">Figure A.3</A>). The low-order 28 bits of a class D address form the multicast <span class="docEmphasis">group ID</span> and the 32-bit address is called the <span class="docEmphasis">group address</span>.</P>
+<P class="docText"><A class="docLink" HREF="#ch21fig01">Figure 21.1</A> shows how IP multicast addresses are mapped into Ethernet multicast addresses. This mapping for IPv4 multicast addresses is described in RFC 1112 [Deering 1989] for Ethernets, in RFC 1390 [Katz 1993] for FDDI networks, and in RFC 1469 [Pusateri 1993] for token-ring networks. We also show the mapping for IPv6 multicast addresses to allow easy comparison of the resulting Ethernet addresses.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch21fig01"></A>Figure 21.1. Mapping of IPv4 and IPv6 multicast address to Ethernet addresses.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="312" src="FILES/21fig01.gif" ALT="graphics/21fig01.gif"></p>
+
+</CENTER>
+<P class="docText">Considering just the IPv4 mapping, the high-order 24 bits of the Ethernet address are always <TT>01:00:5e</TT>. The next bit is always 0, and the low-order 23 bits are copied from the low-order 23 bits of the multicast group address. The high-order 5 bits of the group address are ignored in the mapping. This means that 32 multicast addresses map to a single Ethernet address: The mapping is not one-to-one.</P>
+<P class="docText">The low-order 2 bits of the first byte of the Ethernet address identify the address as a universally administered group address. <span class="docEmphasis">Universally administered</span> means the high-order 24 bits have been assigned by the IEEE and group addresses are recognized and handled specially by receiving interfaces.</P>
+<P class="docText">There are a few special IPv4 multicast addresses:</P>
+<UL><LI><P class="docList">224.0.0.1 is the <span class="docEmphasis">all-hosts</span> group. All multicast-capable nodes (hosts, routers, printers, etc.) on a subnet must join this group on all multicast-capable interfaces. (We will talk about what it means to join a multicast group shortly.)</P></LI><LI><P class="docList">224.0.0.2 is the <span class="docEmphasis">all-routers</span> group. All multicast-capable routers on a subnet must join this group on all multicast-capable interfaces.</P></LI></UL>
+<P class="docText">The range 224.0.0.0 through 224.0.0.255 (which we can also write as 224.0.0.0/24) is called <span class="docEmphasis">link local</span>. These addresses are reserved for low-level topology discovery or maintenance protocols, and datagrams destined to any of these addresses are never forwarded by a multicast router. We will say more about the scope of various IPv4 multicast addresses after looking at IPv6 multicast addresses.</P>
+
+<A NAME="ch21lev2sec2"></A>
+<H4 class="docSection2Title"> IPv6 Multicast Addresses</H4>
+<P class="docText">The high-order byte of an IPv6 multicast address has the value <TT>ff</TT>. <A class="docLink" HREF="#ch21fig01">Figure 21.1</A> shows the mapping from a 16-byte IPv6 multicast address into a 6-byte Ethernet address. The low-order 32 bits of the group address are copied into the low-order 32 bits of the Ethernet address. The high-order 2 bytes of the Ethernet address are <TT>33:33</TT>. This mapping for Ethernets is specified in RFC 2464 [Crawford 1998a], the same mapping for FDDI is in RFC 2467 [Crawford 1998b], and the token-ring mapping is in RFC 2470 [Crawford, Narten, and Thomas 1998].</P>
+<P class="docText">The low-order two bits of the first byte of the Ethernet address specify the address as a locally administered group address. <span class="docEmphasis">Locally administered</span> means there is no guarantee that the address is unique to IPv6. There could be other protocol suites besides IPv6 sharing the network and using the same high-order two bytes of the Ethernet address. As we mentioned earlier, group addresses are recognized and handled specially by receiving interfaces.</P>
+<P class="docText">Two formats are defined for IPv6 multicast addresses, as shown in <A class="docLink" HREF="#ch21fig02">Figure 21.2</A>. When the <span class="docEmphasis">p</span> flag is 0, the <span class="docEmphasis">T</span> flag differentiates between a <span class="docEmphasis">well-known</span> multicast group (a value of 0) and a <span class="docEmphasis">transient</span> multicast group (a value of 1). A <span class="docEmphasis">P</span> value of 1 designates a multicast address that is assigned based on a unicast prefix (defined in RFC 3306 [Haberman and Thaler 2002]). If the <span class="docEmphasis">P</span> flag is 1, the <span class="docEmphasis">T</span> flag also must be 1 (i.e., unicast-based multicast addresses are always transient), and the <span class="docEmphasis">plen</span> and <span class="docEmphasis">prefix</span> fields are set to the prefix length and value of the unicast prefix, respectively. The upper two bits of this field are reserved. IPv6 multicast addresses also have a 4-bit <span class="docEmphasis">scope</span> field that we will discuss shortly. RFC 3307 [Haberman 2002] describes the allocation mechanism for the low-order 32 bits of an IPv6 group address (the <span class="docEmphasis">group ID</span>), independent of the setting of the <span class="docEmphasis">P</span> flag.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch21fig02"></A>Figure 21.2. Format of IPv6 multicast addresses</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="219" src="FILES/21fig02.gif" ALT="graphics/21fig02.gif"></p>
+
+</CENTER>
+<P class="docText">There are a few special IPv6 multicast addresses:</P>
+<UL><LI><P class="docList"><TT>ff01::1</TT> and <TT>ff02::1</TT> are the <span class="docEmphasis">all-nodes</span> groups at interface-local and link-local scope. All nodes (hosts, routers, printers, etc.) on a subnet must join these groups on all multicast-capable interfaces. This is similar to the IPv4 224.0.0.1 multicast address. However, since multicast is an integral part of IPv6, unlike IPv4, this is not optional.</P><BLOCKQUOTE><P><P class="docList">Although the IPv4 group is called the <span class="docEmphasis">all-hosts</span> group and the IPv6 group is called the <span class="docEmphasis">all-nodes</span> group, they serve the same purpose. The group was renamed in IPv6 to make it clear that it is intended to address routers, printers, and any other IP devices on the subnet as well as hosts.</P></P></BLOCKQUOTE></LI><LI><P class="docList"><TT>ff01::2</TT>, <TT>ff02::2</TT> and <TT>ff05::2</TT> are the <span class="docEmphasis">all-routers</span> groups at interface-local, link-local, and site-local scopes. All routers on a subnet must join these groups on all multicast-capable interfaces. This is similar to the IPv4 224.0.0.2 multicast address.</P></LI></UL>
+
+<A NAME="ch21lev2sec3"></A>
+<H4 class="docSection2Title"> Scope of Multicast Addresses</H4>
+<P class="docText">IPv6 multicast addresses have an explicit 4-bit <span class="docEmphasis">scope</span> field that specifies how "far" the multicast packet will travel. IPv6 packets also have a <span class="docEmphasis">hop limit</span> field that limits the number of times the packet is forwarded by a router. The following values have been assigned to the scope field:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">1:</P></TD><TD class="docTableCell" valign="top"><P class="docText">interface-local</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">2:</P></TD><TD class="docTableCell" valign="top"><P class="docText">link-local</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">4:</P></TD><TD class="docTableCell" valign="top"><P class="docText">admin-local</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">5:</P></TD><TD class="docTableCell" valign="top"><P class="docText">site-local</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">8:</P></TD><TD class="docTableCell" valign="top"><P class="docText">organization-local</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">14:</P></TD><TD class="docTableCell" valign="top"><P class="docText">global</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The remaining values are unassigned or reserved. An interface-local datagram must not be output by an interface and a link-local datagram must never be forwarded by a router. What defines an admin region, a site, or an organization is up to the administrators of the multicast routers at that site or organization. IPv6 multicast addresses that differ only in scope represent different groups.</P>
+<P class="docText">IPv4 does not have a separate scope field for multicast packets. Historically, the IPv4 TTL field in the IP header has doubled as a multicast scope field: A TTL of 0 means interface-local; 1 means link-local; up through 32 means site-local; up through 64 means region-local; up through 128 means continent-local (meaning avoiding low-rate or highly congested links, intercontinental or not); and up through 255 are unrestricted in scope (global). This double usage of the TTL field has led to difficulties, as detailed in RFC 2365 [Meyer 1998].</P>
+<P class="docText">Although use of the IPv4 TTL field for scoping is accepted and recommended practice, administrative scoping is preferred when possible. This defines the range 239.0.0.0 through 239.255.255.255 as the <span class="docEmphasis">administratively scoped IPv4 multicast space</span> (RFC 2365 [Meyer 1998]). This is the high end of the multicast address space. Addresses in this range are assigned locally by an organization, but are not guaranteed to be unique across organizational boundaries. An organization must configure its boundary routers (multicast routers at the boundary of the organization) not to forward multicast packets destined to any of these addresses.</P>
+<P class="docText">Administratively scoped IPv4 multicast addresses are divided into local scope and organization-local scope, the former being similar (but not semantically equivalent) to IPv6 site-local scope. We summarize the different scoping rules in <A class="docLink" HREF="#ch21fig03">Figure 21.3</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch21fig03"></A>Figure 21.3. Scope of IPv4 and IPv6 multicast addresses.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="472" HEIGHT="150" src="FILES/21fig03.gif" ALT="graphics/21fig03.gif"></p>
+
+</CENTER>
+
+<A NAME="ch21lev2sec4"></A>
+<H4 class="docSection2Title"> Multicast Sessions</H4>
+<P class="docText">Especially in the case of streaming multimedia, the combination of an IP multicast address (either IPv4 or IPv6) and a transport-layer port (typically UDP) is referred to as a <span class="docEmphasis">session</span>. For example, an audio/video teleconference may comprise two sessions; one for audio and one for video. These sessions almost always use different ports and sometimes also use different groups for flexibility in choice when receiving. For example, one client may choose to receive only the audio session, and one client may choose to receive both the audio and the video session. If the sessions used the same group address, this choice would not be possible.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch21lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch21lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

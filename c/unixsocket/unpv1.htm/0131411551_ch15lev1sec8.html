@@ -1,0 +1,161 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="15.8 Receiving Sender Credentials"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch15lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch15lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch15lev1sec8"></A>
+<H3 class="docSection1Title" id="162666-961">15.8 Receiving Sender Credentials</H3>
+<P class="docText">In <A class="docLink" HREF="0131411551_ch14lev1sec6.html#ch14fig13">Figure 14.13</A>, we showed another type of data that can be passed along a Unix domain socket as ancillary data: user credentials. Exactly how credentials are packaged up and sent as ancillary data tends to be OS-specific. We describe FreeBSD here, and other Unix variants are similar (usually the challenge is determining which structure to use for the credentials). We describe this feature, even though it is not uniform across systems, because it is an important, yet simple, addition to the Unix domain protocols. When a client and server communicate using these protocols, the server often needs a way to know exactly who the client is, to validate that the client has permission to ask for the service being requested.</P>
+<P class="docText">FreeBSD passes credentials in a <TT>cmsgcred</TT> structure, which is defined by including the <TT>&lt;sys/socket.h&gt;</TT> header.</P>
+<pre>
+
+</pre><pre>
+struct cmsgcred {
+        pid_t    cmcred_pid;             /* PID of sending process */
+        uid_t    cmcred_uid;             /* real UID of sending process */
+        uid_t    cmcred_euid;            /* effective UID of sending process */
+        gid_t    cmcred_gid;             /* real GID of sending process */
+        short    cmcred_ngroups;         /* number of groups */
+        gid_t    cmcred_groups[CMGROUP_MAX];     /* groups */
+};
+</pre><pre>
+</pre>
+<P class="docText">Normally, <TT>CMGROUP_MAX</TT> is 16. <TT>cmcred_ngroups</TT> is always at least 1, with the first element of the array the effective group ID.</P>
+<P class="docText">This information is always available on a Unix domain socket, although there are often special arrangments the sender must make to have the information included when sending, and there are often special arrangements (e.g., socket options) the receiver must make to get the credentials. On our FreeBSD system, the receiver doesn't have to do anything special other than call <TT>recvmsg</TT> with an ancillary buffer large enough to hold the credentials, as we show in <A class="docLink" HREF="#ch15fig14">Figure 15.14</A>. The sender, however, must include a <TT>cmsgcred</TT> structure when sending data using <TT>sendmsg</TT>. It is important to note that although FreeBSD requires the sender to include the structure, the contents are filled in by the kernel and cannot be forged by the sender. This makes the passing of credentials over a Unix domain socket a reliable way to verify the client's identity.</P>
+<A NAME="ch15lev2sec3"></A>
+<H4 class="docSection2Title"> Example</H4>
+<P class="docText">As an example of credential passing, we modify our Unix domain stream server to ask for the client's credentials. <A class="docLink" HREF="#ch15fig14">Figure 15.14</A> shows a new function, <TT>read_cred</TT>, that is similar to <TT>read</TT>, but also returns a <TT>cmsgcred</TT> structure containing the sender's credentials.</P>
+<p class="docText"><span class="docEmphasis"><TT>3–4</TT></span> The first three arguments are identical to <TT>read</TT>, with the fourth argument being a pointer to an <TT>cmsgcred</TT> structure that will be filled in.</p>
+<p class="docText"><span class="docEmphasis"><TT>22–31</TT></span> If credentials were returned, the length, level, and type of the ancillary data are verified, and the resulting structure is copied back to the caller. If no credentials were returned, we set the structure to 0. Since the number of groups (<TT>cmcred_ngroups</TT>) is always 1 or more, the value of 0 indicates to the caller that no credentials were returned by the kernel.</p>
+<P class="docText">The <TT>main</TT> function for our echo server, <A class="docLink" HREF="0131411551_ch15lev1sec5.html#ch15fig03">Figure 15.3</A>, is unchanged. <A class="docLink" HREF="#ch15fig15">Figure 15.15</A> shows the new version of the <TT>str_echo</TT> function, modified from <A class="docLink" HREF="0131411551_ch05lev1sec4.html#ch05fig03">Figure 5.3</A>. This function is called by the child after the parent has accepted a new client connection and called <TT>fork</TT>.</P>
+<p class="docText"><span class="docEmphasis"><TT>11–23</TT></span> If credentials were returned, they are printed.</p>
+<p class="docText"><span class="docEmphasis"><TT>24–25</TT></span> The remainder of the loop is unchanged. This code reads buffers from the client and writes them back to the client.</p>
+<P class="docText">Our client from <A class="docLink" HREF="0131411551_ch15lev1sec6.html#ch15fig04">Figure 15.4</A> is only changed minimally to pass an empty <TT>cmsgcred</TT> structure that will be filled in when it calls <TT>sendmsg</TT>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch15fig14"></A>Figure 15.14 <TT>read_cred</TT> function: reads and returns sender's credentials.</H5>
+<P class="docText"><span class="docEmphasis">unixdomain/readcred.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 #define CONTROL_LEN (sizeof(struct cmsghdr) + sizeof(struct cmsgcred))
+
+ 3 ssize_t
+ 4 read_cred(int fd, void *ptr, size_t nbytes, struct cmsgcred *cmsgcredptr)
+ 5 {
+ 6     struct msghdr msg;
+ 7     struct iovec iov[1];
+ 8     char    control[CONTROL_LEN];
+ 9     int     n;
+
+10     msg.msg_name = NULL;
+11     msg.msg_namelen = 0;
+12     iov[0].iov_base = ptr;
+13     iov[0].iov_len = nbytes;
+14     msg.msg_iov = iov;
+15     msg.msg_iovlen = 1;
+16     msg.msg_control = control;
+17     msg.msg_controllen = sizeof(control);
+18     msg.msg_flags = 0;
+
+19     if ( (n = recvmsg(fd, &amp;msg, 0)) &lt; 0)
+20         return (n);
+
+21     cmsgcredptr-&gt;cmcred_ngroups = 0;     /* indicates no credentials returned */
+22     if (cmsgcredptr &amp;&amp; msg.msg_controllen &gt; 0) {
+23         struct cmsghdr *cmptr = (struct cmsghdr *) control;
+
+24         if (cmptr-&gt;cmsg_len &lt; CONTROL_LEN)
+25             err_quit("control length = %d", cmptr-&gt;cmsg_len);
+26         if (cmptr-&gt;cmsg_level != SOL_SOCKET)
+27             err_quit("control level != SOL_SOCKET");
+28         if (cmptr-&gt;cmsg_type != SCM_CREDS)
+29             err_quit("control type != SCM_CREDS");
+30         memcpy(cmsgcredptr, CMSG_DATA(cmptr), sizeof(struct cmsgcred));
+31     }
+
+32     return (n);
+33 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch15fig15"></A>Figure 15.15 <TT>str_echo</TT> function: asks for client's credentials.</H5>
+<P class="docText"><span class="docEmphasis">unixdomain/strecho.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 ssize_t read_cred(int, void *, size_t, struct cmsgcred *);
+
+ 3 void
+ 4 str_echo(int sockfd)
+ 5 {
+ 6     ssize_t n;
+ 7     int     i;
+ 8     char     buf[MAXLINE];
+ 9     struct cmsgcred cred;
+
+10   again:
+11     while ( (n = read_cred(sockfd, buf, MAXLINE, &amp;cred)) &gt; 0) {
+12         if (cred.cmcred_ngroups == 0) {
+13             printf("(no credentials returned)\n");
+14         } else {
+15             printf("PID of sender = %d\n", cred.cmcred_pid);
+16             printf("real user ID = %d\n", cred.cmcred_uid);
+17             printf("real group ID = %d\n", cred.cmcred_gid);
+18             printf("effective user ID = %d\n", cred.cmcred_euid);
+19             printf("%d groups:", cred.cmcred_ngroups - 1);
+20             for (i = 1; i &lt; cred.cmcred_ngroups; i++)
+21                 printf(" %d", cred.cmcred_groups[i]);
+22             printf("\n");
+23         }
+24         Writen(sockfd, buf, n);
+25     }
+
+26     if (n &lt; 0 &amp;&amp; errno == EINTR)
+27         goto again;
+28     else if (n &lt; 0)
+29         err_sys("str_echo: read error");
+30 }
+</PRE>
+
+<P class="docText">Before running the client, we can see our current credentials using the <TT>id</TT> command.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">id</span>
+uid=1007(andy) gid=1007(andy) groups=1007(andy), 0(wheel)
+</pre><pre>
+</pre>
+<P class="docText">Starting the server and then running the client one time in another window produces the following output from the server:</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">unixstrserv02</span>
+PID of sender = 26881
+real user ID = 1007
+real group ID = 1007
+effective user ID = 1007
+2 groups: 1007 0
+</pre><pre>
+</pre>
+<P class="docText">This information is output only after the client has sent data to the server. We see that the information matches what we saw with the <TT>id</TT> command.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch15lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch15lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

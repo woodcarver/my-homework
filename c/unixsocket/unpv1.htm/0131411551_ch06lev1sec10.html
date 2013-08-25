@@ -1,0 +1,67 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.10 'poll' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec10"></A>
+<H3 class="docSection1Title" id="225793-986">6.10 <TT>poll</TT> Function</H3>
+<P class="docText">The <TT>poll</TT> function originated with SVR3 and was originally limited to STREAMS devices (<A class="docLink" HREF="0131411551_ch31.html#ch31">Chapter 31</A>). SVR4 removed this limitation, allowing <TT>poll</TT> to work with any descriptor. <TT>poll</TT> provides functionality that is similar to <TT>select</TT>, but <TT>poll</TT> provides additional information when dealing with STREAMS devices.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;poll.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int poll (struct pollfd *</TT><span class="docEmphasis">fdarray</span>, <TT>unsigned long</TT> <span class="docEmphasis">nfds</span>, <TT>int</TT> <span class="docEmphasis">timeout</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: count of ready descriptors, 0 on timeout, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The first argument is a pointer to the first element of an array of structures. Each element of the array is a <TT>pollfd</TT> structure that specifies the conditions to be tested for a given descriptor, <TT>fd</TT>.</P>
+<pre>
+
+</pre><pre>
+struct pollfd {
+  int     fd;       /* descriptor to check */
+  short   events;   /* events of interest on fd */
+  short   revents;  /* events that occurred on fd */
+};
+</pre><pre>
+</pre>
+<P class="docText">The conditions to be tested are specified by the <TT>events</TT> member, and the function returns the status for that descriptor in the corresponding <TT>revents</TT> member. (Having two variables per descriptor, one a value and one a result, avoids value-result arguments. Recall that the middle three arguments for <TT>select</TT> are value-result.) Each of these two members is composed of one or more bits that specify a certain condition. <A class="docLink" HREF="#ch06fig23">Figure 6.23</A> shows the constants used to specify the <TT>events</TT> flag and to test the <TT>revents</TT> flag against.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig23"></A>Figure 6.23. Input <span class="docEmphasis">events</span> and returned <span class="docEmphasis">revents</span> for <TT>poll</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="451" HEIGHT="186" src="FILES/06fig23.gif" ALT="graphics/06fig23.gif"></p>
+
+</CENTER>
+<P class="docText">We have divided this figure into three sections: The first four constants deal with input, the next three deal with output, and the final three deal with errors. Notice that the final three cannot be set in <TT>events</TT>, but are always returned in <TT>revents</TT> when the corresponding condition exists.</P>
+<P class="docText">There are three classes of data identified by <TT>poll:</TT> <span class="docEmphasis">normal</span>, <span class="docEmphasis">priority band</span>, and <span class="docEmphasis">high-priority</span>. These terms come from the STREAMS-based implementations (<A class="docLink" HREF="0131411551_ch31lev1sec2.html#ch31fig05">Figure 31.5</A>).</P>
+<BLOCKQUOTE><P><P class="docList"><TT>POLLIN</TT> can be defined as the logical OR of <TT>POLLRDNORM</TT> and <TT>POLLRDBAND</TT>. The <TT>POLLIN</TT> constant exists from SVR3 implementations that predated the priority bands in SVR4, so the constant remains for backward compatibility. Similarly, <TT>POLLOUT</TT> is equivalent to <TT>POLLWRNORM</TT>, with the former predating the latter.</P></P></BLOCKQUOTE>
+<P class="docText">With regard to TCP and UDP sockets, the following conditions cause <TT>poll</TT> to return the specified <span class="docEmphasis">revent</span>. Unfortunately, POSIX leaves many holes (i.e., optional ways to return the same condition) in its definition of <TT>poll</TT>.</P>
+<UL><LI><P class="docList">All regular TCP data and all UDP data is considered normal.</P></LI><LI><P class="docList">TCP's out-of-band data (<A class="docLink" HREF="0131411551_ch24.html#ch24">Chapter 24</A>) is considered priority band.</P></LI><LI><P class="docList">When the read half of a TCP connection is closed (e.g., a FIN is received), this is also considered normal data and a subsequent read operation will return 0.</P></LI><LI><P class="docList">The presence of an error for a TCP connection can be considered either normal data or an error (<TT>POLLERR</TT>). In either case, a subsequent <TT>read</TT> will return –1 with <TT>errno</TT> set to the appropriate value. This handles conditions such as the receipt of an RST or a timeout.</P></LI><LI><P class="docList">The availability of a new connection on a listening socket can be considered either normal data or priority data. Most implementations consider this normal data.</P></LI><LI><P class="docList">The completion of a nonblocking <TT>connect</TT> is considered to make a socket writable.</P></LI></UL>
+<P class="docText">The number of elements in the array of structures is specified by the <span class="docEmphasis">nfds</span> argument.</P>
+<BLOCKQUOTE><P><P class="docList">Historically, this argument has been an <TT>unsigned long</TT>, which seems excessive. An <TT>unsigned int</TT> would be adequate. Unix 98 defines a new datatype for this argument: <TT>nfds_t</TT>.</P></P></BLOCKQUOTE>
+<P class="docText">The <span class="docEmphasis">timeout</span> argument specifies how long the function is to wait before returning. A positive value specifies the number of milliseconds to wait. <A class="docLink" HREF="#ch06fig24">Figure 6.24</A> shows the possible values for the <span class="docEmphasis">timeout</span> argument.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig24"></A>Figure 6.24. <span class="docEmphasis">timeout</span> values for <TT>poll</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="286" HEIGHT="69" src="FILES/06fig24.gif" ALT="graphics/06fig24.gif"></p>
+
+</CENTER>
+<P class="docText">The constant <TT>INFTIM</TT> is defined to be a negative value. If the system does not provide a timer with millisecond accuracy, the value is rounded up to the nearest supported value.</P>
+<BLOCKQUOTE><P><P class="docList">The POSIX specification requires that <TT>INFTIM</TT> be defined by including <TT>&lt;poll.h&gt;</TT>, but many systems still define it in <TT>&lt;sys/stropts.h&gt;</TT>.</P></P><P><P class="docList">As with <TT>select</TT>, any timeout set for <TT>poll</TT> is limited by the implementation's clock resolution (often 10 ms).</P></P></BLOCKQUOTE>
+<P class="docText">The return value from <TT>poll</TT> is –1 if an error occurred, 0 if no descriptors are ready before the timer expires, otherwise it is the number of descriptors that have a nonzero <TT>revents</TT> member.</P>
+<P class="docText">If we are no longer interested in a particular descriptor, we just set the <TT>fd</TT> member of the <TT>pollfd</TT> structure to a negative value. Then the <TT>events</TT> member is ignored and the <TT>revents</TT> member is set to 0 on return.</P>
+<P class="docText">Recall our discussion at the end of <A class="docLink" HREF="0131411551_ch06lev1sec3.html#ch06lev1sec3">Section 6.3</A> about <TT>FD_SETSIZE</TT> and the maximum number of descriptors per descriptor set versus the maximum number of descriptors per process. We do not have that problem with <TT>poll</TT> since it is the caller's responsibility to allocate an array of <TT>pollfd</TT> structures and then tell the kernel the number of elements in the array. There is no fixed-size datatype similar to <TT>fd_set</TT> that the kernel knows about.</P>
+<BLOCKQUOTE><P><P class="docList">The POSIX specification requires both <TT>select</TT> and <TT>poll</TT>. But, from a portability perspective today, more systems support <TT>select</TT> than <TT>poll</TT>. Also, POSIX defines <TT>pselect</TT>, an enhanced version of <TT>select</TT> that handles signal blocking and provides increased time resolution. Nothing similar is defined for <TT>poll</TT>.</P></P></BLOCKQUOTE>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,63 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="1.1 Introduction"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch01.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch01lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch01lev1sec1"></A>
+<H3 class="docSection1Title" id="225793-922">1.1 Introduction</H3>
+<P class="docText">When writing programs that communicate across a computer network, one must first invent a <span class="docEmphasis">protocol</span>, an agreement on how those programs will communicate. Before delving into the design details of a protocol, high-level decisions must be made about which program is expected to initiate communication and when responses are expected. For example, a Web server is typically thought of as a long-running program (or <span class="docEmphasis">daemon</span>) that sends network messages only in response to requests coming in from the network. The other side of the protocol is a Web client, such as a browser, which always initiates communication with the server. This organization into <span class="docEmphasis">client</span> and <span class="docEmphasis">server</span> is used by most network-aware applications. Deciding that the client always initiates requests tends to simplify the protocol as well as the programs themselves. Of course, some of the more complex network applications also require <span class="docEmphasis">asynchronous callback</span> communication, where the server initiates a message to the client. But it is far more common for applications to stick to the basic client/server model shown in <A class="docLink" HREF="#ch01fig01">Figure 1.1</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch01fig01"></A>Figure 1.1. Network application: client and server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="407" HEIGHT="63" src="FILES/01fig01.gif" ALT="graphics/01fig01.gif"></p>
+
+</CENTER>
+<P class="docText">Clients normally communicate with one server at a time, although using a Web browser as an example, we might communicate with many different Web servers over, say, a 10-minute time period. But from the server's perspective, at any given point in time, it is not unusual for a server to be communicating with multiple clients. We show this in <A class="docLink" HREF="#ch01fig02">Figure 1.2</A>. Later in this text, we will cover several different ways for a server to handle multiple clients at the same time.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch01fig02"></A>Figure 1.2. Server handling multiple clients at the same time.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="408" HEIGHT="272" src="FILES/01fig02.gif" ALT="graphics/01fig02.gif"></p>
+
+</CENTER>
+<P class="docText">The client application and the server application may be thought of as communicating via a network protocol, but actually, multiple layers of network protocols are typically involved. In this text, we focus on the TCP/IP protocol suite, also called the Internet protocol suite. For example, Web clients and servers communicate using the Transmission Control Protocol, or TCP. TCP, in turn, uses the Internet Protocol, or IP, and IP communicates with a datalink layer of some form. If the client and server are on the same Ethernet, we would have the arrangement shown in <A class="docLink" HREF="#ch01fig03">Figure 1.3</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch01fig03"></A>Figure 1.3. Client and server on the same Ethernet communicating using TCP.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="271" src="FILES/01fig03.gif" ALT="graphics/01fig03.gif"></p>
+
+</CENTER>
+<P class="docText">Even though the client and server communicate using an application protocol, the transport layers communicate using TCP. Note that the actual flow of information between the client and server goes down the protocol stack on one side, across the network, and up the protocol stack on the other side. Also note that the client and server are typically user processes, while the TCP and IP protocols are normally part of the protocol stack within the kernel. We have labeled the four layers on the right side of <A class="docLink" HREF="#ch01fig03">Figure 1.3</A>.</P>
+<P class="docText">TCP and IP are not the only protocols that we will discuss. Some clients and servers use the User Datagram Protocol (UDP) instead of TCP, and we will discuss both protocols in more detail in <A class="docLink" HREF="0131411551_ch02.html#ch02">Chapter 2</A>. Furthermore, we have used the term "IP," but the protocol, which has been in use since the early 1980s, is officially called <span class="docEmphasis">IP version 4</span> (IPv4). A new version, <span class="docEmphasis">IP version 6</span> (IPv6) was developed during the mid-1990s and could potentially replace IPv4 in the years to come. This text covers the development of network applications using both IPv4 and IPv6. <A class="docLink" HREF="0131411551_app01.html#app01">Appendix A</A> provides a comparison of IPv4 and IPv6, along with other protocols that we will discuss.</P>
+<P class="docText">The client and server need not be attached to the same <span class="docEmphasis">local area network</span> (LAN) as we show in <A class="docLink" HREF="#ch01fig03">Figure 1.3</A>. For instance, in <A class="docLink" HREF="#ch01fig04">Figure 1.4</A>, we show the client and server on different LANs, with both LANs connected to a <span class="docEmphasis">wide area network</span> (WAN) using <span class="docEmphasis">routers</span>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch01fig04"></A>Figure 1.4. Client and server on different LANs connected through a WAN.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="264" src="FILES/01fig04.gif" ALT="graphics/01fig04.gif"></p>
+
+</CENTER>
+<P class="docText">Routers are the building blocks of WANs. The largest WAN today is the <span class="docEmphasis">Internet</span>. Many companies build their own WANs and these private WANs may or may not be connected to the Internet.</P>
+<P class="docText">The remainder of this chapter provides an introduction to the various topics that are covered in detail later in the text. We start with a complete example of a TCP client, albeit a simple one, that demonstrates many of the function calls and concepts that we will encounter throughout the text. This client works with IPv4 only, and we show the changes required to work with IPv6. A better solution is to write protocol-independent clients and servers, and we will discuss this in <A class="docLink" HREF="0131411551_ch11.html#ch11">Chapter 11</A>. This chapter also shows a complete TCP server that works with our client.</P>
+<P class="docText">To simplify all our code, we define our own wrapper functions for most of the system functions that we call throughout the text. We can use these wrapper functions most of the time to check for an error, print an appropriate message, and terminate when an error occurs. We also show the test network, hosts, and routers used for most examples in the text, along with their hostnames, IP addresses, and operating systems.</P>
+<P class="docText">Most discussions of Unix these days include the term "X," which is the standard that most vendors have adopted. We describe the history of POSIX and how it affects the Application Programming Interfaces (APIs) that we describe in this text, along with the other players in the standards arena.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch01.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch01lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

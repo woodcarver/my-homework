@@ -1,0 +1,28 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Exercises"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch22lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch23.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch22lev1sec11"></A>
+<H3 class="docSection1Title"> Exercises</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><A NAME="ch22q01"></A><B><A class="docLink" HREF="0131411551_app05lev1sec21.html#ch22a01">22.1</A></B></TD><TD><P class="docText">In <A class="docLink" HREF="0131411551_ch22lev1sec6.html#ch22fig18">Figure 22.18</A>, why are there two calls to <TT>printf</TT>?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch22q02"></A><B><A class="docLink" HREF="0131411551_app05lev1sec21.html#ch22a02">22.2</A></B></TD><TD><P class="docText">Can <TT>dg_send_recv</TT> (<A class="docLink" HREF="0131411551_ch22lev1sec5.html#ch22fig08">Figures 22.8</A> and <A class="docLink" HREF="0131411551_ch22lev1sec5.html#ch22fig09">22.9</A>) ever return 0?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch22q03"></A><B><A class="docLink" HREF="0131411551_app05lev1sec21.html#ch22a03">22.3</A></B></TD><TD><P class="docText">Recode <TT>dg_send_recv</TT> to use <TT>select</TT> and its timer instead of using <TT>alarm</TT>, <TT>SIGALRM</TT>, <TT>sigsetjmp</TT>, and <TT>siglongjmp</TT>.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch22q04"></A><B><A class="docLink" HREF="0131411551_app05lev1sec21.html#ch22a04">22.4</A></B></TD><TD><P class="docText">How can an IPv4 server guarantee that the source address of its reply equals the destination address of the client's request (e.g., functionality similar to that provided by the <TT>IPV6_PKTINFO</TT> socket option)?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch22q05"></A><B><A class="docLink" HREF="0131411551_app05lev1sec21.html#ch22a05">22.5</A></B></TD><TD><P class="docText">The <TT>main</TT> function in <A class="docLink" HREF="0131411551_ch22lev1sec6.html#ch22lev1sec6">Section 22.6</A> is protocol-dependent on IPv4. Recode it to be protocolindependent. Require the user to specify one or two command-line arguments, the first being an optional IP address (e.g., 0.0.0.0 or 0::0) and the second being a required port number. Then call <TT>udp_client</TT> just to obtain the address family, port number, and length of the socket address structure.</P>
+<P class="docText">What happens if you call <TT>udp_client</TT>, as suggested, without specifying a <span class="docEmphasis">hostname</span> argument because <TT>udp_client</TT> does not specify the <TT>AI_PASSIVE</TT> hint to <TT>getaddrinfo</TT>?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch22q06"></A><B>22.6</B></TD><TD><P class="docText">Run the client in <A class="docLink" HREF="0131411551_ch22lev1sec5.html#ch22fig06">Figure 22.6</A> to an echo server across the Internet after modifying the RTT functions to print each RTT. Also, modify the <TT>dg_send_recv</TT> function to print each received sequence number. Plot the resulting RTTs along with the estimators for the RTT and its mean deviation.</P></TD></TR></TABLE></P><br>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch22lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch23.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

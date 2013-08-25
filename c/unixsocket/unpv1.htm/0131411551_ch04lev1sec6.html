@@ -1,0 +1,117 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="4.6 'accept' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch04lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch04lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch04lev1sec6"></A>
+<H3 class="docSection1Title">4.6 <TT>accept</TT> Function</H3>
+<P class="docText"><TT>accept</TT> is called by a TCP server to return the next completed connection from the front of the completed connection queue (<A class="docLink" HREF="0131411551_ch04lev1sec5.html#ch04fig07">Figure 4.7</A>). If the completed connection queue is empty, the process is put to sleep (assuming the default of a blocking socket).</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int accept (int</TT> <span class="docEmphasis">sockfd</span>, <TT>struct sockaddr *</TT><span class="docEmphasis">cliaddr</span>, <TT>socklen_t *</TT><span class="docEmphasis">addrlen</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-negative descriptor if OK, -1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The <span class="docEmphasis">cliaddr</span> and <span class="docEmphasis">addrlen</span> arguments are used to return the protocol address of the connected peer process (the client). <span class="docEmphasis">addrlen</span> is a value-result argument (<A class="docLink" HREF="0131411551_ch03lev1sec3.html#ch03lev1sec3">Section 3.3</A>): Before the call, we set the integer value referenced by *<span class="docEmphasis">addrlen</span> to the size of the socket address structure pointed to by <span class="docEmphasis">cliaddr</span>; on return, this integer value contains the actual number of bytes stored by the kernel in the socket address structure.</P>
+<P class="docText">If <TT>accept</TT> is successful, its return value is a brand-new descriptor automatically created by the kernel. This new descriptor refers to the TCP connection with the client. When discussing <TT>accept</TT>, we call the first argument to <TT>accept</TT> the <span class="docEmphasis">listening socket</span> (the descriptor created by <TT>socket</TT> and then used as the first argument to both <TT>bind</TT> and <TT>listen</TT>), and we call the return value from <TT>accept</TT> the <span class="docEmphasis">connected socket</span>. It is important to differentiate between these two sockets. A given server normally creates only one listening socket, which then exists for the lifetime of the server. The kernel creates one connected socket for each client connection that is <TT>accept</TT>ed (i.e., for which the TCP three-way handshake completes). When the server is finished serving a given client, the connected socket is closed.</P>
+<P class="docText">This function returns up to three values: an integer return code that is either a new socket descriptor or an error indication, the protocol address of the client process (through the <span class="docEmphasis">cliaddr</span> pointer), and the size of this address (through the <span class="docEmphasis">addrlen</span> pointer). If we are not interested in having the protocol address of the client returned, we set both <span class="docEmphasis">cliaddr</span> and <span class="docEmphasis">addrlen</span> to null pointers.</P>
+<P class="docText"><A class="docLink" HREF="0131411551_ch01lev1sec5.html#ch01fig09">Figure 1.9</A> shows these points. The connected socket is closed each time through the loop, but the listening socket remains open for the life of the server. We also see that the second and third arguments to <TT>accept</TT> are null pointers, since we were not interested in the identity of the client.</P>
+<A NAME="ch04lev2sec2"></A>
+<H4 class="docSection2Title"> Example: Value-Result Arguments</H4>
+<P class="docText">We will now show how to handle the value-result argument to <TT>accept</TT> by modifying the code from <A class="docLink" HREF="0131411551_ch01lev1sec5.html#ch01fig09">Figure 1.9</A> to print the IP address and port of the client. We show this in <A class="docLink" HREF="#ch04fig11">Figure 4.11</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch04fig11"></A>Figure 4.11 Daytime server that prints client IP address and port</H5>
+<P class="docText"><span class="docEmphasis">intro/daytimetcpsrv1.c</span></P>
+
+<PRE>
+
+ 1 #include    "unp.h" 2
+ 2 #include    &lt;time.h&gt;
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     listenfd, connfd;
+ 7     socklen_t len;
+ 8     struct sockaddr_in servaddr, cliaddr;
+ 9     char    buff[MAXLINE];
+10     time_t  ticks;
+
+11     listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+12     bzero(&amp;servaddr, sizeof(servaddr));
+13     servaddr.sin_family = AF_INET;
+14     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+15     servaddr.sin_port = htons(13);  /* daytime server */
+
+16     Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+17     Listen(listenfd, LISTENQ);
+
+18     for ( ; ; ) {
+19         len = sizeof(cliaddr);
+20         connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
+21         printf("connection from %s, port %d\n",
+22                Inet_ntop(AF_INET, &amp;cliaddr.sin_addr, buff, sizeof(buff)),
+23                ntohs(cliaddr.sin_port));
+
+24         ticks = time(NULL);
+25         snprintf(buff, sizeof(buff), "%.24s\r\n", ctime(&amp;ticks));
+26         Write(connfd, buff, strlen(buff));
+
+27         Close(connfd);
+28     }
+29 }
+</PRE>
+
+<A NAME="ch04lev3sec1"></A>
+<H5 class="docSection3Title"> New declarations</H5>
+<p class="docText"><span class="docEmphasis"><TT>7–8</TT></span> We define two new variables: <TT>len</TT>, which will be a value-result variable, and <TT>cliaddr</TT>, which will contain the client's protocol address.</p>
+
+<A NAME="ch04lev3sec2"></A>
+<H5 class="docSection3Title"> Accept connection and print client's address</H5>
+<p class="docText"><span class="docEmphasis"><TT>19–23</TT></span> We initialize <TT>len</TT> to the size of the socket address structure and pass a pointer to the <TT>cliaddr</TT> structure and a pointer to <TT>len</TT> as the second and third arguments to <TT>accept</TT>. We call <TT>inet_ntop</TT> (<A class="docLink" HREF="0131411551_ch03lev1sec7.html#ch03lev1sec7">Section 3.7</A>) to convert the 32-bit IP address in the socket address structure to a dotted-decimal ASCII string and call <TT>ntohs</TT> (<A class="docLink" HREF="0131411551_ch03lev1sec4.html#ch03lev1sec4">Section 3.4</A>) to convert the 16-bit port number from network byte order to host byte order.</p>
+<BLOCKQUOTE><P><P class="docList">Calling <TT>sock_ntop</TT> instead of <TT>inet_ntop</TT> would make our server more protocol-independent, but this server is already dependent on IPv4. We will show a protocol-independent version of this server in <A class="docLink" HREF="0131411551_ch11lev1sec13.html#ch11fig13">Figure 11.13</A>.</P></P></BLOCKQUOTE>
+<P class="docText">If we run our new server and then run our client on the same host, connecting to our server twice in a row, we have the following output from the client:</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpcli 127.0.0.1</span>
+        Thu Sep 11 12:44:00 2003
+        solaris % <span class="docEmphStrong">daytimetcpcli 192.168.1.20</span>
+        Thu Sep 11 12:44:09 2003
+</pre><pre>
+</pre>
+<P class="docText">We first specify the server's IP address as the loopback address (127.0.0.1) and then as its own IP address (192.168.1.20). Here is the corresponding server output:</P>
+<pre>
+
+</pre><pre>
+        solaris # <span class="docEmphStrong">daytimetcpsrv1</span>
+        connection from 127.0.0.1, port 43388
+        connection from 192.168.1.20, port 43389
+</pre><pre>
+</pre>
+<P class="docText">Notice what happens with the client's IP address. Since our daytime client (<A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A>) does not call <TT>bind</TT>, we said in <A class="docLink" HREF="0131411551_ch04lev1sec4.html#ch04lev1sec4">Section 4.4</A> that the kernel chooses the source IP address based on the outgoing interface that is used. In the first case, the kernel sets the source IP address to the loopback address; in the second case, it sets the address to the IP address of the Ethernet interface. We can also see in this example that the ephemeral port chosen by the Solaris kernel is 43388, and then 43389 (recall <A class="docLink" HREF="0131411551_ch02lev1sec9.html#ch02fig10">Figure 2.10</A>).</P>
+<P class="docText">As a final point, our shell prompt for the server script changes to the pound sign (#), the commonly used prompt for the superuser. Our server must run with superuser privileges to <TT>bind</TT> the reserved port of 13. If we do not have superuser privileges, the call to <TT>bind</TT> will fail:</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpsrv1</span>
+        bind error: Permission denied
+</pre><pre>
+</pre>
+
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch04lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch04lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

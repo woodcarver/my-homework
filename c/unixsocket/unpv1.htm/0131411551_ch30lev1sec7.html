@@ -1,0 +1,138 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.7 TCP Preforked Server, File Locking Around 'accept'"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec7"></A>
+<H3 class="docSection1Title">30.7 TCP Preforked Server, File Locking Around <TT>accept</TT></H3>
+<P class="docText">The implementation that we just described for 4.4BSD, which allows multiple processes to call <TT>accept</TT> on the same listening descriptor, works only with Berkeley-derived kernels that implement <TT>accept</TT> within the kernel. System V kernels, which implement <TT>accept</TT> as a library function, may not allow this. Indeed, if we run the server from the previous section on such a system, soon after the clients start connecting to the server, a call to <TT>accept</TT> in one of the children returns <TT>EPROTO</TT>, which means a protocol error.</P>
+<BLOCKQUOTE><P><P class="docList">The reasons for this problem with the SVR4 library version of <TT>accept</TT> arise from the STREAMS implementation (<A class="docLink" HREF="0131411551_ch31.html#ch31">Chapter 31</A>) and the fact that the library <TT>accept</TT> is not an atomic operation. Solaris fixes this, but the problem still exists in most other SVR4 implementations.</P></P></BLOCKQUOTE>
+<P class="docText">The solution is for the application to place a <span class="docEmphasis">lock</span> of some form around the call to <TT>accept</TT>, so that only one process at a time is blocked in the call to <TT>accept</TT>. The remaining children will be blocked trying to obtain the lock.</P>
+<P class="docText">There are various ways to provide this locking around the call to <TT>accept</TT>, as we described in the second volume of this series. In this section, we will use POSIX file locking with the <TT>fcntl</TT> function.</P>
+<P class="docText">The only change to the <TT>main</TT> function (<A class="docLink" HREF="0131411551_ch30lev1sec6.html#ch30fig09">Figure 30.9</A>) is adding a call to our <TT>my_lock_init</TT> function before the loop that creates the children.</P>
+<pre>
+
+</pre><pre>
++    my_lock_init("/tmp/lock.XXXXXX"); /* one lock file for all children */
+     for (i = 0; i &lt; nchildren; i++)
+         pids[i] = child_make(i, listenfd, addrlen); /* parent returns */
+</pre><pre>
+</pre>
+<P class="docText">The <TT>child_make</TT> function remains the same as <A class="docLink" HREF="0131411551_ch30lev1sec6.html#ch30fig11">Figure 30.11</A>. The only change to our <TT>child_main</TT> function (<A class="docLink" HREF="0131411551_ch30lev1sec6.html#ch30fig12">Figure 30.12</A>) is to obtain a lock before calling <TT>accept</TT> and release the lock after <TT>accept</TT> returns.</P>
+<pre>
+
+</pre><pre>
+     for ( ; ; ) {
+         clilen = addrlen;
++        my_lock_wait();
+         connfd = Accept(listenfd, cliaddr, &amp;clilen);
++        my_lock_release();
+
+         web_child(connfd);        /* process request */
+         Close(connfd);
+</pre><pre>
+</pre>
+<P class="docText"><A class="docLink" HREF="#ch30fig16">Figure 30.16</A> shows our <TT>my_lock_init</TT> function, which uses POSIX file locking.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig16"></A>Figure 30.16 <TT>my_lock_init</TT> function using POSIX file locking.</H5>
+<P class="docText"><span class="docEmphasis">server/lock_fcntl.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 static struct flock lock_it, unlock_it;
+ 3 static int lock_fd = -1;
+ 4                     /* fcntl() will fail if my_lock_init() not called */
+
+ 5 void
+ 6 my_lock_init(char *pathname)
+ 7 {
+ 8     char     lock_file[1024];
+
+ 9         /* must copy caller's string, in case it's a constant */
+10     strncpy(lock_file, pathname, sizeof(lock_file));
+11     lock_fd = Mkstemp(lock_file);
+
+12     Unlink(lock_file);          /* but lock_fd remains open */
+
+13     lock_it.l_type = F_WRLCK;
+14     lock_it.l_whence = SEEK_SET;
+15     lock_it.l_start = 0;
+16     lock_it.l_len = 0;
+
+17     unlock_it.l_type = F_UNLCK;
+18     unlock_it.l_whence = SEEK_SET;
+19     unlock_it.l_start = 0;
+20     unlock_it.l_len = 0;
+21 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>9–12</TT></span> The caller specifies a pathname template as the argument to <TT>my_lock_init</TT>, and the <TT>mktemp</TT> function creates a unique pathname based on this template. A file is then created with this pathname and immediately <TT>unlinked</TT>. By removing the pathname from the directory, if the program crashes, the file completely disappears. But as long as one or more processes have the file open (i.e., the file's reference count is greater than 0), the file itself is not removed. (This is the fundamental difference between removing a pathname from a directory and closing an open file.)</p>
+<p class="docText"><span class="docEmphasis"><TT>13–20</TT></span> Two <TT>flock</TT> structures are initialized: one to lock the file and one to unlock the file. The range of the file that is locked starts at byte offset 0 (a <TT>l_whence</TT> of <TT>SEEK_SET</TT> with <TT>l_start</TT> set to 0). Since <TT>l_len</TT> is set to 0, this specifies that the entire file is locked. We never write anything to the file (its length is always 0), but that is fine. The advisory lock is still handled correctly by the kernel.</p>
+<BLOCKQUOTE><P><P class="docList">It may be tempting to initialize these structures using</P><pre>
+
+</pre><pre>
+static struct flock lock_it = { F_WRLCK, 0, 0, 0, 0 };
+static struct flock unlock_it = { F_UNLCK, 0, 0, 0, 0 };
+</pre><pre>
+</pre></P><P><P class="docList">but there are two problems. First, there is no guarantee that the constant <TT>SEEK_SET</TT> is 0. But more importantly, there is no guarantee by POSIX as to the order of the members in the structure. The <TT>l_type</TT> member may be the first one in the structure, but not on all systems. All POSIX guarantees is that the members that POSIX requires are present in the structure. POSIX does not guarantee the order of the members, and POSIX also allows additional, non-POSIX members to be in the structure. Therefore, initializing a structure to anything other than all zeros should always be done by actual C code, and not by an initializer when the structure is allocated.</P></P><P><P class="docList">An exception to this rule is when the structure initializer is provided by the implementation. For example, when initializing a Pthread mutex lock in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>, we wrote</P><pre>
+
+</pre><pre>
+pthread_mutex_t mlock = PTHREAD_MUTEX_INITIALIZER;
+</pre><pre>
+</pre></P><P><P class="docList">The <TT>pthread_mutex_t</TT> datatype is often a structure, but the initializer is provided by the implementation and can differ from one implementation to the next.</P></P></BLOCKQUOTE>
+<P class="docText"><A class="docLink" HREF="#ch30fig17">Figure 30.17</A> shows the two functions that lock and unlock the file. These are just calls to <TT>fcntl</TT>, using the structures that were initialized in <A class="docLink" HREF="#ch30fig16">Figure 30.16</A>.</P>
+<P class="docText">This new version of our preforked server now works on SVR4 systems by assuring that only one child process at a time is blocked in the call to <TT>accept</TT>. Comparing rows 2 and 3 in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A> shows that this type of locking adds to the server's process control CPU time.</P>
+<BLOCKQUOTE><P><P class="docList">The Apache Web server, <A class="docLink" target="_blank" HREF="http://www.apache.org/default.htm">http://www.apache.org</A>, preforks its children and then uses either the technique in the previous section (all children blocked in the call to <TT>accept</TT>), if the implementation allows this, or file locking around the <TT>accept</TT>.</P></P></BLOCKQUOTE>
+<A NAME="ch30lev2sec5"></A>
+<H4 class="docSection2Title"> Effect of Too Many Children</H4>
+<P class="docText">We can check this version to see if the same thundering herd problem exists, which we described in the previous section. We check by increasing the number of (unneeded) children and noticing that the timing results get worse proportionally.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig17"></A>Figure 30.17 <TT>my_lock_wait</TT> and <TT>my_lock_release</TT> functions using <TT>fcntl</TT>.</H5>
+<P class="docText"><span class="docEmphasis">server/lock_fcntl.c</span></P>
+
+<PRE>
+22 void
+23 my_lock_wait()
+24 {
+25     int     rc;
+
+26     while ( (rc = fcntl(lock_fd, F_SETLKW, &amp;lock_it)) &lt; 0) {
+27         if (errno == EINTR)
+28             continue;
+29         else
+30             err_sys("fcntl error for my_lock_wait");
+31     }
+32 }
+
+33 void
+34 my_lock_release()
+35 {
+36     if (fcntl(lock_fd, F_SETLKW, &amp;unlock_it) &lt; 0)
+37         err_sys("fcntl error for my_lock_release");
+38 }
+</PRE>
+
+
+<A NAME="ch30lev2sec6"></A>
+<H4 class="docSection2Title"> Distribution of Connections to the Children</H4>
+<P class="docText">We can examine the distribution of the clients to the pool of available children by using the function we described with <A class="docLink" HREF="0131411551_ch30lev1sec6.html#ch30fig14">Figure 30.14</A>. <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A> shows the result. The OS distributes the file locks uniformly to the waiting processes (and this behavior was uniform across several operating systems we tested).</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

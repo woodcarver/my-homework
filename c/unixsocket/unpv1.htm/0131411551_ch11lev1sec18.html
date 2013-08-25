@@ -1,0 +1,118 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.18 Re-entrant Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec17.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec19.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec18"></A>
+<H3 class="docSection1Title">11.18 Re-entrant Functions</H3>
+<P class="docText">The <TT>gethostbyname</TT> function from <A class="docLink" HREF="0131411551_ch11lev1sec3.html#ch11lev1sec3">Section 11.3</A> presents an interesting problem that we have not yet examined in the text: It is not <span class="docEmphasis">re-entrant</span>. We will encounter this problem in general when we deal with threads in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>, but it is interesting to examine the problem now (without having to deal with the concept of threads) and to see how to fix it.</P>
+<P class="docText">First, let us look at how the function works. If we look at its source code (which is easy since the source code for the entire BIND release is publicly available), we see that one file contains both <TT>gethostbyname</TT> and <TT>gethostbyaddr</TT>, and the file has the following general outline:</P>
+<pre>
+
+</pre><pre>
+<span class="docEmphStrong">static</span> struct hostent host ;     /* result stored here */
+
+struct hostent *
+gethostbyname (const char *hostname)
+{
+     return (gethostbyname2 (hostname, family));
+}
+
+struct hostent *
+gethostbyname2 (const char *hostname, int family)
+{
+    /* call DNS functions for A or AAAA query */
+    /* fill in host structure */
+    return (&amp;host) ;
+}
+</pre><pre>
+</pre>
+<pre>
+
+</pre><pre>
+struct hostent *
+
+gethostbyaddr (const char *addr, socklen_t len, int family)
+{
+    /* call DNS functions for PTR query in in-addr.arpa domain */
+    /* fill in host structure */
+    return (&amp;host);
+}
+</pre><pre>
+</pre>
+<P class="docText">We highlight the <TT>static</TT> storage class specifier of the result structure because that is the basic problem. The fact that these three functions share a single <TT>host</TT> variable presents yet another problem that we will discuss in <A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11lev1sec23">Exercise 11.1</A>. (<TT>gethostbyname2</TT> was introduced with the IPv6 support in BIND 4.9.4. It has since been deprecated; see <A class="docLink" HREF="0131411551_ch11lev1sec20.html#ch11lev1sec20">Section 11.20</A> for more detail. We will ignore the fact that <TT>gethostbyname2</TT> is involved when we call <TT>gethostbyname</TT>, as that doesn't affect this discussion.)</P>
+<P class="docText">The re-entrancy problem can occur in a normal Unix process that calls <TT>gethostbyname</TT> or <TT>gethostbyaddr</TT> from both the main flow of control and from a signal handler. When the signal handler is called (say it is a <TT>SIGALRM</TT> signal that is generated once per second), the main flow of control of the process is temporarily stopped and the signal handling function is called. Consider the following:</P>
+<pre>
+
+</pre><pre>
+main ()
+{
+     struct hostent *hptr;
+     ...
+     signal (SIGALRM, sig_alrm);
+     ...
+     hptr = gethostbyname ( ... ) ;
+     ...
+}
+void
+sig_alrm (int signo)
+{
+    struct hostent *hptr;
+    ...
+    hptr = gethostbyname ( ... ) ;
+    ...
+}
+</pre><pre>
+</pre>
+<P class="docText">If the main flow of control is in the middle of <TT>gethostbyname</TT> when it is temporarily stopped (say the function has filled in the <TT>host</TT> variable and is about to return), and the signal handler then calls <TT>gethostbyname</TT>, since only one copy of the variable <TT>host</TT> exists in the process, it is reused. This overwrites the values that were calculated for the call from the main flow of control with the values calculated for the call from the signal handler.</P>
+<P class="docText">If we look at the name and address conversion functions presented in this chapter, along with the <TT>inet_</TT><span class="docEmphasis">XXX</span> functions from <A class="docLink" HREF="0131411551_ch04.html#ch04">Chapter 4</A>, we note the following:</P>
+<UL><LI><P class="docList">Historically, <TT>gethostbyname</TT>, <TT>gethostbyaddr</TT>, <TT>getservbyname</TT>, and <TT>get servbyport</TT> are not re-entrant because all return a pointer to a static structure.</P><P class="docList">Some implementations that support threads (Solaris 2.x) provide re-entrant versions of these four functions with names ending with the_<TT>r</TT> suffix, which we will describe in the next section.</P><P class="docList">Alternately, some implementations that support threads (HP-UX 10.30 and later) provide re-entrant versions of these functions using thread-specific data (<A class="docLink" HREF="0131411551_ch26lev1sec5.html#ch26lev1sec5">Section 26.5</A>).</P></LI><LI><P class="docList"><TT>inet_pton</TT> and <TT>inet_ntop</TT> are always re-entrant.</P></LI><LI><P class="docList">Historically, <TT>inet_ntoa</TT> is not re-entrant, but some implementations that support threads provide a re-entrant version that uses thread-specific data.</P></LI><LI><P class="docList"><TT>getaddrinfo</TT> is re-entrant only if it calls re-entrant functions itself; that is, if it calls re-entrant versions of <TT>gethostbyname</TT> for the hostname and <TT>getservbyname</TT> for the service name. One reason that all the memory for the results is dynamically allocated is to allow it to be re-entrant.</P></LI><LI><P class="docList"><TT>getnameinfo</TT> is re-entrant only if it calls re-entrant functions itself; that is, if it calls re-entrant versions of <TT>gethostbyaddr</TT> to obtain the hostname and <TT>getservbyport</TT> to obtain the service name. Notice that both result strings (for the hostname and the service name) are allocated by the caller to allow this reentrancy.</P></LI></UL>
+<P class="docText">A similar problem occurs with the variable <TT>errno</TT>. Historically, there has been a single copy of this integer variable per process. If a process makes a system call that returns an error, an integer error code is stored in this variable. For example, when the function named <TT>close</TT> in the standard C library is called, it might execute something like the following pseudocode:</P>
+<UL><LI><P class="docList">Put the argument to the system call (an integer descriptor) into a register</P></LI><LI><P class="docList">Put a value in another register indicating the <TT>close</TT> system call is being called</P></LI><LI><P class="docList">Invoke the system call (switch to the kernel with a special instruction)</P></LI><LI><P class="docList">Test the value of a register to see if an error occurred</P></LI><LI><P class="docList">If no error, <TT>return</TT> (0)</P></LI><LI><P class="docList">Store the value of some other register into <TT>errno</TT></P></LI><LI><P class="docList"><TT>return</TT> (-1)</P></LI></UL>
+<P class="docText">First, notice that if an error does not occur, the value of <TT>errno</TT> is not changed. That is why we cannot look at the value of <TT>errno</TT> unless we know that an error has occurred (normally indicated by the function returning -1).</P>
+<P class="docText">Assume a program tests the return value of the <TT>close</TT> function and then prints the value of <TT>errno</TT> if an error occurred, as in the following:</P>
+<pre>
+
+</pre><pre>
+if (close (fd) &lt; 0) {
+    fprintf (stderr, "close error, errno = %d\n", errno)
+    exit (1) ;
+}
+</pre><pre>
+</pre>
+<P class="docText">There is a small window of time between the storing of the error code into <TT>errno</TT> when the system call returns and the printing of this value by the program, during which another thread of execution within this process (i.e., a signal handler) can change the value of <TT>errno</TT>. For example, if, when the signal handler is called, the main flow of control is between <TT>close</TT> and <TT>fprintf</TT> and the signal handler calls some other system call that returns an error (say <TT>write</TT>), then the <TT>errno</TT> value stored from the <TT>write</TT> system call overwrites the value stored by the <TT>close</TT> system call.</P>
+<P class="docText">In looking at these two problems with regard to signal handlers, one solution to the problem with <TT>gethostbyname</TT> (returning a pointer to a static variable) is to <span class="docEmphasis">not</span> call nonre-entrant functions from a signal handler. The problem with <TT>errno</TT> (a single global variable that can be changed by the signal handler) can be avoided by coding the signal handler to save and restore the value of <TT>errno</TT> in the signal handler as follows:</P>
+<pre>
+
+</pre><pre>
+void
+sig_alrm(int signo)
+{
+     int errno_save;
+     errno_save = errno;          /* save its value on entry *
+     if (write( ... ) != nbytes)
+         fprintf (stderr, "write error, errno = %d\n", errno);
+     errno = errno_save;          /* restore its value on return */
+}
+</pre><pre>
+</pre>
+<P class="docText">In this example code, we also call <TT>fprintf</TT>, a standard I/O function, from the signal handler. This is yet another re-entrancy problem because many versions of the standard I/O library are nonre-entrant: Standard I/O functions should not be called from signal handlers.</P>
+<P class="docText">We will revisit this problem of re-entrancy in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A> and we will see how threads handle the problem of the <TT>errno</TT> variable. The next section describes some reentrant versions of the hostname functions.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec17.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec19.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,162 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="19.3 Dumping the Security Association Database (SADB)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch19lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch19lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch19lev1sec3"></A>
+<H3 class="docSection1Title">19.3 Dumping the Security Association Database (SADB)</H3>
+<P class="docText">To dump the current SADB, a process uses the <TT>SADB_DUMP</TT> message. This is the simplest message to send since the message does not require any extensions, simply the 16-byte <TT>sadb_msg</TT> header. After the process sends the <TT>SADB_DUMP</TT> message to the kernel on a key management socket, the kernel replies with a series of <TT>SADB_DUMP</TT> messages back to the same socket, each with one entry from the SADB. The end of the list is indicated by a message with a value of 0 for the <TT>sadb_msg_seq</TT> field.</P>
+<P class="docText">The type of SA can be limited by setting the <TT>sadb_msg_satype</TT> field in the request to one of the values in <A class="docLink" HREF="0131411551_ch19lev1sec2.html#ch19fig03">Figure 19.3</A>. If it is set to <TT>SADB_SATYPE_UNSPEC</TT>, then all SAs in the database are returned. Otherwise, only SAs of the specified type are returned. Not all types of security associations are supported by all implementations. The KAME implementation only supports IPsec SAs (<TT>SADB_SATYPE_AH</TT> and <TT>SADB_SATYPE_ESP</TT>), so an attempt to dump <TT>SADB_SATYPE_RIPV2</TT> SADB entries will get an error reply with errno <TT>EINVAL</TT>. When requesting a specific type whose table is empty, the errno <TT>ENOENT</TT> is returned.</P>
+<P class="docText">Our program to dump the SADB follows in <A class="docLink" HREF="#ch19fig05">Figure 19.5</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch19fig05"></A>Figure 19.5 Program to issue <TT>SADB_DUMP</TT> command on key management socket.</H5>
+<P class="docText"><span class="docEmphasis">key/dump.c</span></P>
+
+<PRE>
+ 1 void
+ 2 sadb_dump(int type)
+ 3 {
+ 4     int     s;
+ 5     char    buf[4096];
+ 6     struct sadb_msg msg;
+ 7     int     goteof;
+
+ 8     s = Socket(PF_KEY, SOCK_RAW, PF_KEY_V2);
+
+ 9     /* Build and write SADB_DUMP request */
+10     bzero(&amp;msg, sizeof (msg));
+        11     msg.sadb_msg_version = PF_KEY_V2;
+12     msg.sadb_msg_type = SADB_DUMP;
+13     msg.sadb_msg_satype = type;
+14     msg.sadb_msg_len = sizeof (msg) / 8;
+15     msg.sadb_msg_pid = getpid();
+16     printf("Sending dump message:\n");
+17     print_sadb_msg (&amp;msg, sizeof (msg));
+18     Write(s, &amp;msg, sizeof (msg));
+
+19     printf("\nMessages returned:\n");
+20     /* Read and print SADB_DUMP replies until done */
+21     goteof = 0;
+22     while (goteof == 0) {
+23         int     msglen;
+24         struct sadb_msg *msgp;
+
+25         msglen = Read(s, &amp;buf, sizeof (buf));
+26         msgp = (struct sadb_msg *) &amp;buf;
+27         print_sadb_msg(msgp, msglen);
+28         if (msgp-&gt;sadb_msg_seq == 0)
+29             goteof = 1;
+30     }
+31     close(s);
+32 }
+33 int
+34 main(int argc, char **argv)
+35 {
+36     int     satype = SADB_SATYPE_UNSPEC;
+37     int     c;
+
+38     opterr = 0;                  /* don't want getopt () writing to stderr */
+39     while ( (c = getopt(argc, argv, "t:")) !=  -1) {
+40         switch (c) {
+41         case 't':
+42             if ( (satype = getsatypebyname (optarg) ) == -1)
+43                 err_quit("invalid -t option %s", optarg);
+44             break;
+
+45         default:
+46             err_quit("unrecognized option: %c", c);
+47         }
+48     }
+49     sadb_dump(satype);
+50 }
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList">This is our first encounter with the POSIX <TT>getopt</TT> function. The third argument is a character string specifying the characters that we allow as command-line arguments, just <TT>t</TT> in this example. It is followed by a colon, indicating that the option takes an argument. In programs that take more than one option, they are concatenated together; for example, <A class="docLink" HREF="0131411551_ch29lev1sec7.html#ch29fig07">Figure 29.7</A> passes <TT>0i:l:v</TT> to indicate that it accepts four options; <TT>i</TT> and <TT>l</TT> take an argument and <TT>0</TT> and <TT>v</TT> don't. This function works with four global variables that are defined by including <TT>&lt;unistd.h&gt;</TT>.</P><pre>
+
+</pre><pre>
+extern char   *optarg;
+extern int     optind, opterr, optopt;
+</pre><pre>
+</pre></P><P><P class="docList">Before calling <TT>getopt</TT>, we set <TT>opterr</TT> to 0 to prevent the function from writing error messages to standard error in case of an error, because we want to handle these. POSIX states that if the first character of the third argument is a colon, this also prevents the function from writing to standard error, but not all implementations support this.</P></P></BLOCKQUOTE>
+<A NAME="ch19lev3sec1"></A>
+<H4 class="docSection2Title"> Open <TT>PF_KEY</TT> socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>1–8</TT></span> We first open a <TT>PF_KEY</TT> socket. This requires system privileges, as described earlier, since this allows access to sensitive keying material.</p>
+
+<A NAME="ch19lev3sec2"></A>
+<H4 class="docSection2Title"> Build <TT>SADB_DUMP</TT> request</H4>
+<p class="docText"><span class="docEmphasis"><TT>9–15</TT></span> We first zero out the <TT>sadb_msg</TT> struct so that we can skip initializing the fields that we wish to remain zero. We fill in each remaining field in the <TT>sadb_msg</TT> struct individually. All messages on sockets opened with <TT>PF_KEY_V2</TT> as the third argument must also use <TT>PF_KEY_V2</TT> as the message version. The message type is <TT>SADB_DUMP</TT>. We set the length to the length of the base header with no extensions since the dump message does not take extensions. Finally, we set the process ID (PID) to our own PID since all messages must be identified by the PID of the sender.</p>
+
+<A NAME="ch19lev3sec3"></A>
+<H4 class="docSection2Title"> Display and write <TT>SADB_DUMP</TT> message</H4>
+<p class="docText"><span class="docEmphasis"><TT>16–18</TT></span> We display the message using our <TT>print_sadb_msg</TT> routine. We don't show this routine since it is long and uninteresting, but it is included in the freely available source code. This routine accepts a message that is being written to or has been received from a key management socket and prints all the information from the message in a human-readable form. We then write the message to the socket.</p>
+
+<A NAME="ch19lev3sec4"></A>
+<H4 class="docSection2Title"> Read replies</H4>
+<p class="docText"><span class="docEmphasis"><TT>19–30</TT></span> We loop, reading replies and printing them using our <TT>print_sadb_msg</TT> function. The last message in the dump sequence has a message sequence number of zero, so we use this as our "end-of-file" indication.</p>
+
+<A NAME="ch19lev3sec5"></A>
+<H4 class="docSection2Title"> Close <TT>PF_KEY</TT> socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>31</TT></span> Finally, we close the socket that we opened.</p>
+
+<A NAME="ch19lev3sec6"></A>
+<H4 class="docSection2Title"> Handle command-line arguments</H4>
+<p class="docText"><span class="docEmphasis"><TT>38–48</TT></span> The <TT>main</TT> function has very little work to do. This program takes a single optional argument, which is the type of SA to dump. By default, the type is <TT>SADB_SATYPE_UNSPEC</TT>, which dumps all SAs of any type. By specifying a command-line argument, the user can select which type of SAs to dump. This program uses our <TT>getsatypebyname</TT> function, which returns the type value for a text string.</p>
+
+<A NAME="ch19lev3sec7"></A>
+<H4 class="docSection2Title"> Call <TT>sadb_dump</TT> routine</H4>
+<p class="docText"><span class="docEmphasis"><TT>49</TT></span> Finally, we call the <TT>sadb_dump</TT> function we defined above to do all the work.</p>
+
+<A NAME="ch19lev2sec1"></A>
+<H4 class="docSection2Title"> Sample Run</H4>
+<P class="docText">The following is a sample run of the dump program on a system with two static SAs.</P>
+<pre>
+
+</pre><pre>
+macosx % <span class="docEmphStrong">dump</span>
+Sending dump message:
+SADB Message Dump, errno 0, satype Unspecified, seq 0, pid 20623
+
+Messages returned:
+SADB Message Dump, errno 0, satype IPsec AH, seq 1, pid 20623
+ SA: SPI=258 Replay Window=0 State=Mature
+  Authentication Algorithm: HMAC-MD5
+   Encryption Algorithm: None
+  [unknown extension 19]
+  Current lifetime:
+   0 allocations, 0 bytes
+   added at Sun May 18 16:28:11 2003, never used
+  Source address:     2.3.4.5/128 (IP proto 255)
+  Dest address:     6.7.8.9/128 (IP proto 255)
+  Authentication key, 128 bits: 0x20202020202020200202020202020202
+SADB Message Dump, errno 0, satype IPsec AH, seq 0, pid 20623
+ SA: SPI=257 Replay Window=0 State=Mature
+  Authentication Algorithm: HMAC-MD5
+  Encryption Algorithm: None
+ [unknown extension 19]
+ Current lifetime:
+  0 allocations, 0 bytes
+  added at Sun May 18 16:26:24 2003, never used
+ Source address:     1.2.3.4/128 (IP proto 255)
+ Dest address:     5.6.7.8/128 (IP proto 255)
+ Authentication key, 128 bits: 0x10101010101010100101010101010101
+</pre><pre>
+</pre>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch19lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch19lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

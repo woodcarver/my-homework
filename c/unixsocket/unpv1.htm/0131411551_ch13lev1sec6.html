@@ -1,0 +1,128 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="13.6 'daemon_inetd' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch13lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch13lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch13lev1sec6"></A>
+<H3 class="docSection1Title">13.6 <TT>daemon_inetd</TT> Function</H3>
+<P class="docText"><A class="docLink" HREF="#ch13fig11">Figure 13.11</A> shows a function named <TT>daemon_inetd</TT> that we can call from a server we know is invoked by <TT>inetd</TT>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch13fig11"></A>Figure 13.11 <TT>daemon_inetd</TT> function: daemonizes process run by <TT>inetd</TT>.</H5>
+<P class="docText"><span class="docEmphasis">daemon_inetd.c</span></P>
+
+<PRE>
+1 #include     "unp.h"
+2 #include     &lt;syslog.h&gt;
+
+3 extern int daemon_proc;         /* defined in error.c */
+
+4 void
+5 daemon_inetd(const char *pname, int facility)
+6 {
+7     daemon_proc = 1;            /* for our err_XXX() functions */
+8     openlog(pname, LOG_PID, facility);
+9 }
+</PRE>
+
+<P class="docText">This function is trivial compared to <TT>daemon_init</TT>, because all of the daemonization steps are performed by <TT>inetd</TT> when it starts. All that we do is set the <TT>daemon_proc</TT> flag for our error functions (<A class="docLink" HREF="0131411551_app04lev1sec3.html#app04fig03">Figure D.3</A>) and call <TT>openlog</TT> with the same arguments as the call in <A class="docLink" HREF="0131411551_ch13lev1sec4.html#ch13fig04">Figure 13.4</A>.</P>
+<A NAME="ch13lev2sec2"></A>
+<H4 class="docSection2Title"> Example: Daytime Server as a Daemon Invoked by <TT>inetd</TT></H4>
+<P class="docText"><A class="docLink" HREF="#ch13fig12">Figure 13.12</A> is a modification of our daytime server from <A class="docLink" HREF="0131411551_ch13lev1sec4.html#ch13fig05">Figure 13.5</A> that can be invoked by <TT>inetd</TT>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch13fig12"></A>Figure 13.12 Protocol-independent daytime server that can be invoked by <TT>inetd</TT>.</H5>
+<P class="docText"><span class="docEmphasis">inetd/daytimetcpsrv3.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+ 2 #include     &lt;time.h&gt;
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     socklen_t len;
+ 7     struct sockaddr *cliaddr;
+ 8     char    buff[MAXLINE];
+ 9     time_t  ticks;
+
+10     daemon_inetd(argv[0], 0);
+
+11     cliaddr = Malloc(sizeof(struct sockaddr_storage));
+12     len = sizeof(struct sockaddr_storage);
+13     Getpeername(0, cliaddr, &amp;len);
+14     err_msg("connection from %s", Sock_ntop(cliaddr, len));
+
+15     ticks = time(NULL);
+16     snprintf(buff, sizeof(buff), "%.24s\r\n", ctime(&amp;ticks));
+17     Write(0, buff, strlen(buff));
+
+18     Close(0);                   /* close TCP connection */
+19     exit(0);
+20 }
+</PRE>
+
+<P class="docText">There are two major changes in this program. First, all the socket creation code is gone: the calls to <TT>tcp_listen</TT> and to <TT>accept</TT>. Those steps are done by <TT>inetd</TT> and we reference the TCP connection using descriptor 0 (standard input). Second, the infinite <TT>for</TT> loop is gone because we are invoked once per client connection. After servicing this client, we terminate.</P>
+<A NAME="ch13lev3sec9"></A>
+<H5 class="docSection3Title"> Call <TT>getpeername</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>11–14</TT></span> Since we do not call <TT>tcp_listen</TT>, we do not know the size of the socket address structure it returns, and since we do not call <TT>accept</TT>, we do not know the client's protocol address. Therefore, we allocate a buffer for the socket address structure using <TT>sizeof(struct sockaddr_storage)</TT> and call <TT>getpeername</TT> with descriptor 0 as the first argument.</p>
+<P class="docText">To run this example on our Solaris system, we first assign the service a name and port, adding the following line to <TT>/etc/services</TT>:</P>
+<pre>
+
+</pre><pre>
+mydaytime     9999/tcp
+</pre><pre>
+</pre>
+<P class="docText">We then add the following line to <TT>/etc/inetd.conf</TT>:</P>
+<pre>
+
+</pre><pre>
+mydaytime  stream  tcp  nowait  andy
+      /home/andy/daytimetcpsrv3  daytimetcpsrv3
+</pre><pre>
+</pre>
+<P class="docText">(We have wrapped the long line.) We place the executable in the specified location and send the <TT>SIGHUP</TT> signal to <TT>inetd</TT>, telling it to reread its configuration file. The next step is to execute <TT>netstat</TT> to verify that a listening socket has been created on TCP port 9999.</P>
+<pre>
+
+</pre><pre>
+solaris % <span class="docEmphStrong">netstat -na | grep 9999</span>
+      *.9999               *.*               0      0  49152     0  LISTEN
+</pre><pre>
+</pre>
+<P class="docText">We then invoke the server from another host.</P>
+<pre>
+
+</pre><pre>
+linux % <span class="docEmphStrong">telnet solaris 9999</span>
+Trying 192.168.1.20...
+Connected to solaris.
+Escape character is '^]'.
+Tue Jun 10 11:04:02 2003
+Connection closed by foreign host.
+</pre><pre>
+</pre>
+<P class="docText">The <TT>/var/adm/messages</TT> file (where we have directed the <TT>LOG_USER</TT> facility messages to be logged in our <TT>/etc/syslog.conf</TT> file) contains the following entry:</P>
+<pre>
+
+</pre><pre>
+Jun 10 11:04:02 solaris daytimetcpsrv3[28724]: connection from 192.168.1.10.58145
+</pre><pre>
+</pre>
+
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch13lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch13lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

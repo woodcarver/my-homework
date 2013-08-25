@@ -1,0 +1,28 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="23.1 Introduction"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch23.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch23lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch23lev1sec1"></A>
+<H3 class="docSection1Title">23.1 Introduction</H3>
+<P class="docText">In this chapter, we will dig a bit deeper into SCTP, examining more of the features and socket options that SCTP provides to its users. We will discuss a number of topics, including control of failure detection, unordered data, and notifications. Throughout this chapter, we will provide examples of code so that the reader can see how to use some of SCTP's advanced features.</P>
+<P class="docText">SCTP is a message-oriented protocol, delivering partial or complete messages to the user. Partial messages will only be delivered if the application chooses to send large messages (e.g., larger than half the socket buffer size) to its peer. When partial messages are delivered, SCTP will never mix two partial messages together. An application will either receive a whole message in one receive operation or it will receive a message in several consecutive receive operations. We will illustrate a method of dealing with this partial delivery mechanism through an example utility function.</P>
+<P class="docText">SCTP servers can be either iterative or concurrent, depending on the style of interface the application developer chooses. SCTP also provides a method to extract an association from a one-to-many-style socket into a separate one-to-one-style socket. This method allows the construction of a server that is both iterative and concurrent.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch23.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch23lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

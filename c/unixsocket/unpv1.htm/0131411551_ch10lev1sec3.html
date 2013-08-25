@@ -1,0 +1,86 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="10.3 SCTP One-to-Many-Style Streaming Echo Client: 'main' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch10lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch10lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch10lev1sec3"></A>
+<H3 class="docSection1Title">10.3 SCTP One-to-Many-Style Streaming Echo Client: <TT>main</TT> Function</H3>
+<P class="docText"><A class="docLink" HREF="#ch10fig03">Figure 10.3</A> shows our SCTP client main function.</P>
+<A NAME="ch10lev3sec9"></A>
+<H4 class="docSection2Title"> Validate arguments and create a socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>9–15</TT></span> The client validates the arguments passed to it. First, the client verifies that the caller provided a host to send messages to. It then checks if the "echo to all" option is being enabled (we will see this used in <A class="docLink" HREF="0131411551_ch10lev1sec5.html#ch10lev1sec5">Section 10.5</A>). Finally, the client creates an SCTP one-to-many-style socket.</p>
+
+<A NAME="ch10lev3sec10"></A>
+<H4 class="docSection2Title"> Set up server address</H4>
+<p class="docText"><span class="docEmphasis"><TT>16–20</TT></span> The client translates the server address, passed on the command line, using the <TT>inet_pton</TT> function. It combines that with the server's well-known port number and uses the resulting address as the destination for the requests.</p>
+
+<A NAME="ch10lev3sec11"></A>
+<H4 class="docSection2Title"> Set up for notifications of interest</H4>
+<p class="docText"><span class="docEmphasis"><TT>21–23</TT></span> The client explicitly sets the notification subscription provided by our one-to-many SCTP socket. Again, it wants no <TT>MSG_NOTIFICATION</TT> events. Therefore, the client turns these off (as was done in the server) and only enables the receipt of the <TT>sctp_sndrcvinfo</TT> structure.</p>
+
+<A NAME="ch10lev3sec12"></A>
+<H4 class="docSection2Title"> Call echo processing function</H4>
+<p class="docText"><span class="docEmphasis"><TT>24–28</TT></span> If the <TT>echo_to_all</TT> flag is not set, the client calls the <TT>sctpstr_cli</TT> function, discussed in <A class="docLink" HREF="0131411551_ch10lev1sec4.html#ch10lev1sec4">Section 10.4</A>. If the <TT>echo_to_all</TT> flag is set, the client calls the <TT>sctpstr_cli_echoall</TT> function. We will discuss this function in <A class="docLink" HREF="0131411551_ch10lev1sec5.html#ch10lev1sec5">Section 10.5</A> as we explore uses for SCTP streams.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch10fig03"></A>Figure 10.3 SCTP streaming echo client main.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctpclient01.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     sock_fd;
+ 6     struct sockaddr_in servaddr;
+ 7     struct sctp_event_subscribe evnts;
+ 8     int     echo_to_all = 0;
+ 9     if (argc &lt; 2)
+10         err_quit("Missing host argument - use '%s host [echo] '\n", argv[0]) ;
+11     if (argc &gt; 2) {
+12         printf("Echoing messages to all streams\n") ;
+13         echo_to_all = 1;
+14     }
+15     sock_fd = Socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+16     bzero(&amp;servaddr, sizeof (servaddr) ) ;
+17     servaddr.sin_family = AF_INET;
+18     servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+19     servaddr.sin_port = htons (SERV_PORT);
+20     Inet_pton(AF_INET, argv[1], &amp;servaddr.sin_addr);
+
+21     bzero(&amp;evnts, sizeof (evnts)) ;
+22     evnts.sctp_data_io_event = 1 ;
+23     Setsockopt(sock_fd, IPPROTO_SCTP, SCTP_EVENTS, &amp;evnts, sizeof (evnts)) ;
+24     if (echo_to_all == 0)
+25         sctpstr_cli (stdin, sock_fd, (SA *) &amp;servaddr, sizeof (servaddr)) ;
+26     else
+27         sctpstr_cli_echoall(stdin, sock_fd, (SA *) &amp;servaddr,
+28                              sizeof (servaddr)) ;
+29     Close (sock_fd) ;
+30     return (0) ;
+31 }
+</PRE>
+
+
+<A NAME="ch10lev3sec13"></A>
+<H4 class="docSection2Title"> Finish up</H4>
+<p class="docText"><span class="docEmphasis"><TT>29–31</TT></span> On return from processing, the client closes the SCTP socket, which shuts down any SCTP associations using the socket. The client then returns from main with a return code of 0, indicating that the program ran successfully.</p>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch10lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch10lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

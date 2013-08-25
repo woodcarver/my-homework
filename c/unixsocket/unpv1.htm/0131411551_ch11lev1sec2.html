@@ -1,0 +1,85 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.2 Domain Name System (DNS)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec2"></A>
+<H3 class="docSection1Title">11.2 Domain Name System (DNS)</H3>
+<P class="docText">The DNS is used primarily to map between hostnames and IP addresses. A hostname can be either a <span class="docEmphasis">simple name</span>, such as <TT>solaris</TT> or <TT>freebsd</TT>, or a <span class="docEmphasis">fully qualified domain name</span> '(FQDN), such as <TT>solaris.unpbook.com</TT>.</P>
+<BLOCKQUOTE><P><P class="docList">Technically, an FQDN is also called an <span class="docEmphasis">absolute name</span> and must end with a period, but users often omit the ending period. The trailing period tells the resolver that this name is fully qualified and it doesn't need to search its list of possible domains.</P></P></BLOCKQUOTE>
+<P class="docText">In this section, we will cover only the basics of the DNS that we need for network programming. Readers interested in additional details should consult Chapter 14 of TCPv1 and [Albitz and Liu 2001]. The additions required for IPv6 are in RFC 1886 [Thomson and Huitema 1995] and RFC 3152 [Bush 2001].</P>
+<A NAME="ch11lev2sec1"></A>
+<H4 class="docSection2Title"> Resource Records</H4>
+<P class="docText">Entries in the DNS are known as <span class="docEmphasis">resource records</span> (RRs). There are only a few types of RRs that we are interested in.</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText">A</P></TD><TD class="docTableCell" valign="top"><P class="docText">An A record maps a hostname into a 32-bit IPv4 address. For example, here are the four DNS records for the host <TT>freebsd</TT> in the <TT>unpbook.com</TT> domain, the first of which is an A record:</P>
+
+<A NAME="PLID0"></A><div class="v1"><a href="&r=noccc&xmlid=0-13-141155-1/ch11lev1sec2#PLID0">[View full width]</a></div><PRE>
+freebsd   IN    A     12.106.32.254
+          IN    AAAA  3ffe:b80:1f8d:1:a00:20ff
+<IMG BORDER="0" width="14" height="9" ALIGN="left" src="FILES/ccc.gif" ALT="graphics/ccc.gif">:fea7:686b
+          IN    MX    5  freebsd.unpbook.com.
+          IN    MX    10 mailhost.unpbook.com.
+</PRE>
+</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText">AAAA</P></TD><TD class="docTableCell" valign="top"><P class="docText">A AAAA record, called a "quad A" record, maps a hostname into a 128-bit IPv6 address. The term "quad A" was chosen because a 128-bit address is four times larger than a 32-bit address.</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText">PTR</P></TD><TD class="docTableCell" valign="top"><P class="docText">PTR records (called "pointer records") map IP addresses into hostnames. For an IPv4 address, then 4 bytes of the 32-bit address are reversed, each byte is converted to its decimal ASCII value (0–255), and <TT>in-addr.arpa</TT> is the appended. The resulting string is used in the PTR query.</P></TD></TR><TR><TD class="docTableCell" valign="top">&nbsp;</TD><TD class="docTableCell" valign="top"><P class="docText">For an IPv6 address, the 32 4-bit nibbles of the 128-bit address are reversed, each nibble is converted to its corresponding hexadecimal ASCII value (<TT>0–9a–f</TT>), and <TT>ip6.arpa</TT> is appended.</P></TD></TR><TR><TD class="docTableCell" valign="top">&nbsp;</TD><TD class="docTableCell" valign="top"><P class="docText">For example, the two PTR records for our host <TT>freebsd</TT> would be <TT>254.32.106.12.in-addr.arpa</TT> and <TT>b.6.8.6.7.a.e.f.f.f.0.2.0.0.a.0.1.0.0.0.d.8.f.1.0.8.b.0.e.f.f.3.ip6.arpa</TT>.</P>
+<BLOCKQUOTE><P><P class="docList">Earlier standards specified that IPv6 addresses were looked up in the <TT>ip6.int</TT> domain. This was changed to <TT>ip6.arpa</TT> for consistency with IPv4. There will be a transition period during which both zones will be populated.</P></P></BLOCKQUOTE>
+</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText">MX</P></TD><TD class="docTableCell" valign="top"><P class="docText">An MX record specifies a host to act as a "mail exchanger" for the specified host. In the example for the host <TT>freebsd</TT> above, two MX records are provided: The first has a preference value of 5 and the second has a preference value of 10. When multiple MX records exist, they are used in order of preference, starting with the smallest value.</P>
+<BLOCKQUOTE><P><P class="docList">We do not use MX records in this text, but we mention them because they are used extensively in the real world.</P></P></BLOCKQUOTE>
+</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText">CNAME</P></TD><TD class="docTableCell" valign="top"><P class="docText">CNAME stands for "canonical name." A common use is to assign CNAME records for common services, such as <TT>ftp</TT> and <TT>www</TT>. If people use these service names instead of the actual hostnames, it is transparent when a service is moved to another host. For example, the following could be CNAMEs for our host <TT>linux</TT>:</P>
+
+<PRE>
+ftp          IN     CNAME    linux.unpbook.com.
+www          IN     CNAME    linux.unpbook.com.
+</PRE>
+</TD></TR></COLGROUP></TABLE></P>
+<P class="docText">It is too early in the deployment of IPv6 to know what conventions administrators will use for hosts that support both IPv4 and IPv6. In our example earlier in this section, we specified both an A record and a AAAA record for our host <TT>freebsd</TT>. One possibility is to place both the A record and the AAAA record under the host's normal name (as shown earlier) and create another RR whose name ends in <TT>-4</TT> containing the A record, another RR whose name ends in <TT>-6</TT> containing the AAAA record, and another RR whose name ends in <TT>-611</TT> containing a AAAA record with the host's link-local address (which is sometimes handy for debugging purposes). All the records for another of our hosts are then</P>
+<pre>
+
+</pre><pre>
+aix          IN     A          192.168.42.2
+             IN     AAAA       3ffe:b80:1f8d:2:204:acff:fe17:bf38
+             IN     MX         5 aix.unpbook.com.
+             IN     MX         10 mailhost.unpbook.com.
+aix-4        IN     A          192.168.42.2
+aix-6        IN     AAAA       3ffe:b80:1f8d:2:204:acff:fe17:bf38
+aix-611      IN     AAAA                 fe80::204:acff:fe17:bf38
+</pre><pre>
+</pre>
+<P class="docText">This gives us additional control over the protocol chosen by some applications, as we will see in the next chapter.</P>
+
+<A NAME="ch11lev2sec2"></A>
+<H4 class="docSection2Title"> Resolvers and Name Servers</H4>
+<P class="docText">Organizations run one or more <span class="docEmphasis">name servers</span>, often the program known as BIND (Berkeley Internet Name Domain). Applications such as the clients and servers that we are writing in this text contact a DNS server by calling functions in a library known as the <span class="docEmphasis">resolver</span>. The common resolver functions are <TT>gethostbyname</TT> and <TT>gethostbyaddr</TT>, both of which are described in this chapter. The former maps a hostname into its IPv4 addresses, and the latter does the reverse mapping.</P>
+<P class="docText"><A class="docLink" HREF="#ch11fig01">Figure 11.1</A> shows a typical arrangement of applications, resolvers, and name servers. We now write the application code. On some systems, the resolver code is contained in a system library and is link-edited into the application when the application is built. On others, there is a centralized resolver daemon that all applications share, and the system library code performs RPCs to this daemon. In either case, application code calls the resolver code using normal function calls, typically calling the functions <TT>gethostbyname</TT> and <TT>gethostbyaddr</TT>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch11fig01"></A>Figure 11.1. Typical arrangement of clients, resolvers, and name servers.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="257" src="FILES/11fig01.gif" ALT="graphics/11fig01.gif"></p>
+
+</CENTER>
+<P class="docText">The resolver code reads its system-dependent configuration files to determine the location of the organization's name servers. (We use the plural "name servers" because most organizations run multiple name servers, even though we show only one local server in the figure. Multiple name servers are absolutely required for reliability and redundancy.) The file <TT>/etc/resolv.conf</TT> normally contains the IP addresses of the local name servers.</P>
+<BLOCKQUOTE><P><P class="docList">It might be nice to use the names of the name servers in the <TT>/etc/resolv.conf</TT> file, since the names are easier to remember and configure, but this introduces a chicken-and-egg problem of where to go to do the name-to-address conversion for the server that will do the name and address conversion!</P></P></BLOCKQUOTE>
+<P class="docText">The resolver sends the query to the local name server using UDP. If the local name server does not know the answer, it will normally query other name servers across the Internet, also using UDP. If the answers are too large to fit in a UDP packet, the resolver will automatically switch to TCP.</P>
+
+<A NAME="ch11lev2sec3"></A>
+<H4 class="docSection2Title"> DNS Alternatives</H4>
+<P class="docText">It is possible to obtain name and address information without using the DNS. Common alternatives are static host files (normally the file <TT>/etc/hosts</TT>, as we describe in <A class="docLink" HREF="0131411551_ch11lev1sec21.html#ch11fig21">Figure 11.21</A>), the Network Information System (NIS) or Lightweight Directory Access Protocol (LDAP). Unfortunately, it is implementation-dependent how an administrator configures a host to use the different types of name services. Solaris 2.x, HP-UX 10 and later, and FreeBSD 5.x and later use the file <TT>/etc/nsswitch.conf</TT>, and AIX uses the file <TT>/etc/netsvc.conf</TT>. BIND 9.2.2 supplies its own version named the Information Retrieval Service (IRS), which uses the file <TT>/etc/irs.conf</TT>. If a name server is to be used for hostname lookups, then all these systems use the file <TT>/etc/resolv.conf</TT> to specify the IP addresses of the name servers. Fortunately, these differences are normally hidden to the application programmer, so we just call the resolver functions such as <TT>gethostbyname</TT> and <TT>gethostbyaddr</TT>.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

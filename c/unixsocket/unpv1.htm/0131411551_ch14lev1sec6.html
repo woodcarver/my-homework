@@ -1,0 +1,95 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="14.6 Ancillary Data"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch14lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch14lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch14lev1sec6"></A>
+<H3 class="docSection1Title">14.6 Ancillary Data</H3>
+<P class="docText">Ancillary data can be sent and received using the <TT>msg_control</TT> and <TT>msg_controllen</TT> members of the <TT>msghdr</TT> structure with the <TT>sendmsg</TT> and <TT>recvmsg</TT> functions. Another term for ancillary data is <span class="docEmphasis">control information</span>. In this section, we will describe the concept and show the structure and macros used to build and process ancillary data, but we will save the code examples for later chapters that describe the actual uses of ancillary data.</P>
+<P class="docText"><A class="docLink" HREF="#ch14fig11">Figure 14.11</A> is a summary of the various uses of ancillary data we cover in this text.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig11"></A>Figure 14.11. Summary of uses for ancillary data.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="172" src="FILES/14fig11.gif" ALT="graphics/14fig11.gif"></p>
+
+</CENTER>
+<P class="docText">The OSI protocol suite also uses ancillary data for various purposes we do not discuss in this text.</P>
+<P class="docText">Ancillary data consists of one or more <span class="docEmphasis">ancillary data objects</span>, each one beginning with a <TT>cmsghdr</TT> structure, defined by including <TT>&lt;sys/socket.h&gt;</TT>.</P>
+<pre>
+
+</pre><pre>
+struct cmsghdr {
+  socklen_t  cmsg_len;   /* length in bytes, including this structure */
+  int        cmsg_level; /* originating protocol */
+  int        cmsg_type;  /* protocol-specific type */
+      /* followed by unsigned char cmsg_data[] */
+};
+</pre><pre>
+</pre>
+<P class="docText">We have already seen this structure in <A class="docLink" HREF="0131411551_ch14lev1sec5.html#ch14fig09">Figure 14.9</A>, when it was used with the <TT>IP_RECVDSTADDR</TT> socket option to return the destination IP address of a received UDP datagram. The ancillary data pointed to by <TT>msg_control</TT> must be suitably aligned for a <TT>cmsghdr</TT> structure. We will show one way to do this in <A class="docLink" HREF="0131411551_ch15lev1sec7.html#ch15fig11">Figure 15.11</A>.</P>
+<P class="docText"><A class="docLink" HREF="#ch14fig12">Figure 14.12</A> shows an example of two ancillary data objects in the control buffer. <TT>msg_control</TT> points to the first ancillary data object, and the total length of the ancillary data is specified by <TT>msg_controllen</TT>. Each object is preceded by a <TT>cmsghdr</TT> structure that describes the object. There can be padding between the <TT>cmsg_type</TT> member and the actual data, and there can also be padding at the end of the data, before the next ancillary data object. The five <TT>CMSG_</TT><span class="docEmphasis">xxx</span> macros we describe shortly account for this possible padding.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig12"></A>Figure 14.12. Ancillary data containing two ancillary data objects.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="495" HEIGHT="381" src="FILES/14fig12.gif" ALT="graphics/14fig12.gif"></p>
+
+</CENTER>
+<BLOCKQUOTE><P><P class="docList">Not all implementations support multiple ancillary data objects in the control buffer.</P></P></BLOCKQUOTE>
+<P class="docText"><A class="docLink" HREF="#ch14fig13">Figure 14.13</A> shows the format of the <TT>cmsghdr</TT> structure when used with a Unix domain socket for descriptor passing (<A class="docLink" HREF="0131411551_ch15lev1sec7.html#ch15lev1sec7">Section 15.7</A>) or credential passing (<A class="docLink" HREF="0131411551_ch15lev1sec8.html#ch15lev1sec8">Section 15.8</A>).</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch14fig13"></A>Figure 14.13. <TT>cmsghdr</TT> structure when used with Unix domain sockets.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="215" src="FILES/14fig13.gif" ALT="graphics/14fig13.gif"></p>
+
+</CENTER>
+<P class="docText">In this figure, we assume each of the three members of the <TT>cmsghdr</TT> structure occupies four bytes and there is no padding between the <TT>cmsghdr</TT> structure and the actual data. When descriptors are passed, the contents of the <TT>cmsg_data</TT> array are the actual descriptor values. In this figure, we show only one descriptor being passed, but in general, more than one can be passed (in which case, the <TT>cmsg_len</TT> value will be 12 plus 4 times the number of descriptors, assuming each descriptor occupies 4 bytes).</P>
+<P class="docText">Since the ancillary data returned by <TT>recvmsg</TT> can contain any number of ancillary data objects, and to hide the possible padding from the application, the following five macros are defined by including the <TT>&lt;sys/socket.h&gt;</TT> header to simplify the processing of the ancillary data:</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" align="left" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/param.h&gt; /* for ALIGN macro on many implementations */</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct cmsghdr *CMSG_FIRSTHDR(struct msghdr *</TT><span class="docEmphasis">mhdrptr</span><TT>)</TT> ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: pointer to first <TT>cmsghdr</TT> structure or <TT>NULL</TT> if no ancillary data</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct cmsghdr *CMSG_NXTHDR(struct msghdr *</TT><span class="docEmphasis">mhdrptr</span>, <TT>struct cmsghdr *</TT><span class="docEmphasis">cmsgptr</span><TT>)</TT> ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: pointer to next <TT>cmsghdr</TT> structure or <TT>NULL</TT> if no more ancillary data objects</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>unsigned char *CMSG_DATA(struct cmsghdr *</TT><span class="docEmphasis">cmsgptr</span><TT>)</TT> ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: pointer to first byte of data associated with <TT>cmsghdr</TT> structure</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>unsigned int CMSG_LEN(unsigned int</TT> <span class="docEmphasis">length</span><TT>)</TT> ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: value to store in <TT>cmsg_len</TT> given the amount of data</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>unsigned int CMSG_SPACE(unsigned int</TT> <span class="docEmphasis">length</span><TT>)</TT> ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: total size of an ancillary data object given the amount of data</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">POSIX defines the first three macros; RFC 3542 [Stevens et al. 2003] defines the last two.</P>
+<P class="docText">These macros would be used in the following pseudocode:</P>
+<pre>
+
+</pre><pre>
+struct msghdr     msg;
+struct cmsghdr    *cmsgptr;
+
+/* fill in msg structure */
+
+/* call recvmsg() */
+
+for (cmsgptr = CMSG_FIRSTHDR(&amp;msg); cmsgptr != NULL;
+     cmsgptr = CMSG_NXTHDR(&amp;msg, cmsgptr)) {
+    if (cmsgptr-&gt;cmsg_level == ... &amp;&amp;
+        cmsgptr-&gt;cmsg_type == ... ) {
+        u_char *ptr;
+
+        ptr = CMSG_DATA(cmsgptr);
+        /* process data pointed to by ptr */
+    }
+}
+</pre><pre>
+</pre>
+<P class="docText"><TT>CMSG_FIRSTHDR</TT> returns a pointer to the first ancillary data object, or a null pointer if there is no ancillary data in the <TT>msghdr</TT> structure (either <TT>msg_control</TT> is a null pointer or <TT>cmsg_len</TT> is less than the size of a <TT>cmsghdr</TT> structure). <TT>CMSG_NXTHDR</TT> returns a null pointer when there is not another ancillary data object in the control buffer.</P>
+<BLOCKQUOTE><P><P class="docList">Many existing implementations of <TT>CMSG_FIRSTHDR</TT> never look at <TT>msg_controllen</TT> and just return the value of <TT>cmsg_control</TT>. In <A class="docLink" HREF="0131411551_ch22lev1sec2.html#ch22fig02">Figure 22.2</A>, we will test the value of <TT>msg_controllen</TT> before calling this macro.</P></P></BLOCKQUOTE>
+<P class="docText">The difference between <TT>CMSG_LEN</TT> and <TT>CMSG_SPACE</TT> is that the former does not account for any padding following the data portion of the ancillary data object and is therefore the value to store in <TT>cmsg_len</TT>, while the latter accounts for the padding at the end and is therefore the value to use if dynamically allocating space for the ancillary data object.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch14lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch14lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

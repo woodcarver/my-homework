@@ -1,0 +1,55 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="7.6 IPv4 Socket Options"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch07lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch07lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch07lev1sec6"></A>
+<H3 class="docSection1Title">7.6 IPv4 Socket Options</H3>
+<P class="docText">These socket options are processed by IPv4 and have a <span class="docEmphasis">level</span> of <TT>IPPROTO_IP</TT>. We defer discussion of the multicasting socket options until <A class="docLink" HREF="0131411551_ch21lev1sec6.html#ch21lev1sec6">Section 21.6</A>.</P>
+<A NAME="ch07lev2sec14"></A>
+<H4 class="docSection2Title"> <TT>IP_HDRINCL</TT> Socket Option</H4>
+<P class="docText">If this option is set for a raw IP socket (<A class="docLink" HREF="0131411551_ch28.html#ch28">Chapter 28</A>), we must build our own IP header for all the datagrams we send on the raw socket. Normally, the kernel builds the IP header for datagrams sent on a raw socket, but there are some applications (notably <TT>traceroute</TT>) that build their own IP header to override values that IP would place into certain header fields.</P>
+<P class="docText">When this option is set, we build a complete IP header, with the following exceptions:</P>
+<UL><LI><P class="docList">IP always calculates and stores the IP header checksum.</P></LI><LI><P class="docList">If we set the IP identification field to 0, the kernel will set the field.</P></LI><LI><P class="docList">If the source IP address is <TT>INADDR_ANY</TT>, IP sets it to the primary IP address of the outgoing interface.</P></LI><LI><P class="docList">Setting IP options is implementation-dependent. Some implementations take any IP options that were set using the <TT>IP_OPTIONS</TT> socket option and append these to the header that we build, while others require our header to also contain any desired IP options.</P></LI><LI><P class="docList">Some fields must be in host byte order, and some in network byte order. This is implementation-dependent, which makes writing raw packets with <TT>IP_HDRINCL</TT> not as portable as we'd like.</P></LI></UL>
+<P class="docText">We show an example of this option in <A class="docLink" HREF="0131411551_ch29lev1sec7.html#ch29lev1sec7">Section 29.7</A>. Pages 1056–1057 of TCPv2 provide additional details on this socket option.</P>
+
+<A NAME="ch07lev2sec15"></A>
+<H4 class="docSection2Title"> <TT>IP_OPTIONS</TT> Socket Option</H4>
+<P class="docText">Setting this option allows us to set IP options in the IPv4 header. This requires intimate knowledge of the format of the IP options in the IP header. We will discuss this option with regard to IPv4 source routes in <A class="docLink" HREF="0131411551_ch27lev1sec3.html#ch27lev1sec3">Section 27.3</A>.</P>
+
+<A NAME="ch07lev2sec16"></A>
+<H4 class="docSection2Title"> <TT>IP_RECVDSTADDR</TT> Socket Option</H4>
+<P class="docText">This socket option causes the destination IP address of a received UDP datagram to be returned as ancillary data by <TT>recvmsg</TT>. We will show an example of this option in <A class="docLink" HREF="0131411551_ch22lev1sec2.html#ch22lev1sec2">Section 22.2</A>.</P>
+
+<A NAME="ch07lev2sec17"></A>
+<H4 class="docSection2Title"> <TT>IP_RECVIF</TT> Socket Option</H4>
+<P class="docText">This socket option causes the index of the interface on which a UDP datagram is received to be returned as ancillary data by <TT>recvmsg</TT>. We will show an example of this option in <A class="docLink" HREF="0131411551_ch22lev1sec2.html#ch22lev1sec2">Section 22.2</A>.</P>
+
+<A NAME="ch07lev2sec18"></A>
+<H4 class="docSection2Title"> <TT>IP_TOS</TT> Socket Option</H4>
+<P class="docText">This option lets us set the type-of-service (TOS) field (which contains the DSCP and ECN fields, <A class="docLink" HREF="0131411551_app01lev1sec2.html#app01fig01">Figure A.1</A>) in the IP header for a TCP, UDP, or SCTP socket. If we call <TT>getsockopt</TT> for this option, the current value that would be placed into the DSCP and ECN fields in the IP header (which defaults to 0) is returned. There is no way to fetch the value from a received IP datagram.</P>
+<P class="docText">An application can set the DSCP to a value negotiated with the network service provider to receive prearranged services, e.g., low delay for IP telephony or higher throughput for bulk data transfer. The diffserv architecture, defined in RFC 2474 [Nichols et al. 1998], provides for only limited backward compatibility with the historical TOS field definition (from RFC 1349 [Almquist 1992]). Application that set <TT>IP_TOS</TT> to one of the contents from <TT>&lt;netinet/ip.h&gt;</TT>, for instance, <TT>IPTOS_LOWDELAY</TT> or <TT>IPTOS_THROUGHPUT</TT>, should instead use a user-specified DSCP value. The only TOS values that diffserv retains are precedence levels 6 ("internetwork control") and 7 ("network control"); this means that applications that set <TT>IP_TOS</TT> to <TT>IPTOS_PREC_NETCONTROL</TT> or <TT>IPTOS_PREC_INTERNETCONTROL</TT> <span class="docEmphasis">will</span> work in a diffserv network.</P>
+<P class="docText">RFC 3168 [Ramakrishnan, Floyd, and Black 2001] contains the definition of the ECN field. Applications should generally leave the setting of the ECN field to the kernel, and should specify zero values in the low two bits of the value set with <TT>IP_TOS</TT>.</P>
+
+<A NAME="ch07lev2sec19"></A>
+<H4 class="docSection2Title"> <TT>IP_TTL</TT> Socket Option</H4>
+<P class="docText">With this option, we can set and fetch the default TTL (<A class="docLink" HREF="0131411551_app01lev1sec2.html#app01fig01">Figure A.1</A>) that the system will use for unicast packets sent on a given socket. (The multicast TTL is set using the <TT>IP_MULTICAST_TTL</TT> socket option, described in <A class="docLink" HREF="0131411551_ch21lev1sec6.html#ch21lev1sec6">Section 21.6</A>.) 4.4BSD, for example, uses the default of 64 for both TCP and UDP sockets (specified in the IANA's "IP Option Numbers" registry [IANA]) and 255 for raw sockets. As with the TOS field, calling <TT>getsockopt</TT> returns the default value of the field that the system will use in outgoing datagrams—there is no way to obtain the value from a received datagram. We will set this socket option with our <TT>traceroute</TT> program in <A class="docLink" HREF="0131411551_ch28lev1sec6.html#ch28fig19">Figure 28.19</A>.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch07lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch07lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

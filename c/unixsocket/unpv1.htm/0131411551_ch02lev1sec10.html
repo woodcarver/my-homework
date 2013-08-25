@@ -1,0 +1,62 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="2.10 TCP Port Numbers and Concurrent Servers"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch02lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch02lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch02lev1sec10"></A>
+<H3 class="docSection1Title" id="162666-893">2.10 TCP Port Numbers and Concurrent Servers</H3>
+<P class="docText">With a concurrent server, where the main server loop spawns a child to handle each new connection, what happens if the child continues to use the well-known port number while servicing a long request? Let's examine a typical sequence. First, the server is started on the host <TT>freebsd</TT>, which is multihomed with IP addresses 12.106.32.254 and 192.168.42.1, and the server does a passive open using its well-known port number (21, for this example). It is now waiting for a client request, which we show in <A class="docLink" HREF="#ch02fig11">Figure 2.11</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch02fig11"></A>Figure 2.11. TCP server with a passive open on port 21.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="379" HEIGHT="163" src="FILES/02fig11.gif" ALT="graphics/02fig11.gif"></p>
+
+</CENTER>
+<P class="docText">We use the notation <TT>{*:21, *:*}</TT> to indicate the server's socket pair. The server is waiting for a connection request on any local interface (the first asterisk) on port 21. The foreign IP address and foreign port are not specified and we denote them as <TT>*:*</TT>. We also call this a <span class="docEmphasis">listening socket</span>.</P>
+<BLOCKQUOTE><P><P class="docList">We use a colon to separate the IP address from the port number because that is what HTTP uses and is commonly seen elsewhere. The <TT>netstat</TT> program uses a period to separate the IP address and port, but this is sometimes confusing because decimal points are used in both domain names (<TT>freebsd.unpbook.com.21</TT>) and in IPv4 dotted-decimal notation (<TT>12.106.32.254.21</TT>).</P></P></BLOCKQUOTE>
+<P class="docText">When we specify the local IP address as an asterisk, it is called the <span class="docEmphasis">wildcard</span> character. If the host on which the server is running is multihomed (as in this example), the server can specify that it wants only to accept incoming connections that arrive destined to one specific local interface. This is a one-or-any choice for the server. The server cannot specify a list of multiple addresses. The wildcard local address is the "any" choice. In <A class="docLink" HREF="0131411551_ch01lev1sec5.html#ch01fig09">Figure 1.9</A>, the wildcard address was specified by setting the IP address in the socket address structure to <TT>INADDR_ANY</TT> before calling <TT>bind</TT>.</P>
+<P class="docText">At some later time, a client starts on the host with IP address 206.168.112.219 and executes an active open to the server's IP address of 12.106.32.254. We assume the ephemeral port chosen by the client TCP is 1500 for this example. This is shown in <A class="docLink" HREF="#ch02fig12">Figure 2.12</A>. Beneath the client we show its socket pair.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch02fig12"></A>Figure 2.12. Connection request from client to server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="102" src="FILES/02fig12.gif" ALT="graphics/02fig12.gif"></p>
+
+</CENTER>
+<P class="docText">When the server receives and accepts the client's connection, it <TT>forks</TT> a copy of itself, letting the child handle the client, as we show in <A class="docLink" HREF="#ch02fig13">Figure 2.13</A>. (We will describe the <TT>fork</TT> function in <A class="docLink" HREF="0131411551_ch04lev1sec7.html#ch04lev1sec7">Section 4.7</A>.)</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch02fig13"></A>Figure 2.13. Concurrent server has child handle client.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="173" src="FILES/02fig13.gif" ALT="graphics/02fig13.gif"></p>
+
+</CENTER>
+<P class="docText">At this point, we must distinguish between the listening socket and the connected socket on the server host. Notice that the connected socket uses the same local port (21) as the listening socket. Also notice that on the multihomed server, the local address is filled in for the connected socket (12.106.32.254) once the connection is established.</P>
+<P class="docText">The next step assumes that another client process on the client host requests a connection with the same server. The TCP code on the client host assigns the new client socket an unused ephemeral port number, say 1501. This gives us the scenario shown in <A class="docLink" HREF="#ch02fig14">Figure 2.14</A>. On the server, the two connections are distinct: the socket pair for the first connection differs from the socket pair for the second connection because the client's TCP chooses an unused port for the second connection (1501).</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch02fig14"></A>Figure 2.14. Second client connection with same server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="132235130214" WIDTH="500" HEIGHT="228" src="FILES/02fig14.gif" ALT="graphics/02fig14.gif"></p>
+
+</CENTER>
+<P class="docText">Notice from this example that TCP cannot demultiplex incoming segments by looking at just the destination port number. TCP must look at all four elements in the socket pair to determine which endpoint receives an arriving segment. In <A class="docLink" HREF="#ch02fig14">Figure 2.14</A>, we have three sockets with the same local port (21). If a segment arrives from 206.168.112.219 port 1500 destined for 12.106.32.254 port 21, it is delivered to the first child. If a segment arrives from 206.168.112.219 port 1501 destined for 12.106.32.254 port 21, it is delivered to the second child. All other TCP segments destined for port 21 are delivered to the original server with the listening socket.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch02lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch02lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

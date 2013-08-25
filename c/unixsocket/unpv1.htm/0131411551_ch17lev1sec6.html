@@ -1,0 +1,441 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="17.6 'get_ifi_info' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch17lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch17lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch17lev1sec6"></A>
+<H3 class="docSection1Title">17.6 <TT>get_ifi_info</TT> Function</H3>
+<P class="docText">Since many programs need to know all the interfaces on a system, we will develop a function of our own named <TT>get_ifi_info</TT> that returns a linked list of structures, one for each interface that is currently "up." In this section, we will implement this function using the <TT>SIOCGIFCONF ioctl</TT>, and in <A class="docLink" HREF="0131411551_ch18.html#ch18">Chapter 18</A>, we will develop a version using routing sockets.</P>
+<BLOCKQUOTE><P><P class="docList">FreeBSD provides a function named <TT>getifaddrs</TT> with similar functionality.</P></P><P><P class="docList">Searching the entire FreeBSD 4.8 source tree shows that 12 programs issue the <TT>SIOCGIFCONF ioctl</TT> to determine the interfaces present.</P></P></BLOCKQUOTE>
+<P class="docText">We first define the <TT>ifi_info</TT> structure in a new header named <TT>unpifi.h</TT>, shown in <A class="docLink" HREF="#ch17fig05">Figure 17.5</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig05"></A>Figure 17.5 <TT>unpifi.h</TT> header.</H5>
+<P class="docText"><span class="docEmphasis">lib/unpifi.h</span></P>
+
+<PRE>
+ 1 /* Our own header for the programs that need interface configuration info.
+ 2    Include this file, instead of "unp.h". */
+
+ 3 #ifndef __unp_ifi_h
+ 4 #define __unp_ifi_h
+
+ 5 #include     "unp.h"
+ 6 #include     &lt;net/if.h&gt;
+
+ 7 #define IFI_NAME     16            /* same as IFNAMSIZ in &lt;net/if.h&gt; */
+ 8 #define IFI_HADDR     8            /* allow for 64-bit EUI-64 in future */
+
+ 9 struct  ifi_info {
+10     char     ifi_name[IFI_NAME];   /* interface name, null-terminated */
+11     short    ifi_index;            /* interface index */
+12     short    ifi_mtu;              /* interface MTU */
+13     u_char   ifi_haddr[IFI_HADDR];     /* hardware address */
+14     u_short  ifi_hlen;             /* # bytes in hardware address: 0, 6, 8 */
+15     short    ifi_flags;            /* IFF_xxx constants from &lt;net/if.h&gt; */
+16     short    ifi_myflags;          /* our own IFI_xxx flags */
+17     struct  sockaddr *ifi_addr;    /* primary address */
+18     struct  sockaddr *ifi_brdaddr;     /* broadcast address */
+19     struct  sockaddr *ifi_dstaddr;     /* destination address */
+20     struct  ifi_info *ifi_next;    /* next of these structures */
+21 };
+
+22 #define IFI_ALIAS    1             /* ifi_addr is an alias */
+
+23                      /* function prototypes */
+24 struct ifi_info *get_ifi_info(int, int);
+25 struct ifi_info *Get_ifi_info(int, int);
+26 void    free_ifi_info(struct ifi_info *);
+
+27 #endif  /* __unp_ifi_h */
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>9–21</TT></span> A linked list of these structures is returned by our function, each structure's <TT>ifi_next</TT> member pointing to the next one. We return in this structure just the information that a typical application is probably interested in: the interface name, the interface index, the MTU, the hardware address (e.g., an Ethernet address), the interface flags (to let the application determine if the interface supports broadcasting or multicasting, or is a point-to-point interface), the interface address, the broadcast address, and the destination address for a point-to-point link. All the memory used to hold the <TT>ifi_info</TT> structures, along with the socket address structures contained within, are obtained dynamically. Therefore, we also provide a <TT>free_ifi_info</TT> function to free all this memory.</p>
+<P class="docText">Before showing the implementation of our <TT>get_ifi_info</TT> function, we show a simple program that calls this function and then outputs all the information. This program is a miniature version of the <TT>ifconfig</TT> program and is shown in <A class="docLink" HREF="#ch17fig06">Figure 17.6</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig06"></A>Figure 17.6 <TT>prifinfo</TT> program that calls our <TT>get_ifi_info</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">ioctl/prifinfo.c</span></P>
+
+<PRE>
+ 1 #include     "unpifi.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     struct ifi_info *ifi, *ifihead;
+ 6     struct sockaddr *sa;
+ 7     u_char *ptr;
+ 8     int     i, family, doaliases;
+ 9     if (argc != 3)
+10         err_quit("usage: prifinfo &lt;inet4|inet6&gt; &lt;doaliases&gt;");
+11     if (strcmp(argv[1], "inet4") == 0)
+12         family = AF_INET;
+13     else if (strcmp (argv[1], "inet6") == 0)
+14         family = AF_INET6;
+15     else
+16         err_quit("invalid &lt;address-family&gt;");
+17     doaliases = atoi(argv[2]);
+18     for (ifihead = ifi = Get_ifi_info(family, doaliases);
+19          ifi != NULL; ifi = ifi-&gt;ifi_next) {
+20         printf("%s: ", ifi-&gt;ifi_name);
+21         if (ifi-&gt;ifi_index != 0)
+22             printf("(%d) ", ifi-&gt;ifi_index);
+23         printf("&lt;");
+24         if (ifi-&gt;ifi_flags &amp; IFF_UP)            printf("UP ");
+25         if (ifi-&gt;ifi_flags &amp; IFF_BROADCAST)     printf("BCAST ");
+26         if (ifi-&gt;ifi_flags &amp; IFF_MULTICAST)     printf("MCAST ");
+27         if (ifi-&gt;ifi_flags &amp; IFF_LOOPBACK)      printf("LOOP ");
+28         if (ifi-&gt;ifi_flags &amp; IFF_POINTOPOINT)   printf("P2P ");
+29         printf("&gt;\n");
+30         if ( (i = ifi-&gt;ifi_hlen) &gt; 0) {
+31             ptr = ifi-&gt;ifi_haddr;
+32             do {
+33                 printf("%s%x", (i == ifi-&gt;ifi_hlen) ? "  " : ":", *ptr++);
+34             } while (--i &gt; 0);
+35             printf("\n");
+36         }
+37         if (ifi-&gt;ifi_mtu != 0)
+38             printf("  MTU: %d\n", ifi-&gt;ifi_mtu);
+39         if ( (sa = ifi-&gt;ifi_addr) != NULL)
+40             printf("  IP addr: %s\n", Sock_ntop_host (sa, sizeof (*sa)));
+41         if ( (sa = ifi-&gt;ifi_brdaddr) != NULL)
+42             printf("  broadcast addr: %s\n",
+43                    Sock_ntop_host (sa, sizeof(*sa)));
+44         if ( (sa = ifi-&gt;ifi_dstaddr) != NULL)
+45             printf("  destination addr: %s\n",
+46                    Sock_ntop_host(sa, sizeof(*sa)));
+47     }
+48     free_ifi_info(ifihead);
+49     exit(0);
+50 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>18–47</TT></span> The program is a <TT>for</TT> loop that calls <TT>get_ifi_info</TT> once and then steps through all the <TT>ifi_info</TT> structures that are returned.</p>
+<p class="docText"><span class="docEmphasis"><TT>20–36</TT></span> The interface name, index, and flags are all printed. If the length of the hardware address is greater than 0, it is printed as hexadecimal numbers. (Our <TT>get_ifi_info</TT> function returns an <TT>ifi_hlen</TT> of 0 if it is not available.)</p>
+<p class="docText"><span class="docEmphasis"><TT>37–46</TT></span> The MTU and three IP addresses are printed, if returned.</p>
+<P class="docText">If we run this program on our host <TT>macosx</TT> (<A class="docLink" HREF="0131411551_ch01lev1sec9.html#ch01fig16">Figure 1.16</A>), we have the following output:</P>
+<pre>
+
+</pre><pre>
+macosx % <span class="docEmphStrong">prifinfo inet4 0</span>
+lo0: &lt;UP MCAST LOOP &gt;
+  MTU: 16384
+  IP addr: 127.0.0.1
+en1: &lt;UP BCAST MCAST &gt;
+  MTU: 1500
+  IP addr: 172.24.37.78
+  broadcast addr: 172.24.37.95
+</pre><pre>
+</pre>
+<P class="docText">The first command-line argument of <TT>inet4</TT> specifies IPv4 addresses, and the second argument of 0 specifies that no address aliases are to be returned (we will describe IP address aliases in <A class="docLink" HREF="0131411551_app01lev1sec4.html#app01lev1sec4">Section A.4</A>). Note that under MacOS X, the hardware address of the Ethernet interface is not available using this method.</P>
+<P class="docText">If we add three alias addresses to the Ethernet interface (<TT>en1</TT>) with host IDs of 79, 80, and 81, and if we change the second command-line argument to 1, we have the following:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top">
+<PRE>macosx % <span class="docEmphStrong">prifinfo inet4 1</span>
+lo0: &lt;UP MCAST LOOP &gt;
+  MTU: 16384
+  IP addr: 127.0.0.1</PRE></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>en1: &lt;UP BCAST MCAST &gt;
+  MTU: 1500
+  IP addr: 172.24.37.78
+  broadcast addr: 172.24.37.95</PRE></TD><TD class="docTableCell" valign="middle"><P class="docText"><span class="docEmphasis">primary IP address</span></P></TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>en1: &lt;UP BCAST MCAST &gt;
+  MTU: 1500
+  IP addr: 172.24.37.79
+  broadcast addr: 172.24.37.95</PRE></TD><TD class="docTableCell" valign="middle"><P class="docText"><span class="docEmphasis">first alias</span></P></TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>en1: &lt;UP BCAST MCAST &gt;
+  MTU: 1500
+  IP addr: 172.24.37.80
+  broadcast addr: 172.24.37.95</PRE></TD><TD class="docTableCell" valign="middle"><P class="docText"><span class="docEmphasis">second alias</span></P></TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>en1: &lt;UP BCAST MCAST &gt;
+  MTU: 1500
+  IP addr: 172.24.37.81
+  broadcast addr: 172.24.37.95</PRE></TD><TD class="docTableCell" valign="middle"><P class="docText"><span class="docEmphasis">third alias</span></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">If we run the same program under FreeBSD using the implementation of <TT>get_ifi_info</TT> from <A class="docLink" HREF="0131411551_ch18lev1sec5.html#ch18fig16">Figure 18.16</A> (which can easily obtain the hardware address), we have the following:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top">
+<PRE>freebsd4 % <span class="docEmphStrong">prifinfo inet4 1</span>
+de0: &lt;UP BCAST MCAST &gt;
+  0:80:c8:2b:d9:28
+  IP addr: 135.197.17.100
+  broadcast addr: 135.197.17.255</PRE></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>de1: &lt;UP BCAST MCAST &gt;
+  0:40:5:42:d6:de
+  IP addr: 172.24.37.94
+  broadcast addr: 172.24.37.95</PRE></TD><TD class="docTableCell" valign="middle"><P class="docText"><span class="docEmphasis">primary address</span></P></TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>de1: &lt;UP BCAST MCAST &gt;
+  0:40:5:42:d6:de
+  IP addr: 172.24.37.93
+  broadcast addr: 172.24.37.93</PRE></TD><TD class="docTableCell" valign="middle"><P class="docText"><span class="docEmphasis">alias</span></P></TD></TR><TR><TD class="docTableCell" valign="top">
+<PRE>lo0: &lt;UP MCAST LOOP &gt;
+  IP addr: 127.0.0.1</PRE></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">For this example, we directed the program to print the aliases and we see that one alias is defined for the second Ethernet interface (<TT>de1</TT>) with a host ID of 93.</P>
+<P class="docText">We now show our implementation of <TT>get_ifi_info</TT> that uses the <TT>SIOCGIFCONF ioctl</TT>. <A class="docLink" HREF="#ch17fig07">Figure 17.7</A> shows the first part of the function, which obtains the interface configuration from the kernel.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig07"></A>Figure 17.7 Issue <TT>SIOCGIFCONF</TT> request to obtain interface configuration.</H5>
+<P class="docText"><span class="docEmphasis">lib/get_ifi_info.c</span></P>
+
+<PRE>
+ 1 #include     "unpifi.h"
+
+ 2 struct ifi_info *
+ 3 get_ifi_info(int family, int doaliases)
+ 4 {
+ 5     struct ifi_info *ifi, *ifihead, **ifipnext;
+ 6     int     sockfd, len, lastlen, flags, myflags, idx = 0, hlen = 0;
+ 7     char    *ptr, *buf, lastname[IFNAMSIZ], *cptr, *haddr, *sdlname;
+ 8     struct ifconf ifc;
+ 9     struct ifreq *ifr, ifrcopy;
+10     struct sockaddr_in *sinptr;
+11     struct sockaddr_in6 *sin6ptr;
+
+12     sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+13     lastlen = 0;
+14     len = 100 * sizeof(struct ifreq);     /* initial buffer size guess */
+15     for ( ; ; ) {
+16         buf = Malloc(len);
+17         ifc.ifc_len = len;
+18         ifc.ifc_buf = buf;
+19         if (ioctl(sockfd, SIOCGIFCONF, &amp;ifc) &lt; 0) {
+20             if (errno != EINVAL || lastlen != 0)
+21                 err_sys("ioctl error");
+22         } else {
+23             if (ifc.ifc_len == lastlen)
+24                 break;          /* success, len has not changed */
+25             lastlen = ifc.ifc_len;
+26         }
+27         len += 10 * sizeof(struct ifreq);     /* increment */
+28         free(buf);
+29     }
+30     ifihead = NULL;
+31     ifipnext = &amp;ifihead;
+32     lastname[0] = 0;
+33     sdlname = NULL;
+</PRE>
+
+<A NAME="ch17lev3sec1"></A>
+<H4 class="docSection2Title"> Create Internet Socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>11</TT></span> We create a UDP socket that will be used with <TT>ioctls</TT>. Either a TCP or a UDP socket can be used (p. 163 of TCPv2).</p>
+
+<A NAME="ch17lev3sec2"></A>
+<H4 class="docSection2Title"> Issue <TT>SIOCGIFCONF</TT> Request in a Loop</H4>
+<p class="docText"><span class="docEmphasis"><TT>12–28</TT></span> A fundamental problem with the <TT>SIOCGIFCONF</TT> request is that some implementations do not return an error if the buffer is not large enough to hold the result. Instead, the result is truncated and success is returned (a return value of 0 from <TT>ioctl</TT>). This means the only way we know that our buffer is large enough is to issue the request, save the return length, issue the request again with a larger buffer, and compare the length with the saved value. Only if the two lengths are the same is our buffer large enough.</p>
+<BLOCKQUOTE><P><P class="docList">Berkeley-derived implementations do not return an error if the buffer is too small (pp. 118–119 of TCPv2); the result is just truncated to fit the available buffer. Solaris 2.5, on the other hand, returns <TT>EINVAL</TT> if the returned length would be greater than or equal to the buffer length. But, we cannot assume success if the returned length is less than the buffer size because Berkeley-derived implementations can return less than the buffer size if another structure does not fit.</P></P><P><P class="docList">Some implementations provide a <TT>SIOCGIFNUM</TT> request that returns the number of interfaces. This allows the application to then allocate a buffer of sufficient size before issuing the <TT>SIOCGIFCONF</TT> request, but this new request is not widespread.</P></P><P><P class="docList">Allocating a fixed-sized buffer for the result from the <TT>SIOCGIFCONF</TT> request has become a problem with the growth of the Web, because large Web servers are allocating many alias addresses to a single interface. Solaris 2.5, for example, had a limit of 256 aliases per interface, but this limit increases to 8,192 with 2.6. Sites with numerous aliases discovered that programs with fixed-size buffers for interface information started failing. Even though Solaris returns an error if a buffer is too small, these programs allocate their fixed-size buffer, issue the <TT>ioctl</TT>, but then die if an error is returned.</P></P></BLOCKQUOTE>
+<p class="docText"><span class="docEmphasis"><TT>12–15</TT></span> We dynamically allocate a buffer, starting with room for 100 <TT>ifreq</TT> structures. We also keep track of the length returned by the last <TT>SIOCGIFCONF</TT> request in <TT>lastlen</TT> and initialize this to 0.</p>
+<p class="docText"><span class="docEmphasis"><TT>19–20</TT></span> If an error of <TT>EINVAL</TT> is returned by <TT>ioctl</TT>, and we have not yet had a successful return (i.e., <TT>lastlen</TT> is still 0), we have not yet allocated a buffer large enough and continue through the loop.</p>
+<p class="docText"><span class="docEmphasis"><TT>22–23</TT></span> If <TT>ioctl</TT> returns success, and if the returned length equals <TT>lastlen</TT>, the length has not changed (our buffer is large enough) and we <TT>break</TT> out of the loop since we have all the information.</p>
+<p class="docText"><span class="docEmphasis"><TT>26–27</TT></span> Each time around the loop, we increase the buffer size to hold 10 more <TT>ifreq</TT> structures.</p>
+
+<A NAME="ch17lev3sec3"></A>
+<H4 class="docSection2Title"> Initialize Linked List Pointers</H4>
+<p class="docText"><span class="docEmphasis"><TT>29–31</TT></span> Since we will be returning a pointer to the head of a linked list of <TT>ifi_info</TT> structures, we use the two variables <TT>ifihead</TT> and <TT>ifipnext</TT> to hold pointers to the list as we build it.</p>
+<P class="docText">The next part of our <TT>get_ifi_info</TT> function, the beginning of the main loop, is shown in <A class="docLink" HREF="#ch17fig08">Figure 17.8</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig08"></A>Figure 17.8 Process interface configuration.</H5>
+<P class="docText"><span class="docEmphasis">lib/get_ifi_info.c</span></P>
+
+<PRE>
+34     for (ptr = buf; ptr &lt; buf + ifc.ifc_len;) {
+35          ifr = (struct ifreq *) ptr;
+
+36 #ifdef   HAVE_SOCKADDR_SA_LEN
+37          len = max(sizeof(struct sockaddr), ifr-&gt;ifr_addr.sa_len);
+38 #else
+39          switch (ifr-&gt;ifr_addr.sa_family) {
+40 #ifdef   IPV6
+41          case AF_INET6:
+42              len = sizeof(struct sockaddr_in6);
+43              break;
+44 #endif
+45          case AF_INET:
+46          default:
+47              len = sizeof(struct sockaddr);
+48              break;
+49          }
+50 #endif   /* HAVE_SOCKADDR_SA_LEN */
+51          ptr += sizeof(ifr-&gt;ifr_name) + len; /* for next one in buffer */
+
+52 #ifdef   HAVE_SOCKADDR_DL_STRUCT
+53          /* assumes that AF_LINK precedes AF_INET or AF_INET6 */
+54          if (ifr-&gt;ifr_addr.sa_family == AF_LINK) {
+55              struct sockaddr_dl *sdl = (struct sockaddr_dl *) &amp;ifr-&gt;ifr_addr;
+56              sdlname = ifr-&gt;ifr_name;
+57              idx = sdl-&gt;sdl_index;
+58              haddr = sdl-&gt;sdl_data + sdl-&gt;sdl_nlen;
+59              hlen = sdl-&gt;sdl_alen;
+60          }
+61 #endif
+
+62          if (ifr-&gt;ifr_addr.sa_family != family)
+63              continue;              /* ignore if not desired address family */
+
+64          myflags = 0;
+65          if ( (cptr = strchr(ifr-&gt;ifr_name, ':')) != NULL)
+66              *cptr = 0;          /* replace colon with null */
+67          if (strncmp(lastname, ifr-&gt;ifr_name, IFNAMSIZ) == 0) {
+68              if (doaliases == 0)
+69                  continue;       /* already processed this interface */
+70              myflags = IFI_ALIAS;
+71          }
+72          memcpy(lastname, ifr-&gt;ifr_name, IFNAMSIZ);
+
+73          ifrcopy = *ifr;
+74          Ioctl(sockfd, SIOCGIFFLAGS, &amp;ifrcopy);
+75          flags = ifrcopy.ifr_flags;
+76          if ((flags &amp; IFF_UP) == 0)
+77              continue;               /* ignore if interface not up */
+</PRE>
+
+
+<A NAME="ch17lev3sec4"></A>
+<H4 class="docSection2Title"> Step to Next Socket Address Structure</H4>
+<p class="docText"><span class="docEmphasis"><TT>35–51</TT></span> As we loop through all the <TT>ifreq</TT> structures, <TT>ifr</TT> points to each structure and we then increment <TT>ptr</TT> to point to the next one. But, we must deal with newer systems that provide a length field for socket address structures and older systems that do not provide this length. Even though the declaration in <A class="docLink" HREF="0131411551_ch17lev1sec5.html#ch17fig02">Figure 17.2</A> declares the socket address structure contained within the <TT>ifreq</TT> structure as a generic socket address structure, on newer systems, this can be any type of socket address structure. Indeed, on 4.4BSD, a datalink socket address structure is also returned for each interface (p. 118 of TCPv2). Therefore, if the length member is supported, we must use its value to update our pointer to the next socket address structure. Otherwise, we use a length based on the address family, using the size of the generic socket address structure (16 bytes) as the default.</p>
+<BLOCKQUOTE><P><P class="docList">We put in a <TT>case</TT> for IPv6, for newer systems, just in case. The problem is that the <TT>union</TT> in the <TT>ifreq</TT> structure defines the returned addresses as generic 16-byte <TT>sockaddr</TT> structures, which are adequate for 16-byte IPv4 <TT>sockaddr_in</TT> structures, but too small for 28-byte IPv6 <TT>sockaddr_in6</TT> structures. This is not a problem on systems that have the <TT>sa_len</TT> field in the <TT>sockaddr</TT> since they can indicate variable-sized <TT>sockaddr</TT> structures easily.</P></P></BLOCKQUOTE>
+
+<A NAME="ch17lev3sec5"></A>
+<H4 class="docSection2Title"> Handle <TT>AF_LINK</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>52–60</TT></span> If the system is one that returns <TT>AF_LINK sockaddrs</TT> in <TT>SIOCGIFCONF</TT>, copy the interface index and the hardware address information from the <TT>AF_LINK sockaddr</TT>.</p>
+<p class="docText"><span class="docEmphasis"><TT>62–63</TT></span> We ignore any addresses from families except those desired by the caller.</p>
+
+<A NAME="ch17lev3sec6"></A>
+<H4 class="docSection2Title"> Handle Aliases</H4>
+<p class="docText"><span class="docEmphasis"><TT>64–72</TT></span> We must detect any aliases that may exist for the interface, that is, additional addresses that have been assigned to the interface. Note from our examples following <A class="docLink" HREF="#ch17fig06">Figure 17.6</A> that under Solaris, the interface name for an alias contains a colon, while under 4.4BSD, the interface name does not change for an alias. To handle both cases, we save the last interface name in <TT>lastname</TT> and only compare up to a colon, if present. If a colon is not present, we still ignore this interface if the name is equivalent to the last interface we processed.</p>
+
+<A NAME="ch17lev3sec7"></A>
+<H4 class="docSection2Title"> Fetch Interface Flags</H4>
+<p class="docText"><span class="docEmphasis"><TT>73–77</TT></span> We issue an <TT>ioctl</TT> of <TT>SIOCGIFFLAGS</TT> (<A class="docLink" HREF="0131411551_ch17lev1sec5.html#ch17lev1sec5">Section 17.5</A>) to fetch the interface flags. The third argument to <TT>ioctl</TT> is a pointer to an <TT>ifreq</TT> structure that must contain the name of the interface for which we want the flags. We make a copy of the <TT>ifreq</TT> structure before issuing the <TT>ioctl</TT>, because if we didn't, this request would overwrite the IP address of the interface since both are members of the same <TT>union</TT> in <A class="docLink" HREF="0131411551_ch17lev1sec5.html#ch17fig02">Figure 17.2</A>. If the interface is not up, we ignore it.</p>
+<P class="docText"><A class="docLink" HREF="#ch17fig09">Figure 17.9</A> contains the third part of our function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig09"></A>Figure 17.9 Allocate and initialize <TT>ifi_info</TT> structure.</H5>
+<P class="docText"><span class="docEmphasis">lib/get_ifi_info.c</span></P>
+
+<PRE>
+78         ifi = Calloc(1, sizeof(struct ifi_info));
+79         *ifipnext = ifi;        /* prev points to this new one */
+80         ifipnext = &amp;ifi-&gt;ifi_next;  /* pointer to next one goes here */
+
+81         ifi-&gt;ifi_flags = flags; /* IFF_xxx values */
+82         ifi-&gt;ifi_myflags = myflags; /* IFI_xxx values */
+83 #if defined(SIOCGIFMTU) &amp;&amp; defined(HAVE_STRUCT_IFREQ_IFR_MTU)
+84         Ioctl(sockfd, SIOCGIFMTU, &amp;ifrcopy);
+85         ifi-&gt;ifi_mtu = ifrcopy.ifr_mtu;
+86 #else
+87         ifi-&gt;ifi_mtu = 0;
+88 #endif
+89         memcpy(ifi-&gt;ifi_name, ifr-&gt;ifr_name, IFI_NAME);
+90         ifi-&gt;ifi_name [IFI_NAME - 1] = '\0';
+91         /* If the sockaddr_dl is from a different interface, ignore it */
+92         if (sdlname == NULL || strcmp (sdlname, ifr-&gt;ifr_name) != 0)
+93             idx = hlen = 0;
+94         ifi-&gt;ifi_index = idx;
+95         ifi-&gt;ifi_hlen = hlen;
+96         if (ifi-&gt;ifi_hlen &gt; IFI_HADDR)
+97             ifi-&gt;ifi_hlen = IFI_HADDR;
+98         if (hlen)
+99             memcpy(ifi-&gt;ifi_haddr, haddr, ifi-&gt;ifi_hlen);
+</PRE>
+
+
+<A NAME="ch17lev3sec8"></A>
+<H4 class="docSection2Title"> Allocate and Initialize <TT>ifi_info</TT> Structure</H4>
+<p class="docText"><span class="docEmphasis"><TT>78–99</TT></span> At this point, we know that we will return this interface to the caller. We allocate memory for our <TT>ifi_info</TT> structure and add it to the end of the linked list we are building. We copy the interface flags, MTU, and name into the structure. We make certain that the interface name is null-terminated, and since <TT>calloc</TT> initializes the allocated region to all zero bits, we know that <TT>ifi_hlen</TT> is initialized to 0 and that <TT>ifi_next</TT> is initialized to a null pointer. We copy the saved interface index and hardware length; if the length is nonzero, we also copy the saved hardware address.</p>
+<P class="docText"><A class="docLink" HREF="#ch17fig10">Figure 17.10</A> contains the last part of our function.</P>
+<p class="docText"><span class="docEmphasis"><TT>102–104</TT></span> We copy the IP address that was returned from our original <TT>SIOCGIFCONF</TT> request in the structure we are building.</p>
+<p class="docText"><span class="docEmphasis"><TT>106–119</TT></span> If the interface supports broadcasting, we fetch the broadcast address with an <TT>ioctl</TT> of <TT>SIOCGIFBRDADDR</TT>. We allocate memory for the socket address structure containing this address and add it to the <TT>ifi_info</TT> structure we are building. Similarly, if the interface is a point-to-point interface, the <TT>SIOCGIFDSTADDR</TT> returns the IP address of the other end of the link.</p>
+<p class="docText"><span class="docEmphasis"><TT>123–133</TT></span> This is the IPv6 case; it is exactly the same as for IPv4 except that there is no call to <TT>SIOCGIFBRDADDR</TT> because IPv6 does not support broadcasting.</p>
+<P class="docText"><A class="docLink" HREF="#ch17fig11">Figure 17.11</A> shows the <TT>free_ifi_info</TT> function, which takes a pointer that was returned by <TT>get_ifi_info</TT> and frees all the dynamic memory.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch17fig10"></A>Figure 17.10 Fetch and return interface addresses.</H5>
+<P class="docText"><span class="docEmphasis">lib/get_ifi_info.c</span></P>
+
+<PRE>
+100        switch (ifr-&gt;ifr_addr.sa_family) {
+101        case AF_INET:
+102            sinptr = (struct sockaddr_in *) &amp;ifr-&gt;ifr_addr;
+103            ifi-&gt;ifi_addr = Calloc(1, sizeof(struct sockaddr_in));
+104            memcpy(ifi-&gt;ifi_addr, sinptr, sizeof(struct sockaddr_in));
+
+105 #ifdef SIOCGIFBRDADDR
+106            if (flags &amp; IFF_BROADCAST) {
+107                Ioctl(sockfd, SIOCGIFBRDADDR, &amp;ifrcopy);
+108                sinptr = (struct sockaddr_in *) &amp;ifrcopy.ifr_broadaddr;
+109                ifi-&gt;ifi_brdaddr = Calloc(1, sizeof(struct sockaddr_in));
+110                memcpy(ifi-&gt;ifi_brdaddr, sinptr, sizeof(struct sockaddr_in));
+111            }
+112 #endif
+
+113 #ifdef SIOCGIFDSTADDR
+114            if (flags &amp; IFF_POINTOPOINT) {
+115                Ioctl(sockfd, SIOCGIFDSTADDR, &amp;ifrcopy);
+116                sinptr = (struct sockaddr_in *) &amp;ifrcopy.ifr_dstaddr;
+117                ifi-&gt;ifi_dstaddr = Calloc(1, sizeof(struct sockaddr_in));
+118                memcpy(ifi-&gt;ifi_dstaddr, sinptr, sizeof(struct sockaddr_in));
+119            }
+120 #endif
+121            break;
+
+122        case AF_INET6:
+123            sin6ptr = (struct sockaddr_in6 *) &amp;ifr-&gt;ifr_addr;
+124            ifi-&gt;ifi_addr = Calloc(1, sizeof(struct sockaddr_in6));
+125            memcpy(ifi-&gt;ifi_addr, sin6ptr, sizeof(struct sockaddr_in6));
+
+126 #ifdef SIOCGIFDSTADDR
+127            if (flags &amp; IFF_POINTOPOINT) {
+128                Ioctl(sockfd, SIOCGIFDSTADDR, &amp;ifrcopy);
+129                sin6ptr = (struct sockaddr_in6 *) &amp;ifrcopy.ifr_dstaddr;
+130                ifi-&gt;ifi_dstaddr = Calloc(1, sizeof(struct sockaddr_in6));
+131                memcpy(ifi-&gt;ifi_dstaddr, sin6ptr,
+132                       sizeof(struct sockaddr_in6));
+133            }
+134 #endif
+135            break;
+
+136        default:
+137            break;
+138        }
+139    }
+140    free(buf);
+141    return (ifihead);           /* pointer to first structure in linked list */
+142 }
+</PRE>
+
+
+<H5 class="docExampleTitle"><A NAME="ch17fig11"></A>Figure 17.11 <TT>free_ifi_info</TT> function: frees dynamic memory allocated by <TT>get_ifi_info</TT>.</H5>
+<P class="docText"><span class="docEmphasis">lib/get_ifi_info.c</span></P>
+
+<PRE>
+143 void
+144 free_ifi_info(struct ifi_info *ifihead)
+145 {
+146     struct ifi_info *ifi, *ifinext;
+
+147     for (ifi = ifihead; ifi != NULL; ifi = ifinext) {
+148         if (ifi-&gt;ifi_addr != NULL)
+149             free(ifi-&gt;ifi_addr);
+150         if (ifi-&gt;ifi_brdaddr != NULL)
+151             free(ifi-&gt;ifi_brdaddr);
+152         if (ifi-&gt;ifi_dstaddr != NULL)
+153             free(ifi-&gt;ifi_dstaddr);
+154         ifinext = ifi-&gt;ifi_next;     /* can't fetch ifi_next after free() */
+155         free(ifi);               /* the ifi_info{} itself */
+156     }
+157 }
+</PRE>
+
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch17lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch17lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

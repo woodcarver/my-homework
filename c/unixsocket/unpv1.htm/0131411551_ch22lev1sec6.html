@@ -1,0 +1,194 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="22.6 Binding Interface Addresses"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch22lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch22lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch22lev1sec6"></A>
+<H3 class="docSection1Title">22.6 Binding Interface Addresses</H3>
+<P class="docText">One common use for our <TT>get_ifi_info</TT> function is with UDP applications that need to monitor all interfaces on a host to know when a datagram arrives, and on which interface it arrives. This allows the receiving program to know the destination address of the UDP datagram, since that address is what determines the socket to which a datagram is delivered, even if the host does not support the <TT>IP_RECVDSTADDR</TT> socket option.</P>
+<BLOCKQUOTE><P><P class="docList">Recall our discussion at the end of <A class="docLink" HREF="0131411551_ch22lev1sec2.html#ch22lev1sec2">Section 22.2</A>. If the host employs the common weak end system model, the destination IP address may differ from the IP address of the receiving interface. In this case, all we can determine is the destination address of the datagram, which does not need to be an address assigned to the receiving interface. To determine the receiving interface requires either the <TT>IP_RECVIF</TT> or <TT>IPV6_PKTINFO</TT> socket option.</P></P></BLOCKQUOTE>
+<P class="docText"><A class="docLink" HREF="#ch22fig15">Figure 22.15</A> is the first part of a simple example of this technique with a UDP server that binds all the unicast addresses, all the broadcast addresses, and finally the wildcard address.</P>
+<A NAME="ch22lev3sec26"></A>
+<H4 class="docSection2Title"> Call <TT>get_ifi_info</TT>, to obtain interface information</H4>
+<p class="docText"><span class="docEmphasis"><TT>11–12</TT></span> <TT>get_ifi_info</TT>, obtains all the IPv4 addresses, including aliases, for all interfaces. The program then loops through each returned <TT>ifi_info</TT> structure.</p>
+
+<A NAME="ch22lev3sec27"></A>
+<H4 class="docSection2Title"> Create UDP socket and <TT>bind</TT> unicast address</H4>
+<p class="docText"><span class="docEmphasis"><TT>13–20</TT></span> A UDP socket is created and the unicast address is bound to it. We also set the <TT>SO_REUSEADDR</TT> socket option, as we are binding the same port (<TT>SERV_PORT</TT>) for all IP addresses.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch22fig15"></A>Figure 22.15 First part of UDP server that <TT>bind</TT>s all addresses.</H5>
+<P class="docText"><span class="docEmphasis">advio/udpserv03.c</span></P>
+
+<PRE>
+ 1 #include    "unpifi.h"
+
+ 2 void    mydg_echo(int, SA *, socklen_t, SA *);
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     sockfd;
+ 7     const int on = 1;
+ 8     pid_t   pid;
+ 9     struct ifi_info *ifi, *ifihead;
+10     struct sockaddr_in *sa, cliaddr, wildaddr;
+
+11     for (ifihead = ifi = Get_ifi_info(AF_INET, 1);
+12          ifi != NULL; ifi = ifi-&gt;ifi_next) {
+
+13             /* bind unicast address */
+14         sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+15         Setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &amp;on, sizeof(on));
+
+16         sa = (struct sockaddr_in *) ifi-&gt;ifi_addr;
+17         sa-&gt;sin_family = AF_INET;
+18         sa-&gt;sin_port = htons(SERV_PORT);
+19         Bind(sockfd, (SA *) sa, sizeof(*sa));
+20         printf("bound %s\n", Sock_ntop((SA *) sa, sizeof(*sa)));
+
+21         if ( (pid = Fork()) == 0) {  /* child */
+22             mydg_echo(sockfd, (SA *) &amp;cliaddr, sizeof(cliaddr), (SA *) sa);
+23             exit(0);            /* never executed */
+24         }
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList">Not all implementations require that this socket option be set. Berkeley-derived implementations, for example, do not require the option and allow a new <TT>bind</TT> of an already bound port if the new IP address being bound: (i) is not the wildcard, and (ii) differs from all the IP addresses that are already bound to the port.</P></P></BLOCKQUOTE>
+
+<A NAME="ch22lev3sec28"></A>
+<H4 class="docSection2Title"> <TT>fork</TT> child for this address</H4>
+<p class="docText"><span class="docEmphasis"><TT>21–24</TT></span> A child is <TT>forked</TT> and the function <TT>mydg_echo</TT> is called for the child. This function waits for any datagram to arrive on this socket and echoes it back to the sender.</p>
+<P class="docText"><A class="docLink" HREF="#ch22fig16">Figure 22.16</A> shows the next part of the <TT>main</TT> function, which handles broadcast addresses.</P>
+
+<A NAME="ch22lev3sec29"></A>
+<H4 class="docSection2Title"> Bind broadcast address</H4>
+<p class="docText"><span class="docEmphasis"><TT>25–42</TT></span> If the interface supports broadcasting, a UDP socket is created and the broadcast address is bound to it. This time, we allow the <TT>bind</TT> to fail with an error of <TT>EADDRINUSE</TT> because if an interface has multiple addresses (aliases) on the same subnet, then each of the different unicast addresses will have the same broadcast address. We showed an example of this following <A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17fig06">Figure 17.6</A>. In this scenario, we expect only the first <TT>bind</TT> to succeed.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch22fig16"></A>Figure 22.16 Second part of UDP server that <TT>bind</TT>s all addresses.</H5>
+<P class="docText"><span class="docEmphasis">advio/udpserv03.c</span></P>
+
+<PRE>
+25     if (ifi-&gt;ifi_flags &amp; IFF_BROADCAST) {
+26             /* try to bind broadcast address */
+27         sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+28         Setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &amp;on, sizeof(on));
+
+29         sa = (struct sockaddr_in *) ifi-&gt;ifi_brdaddr;
+30         sa-&gt;sin_family = AF_INET;
+31         sa-&gt;sin_port = htons(SERV_PORT);
+32         if (bind(sockfd, (SA *) sa, sizeof(*sa)) &lt; 0) {
+33             if (errno == EADDRINUSE) {
+34                 printf("EADDRINUSE: %s\n",
+35                        Sock_ntop((SA *) sa, sizeof(*sa)));
+36                 Close(sockfd);
+37                 continue;
+38             } else
+39                 err_sys("bind error for %s",
+40                         Sock_ntop((SA *) sa, sizeof(*sa)));
+41         }
+42         printf("bound %s\n", Sock_ntop((SA *) sa, sizeof(*sa)));
+
+43         if ( (pid = Fork()) == 0) {  /* child */
+44             mydg_echo(sockfd, (SA *) &amp;cliaddr, sizeof(cliaddr),
+45                       (SA *) sa);
+46             exit(0);        /* never executed */
+47         }
+48     }
+49 }
+</PRE>
+
+
+<A NAME="ch22lev3sec30"></A>
+<H4 class="docSection2Title"> <TT>fork</TT> child</H4>
+<p class="docText"><span class="docEmphasis"><TT>43–47</TT></span> A child is spawned and it calls the function <TT>mydg_echo</TT>.</p>
+<P class="docText">The final part of the <TT>main</TT> function is shown in <A class="docLink" HREF="#ch22fig17">Figure 22.17</A>. This code <TT>binds</TT> the wildcard address to handle any destination addresses except the unicast and broadcast addresses we have already bound. The only datagrams that should arrive on this socket should be those destined to the limited broadcast address (255.255.255.255).</P>
+
+<A NAME="ch22lev3sec31"></A>
+<H4 class="docSection2Title"> Create socket and bind wildcard address</H4>
+<p class="docText"><span class="docEmphasis"><TT>50–62</TT></span> A UDP socket is created, the <TT>SO_REUSEADDR</TT> socket option is set, and the wildcard IP address is bound. A child is spawned, which calls the <TT>mydg_echo</TT> function.</p>
+
+<A NAME="ch22lev3sec32"></A>
+<H4 class="docSection2Title"> <TT>main</TT> function terminates</H4>
+<p class="docText"><span class="docEmphasis"><TT>63</TT></span> The <TT>main</TT> function terminates, and the server continues executing all the children that were spawned.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch22fig17"></A>Figure 22.17 Final part of UDP server that <TT>bind</TT>s all addresses.</H5>
+<P class="docText"><span class="docEmphasis">advio/udpserv03.c</span></P>
+
+<PRE>
+50         /* bind wildcard address */
+51     sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+52     Setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &amp;on, sizeof(on));
+
+53     bzero(&amp;wildaddr, sizeof(wildaddr));
+54     wildaddr.sin_family = AF_INET;
+55     wildaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+56     wildaddr.sin_port = htons(SERV_PORT);
+57     Bind(sockfd, (SA *) &amp;wildaddr, sizeof(wildaddr));
+58     printf("bound %s\n", Sock_ntop((SA *) &amp;wildaddr, sizeof(wildaddr)));
+
+59     if ( (pid = Fork()) == 0) {  /* child */
+60         mydg_echo(sockfd, (SA *) &amp;cliaddr, sizeof(cliaddr), (SA *) sa);
+61         exit(0);                /* never executed */
+62     }
+63     exit(0);
+64 }
+</PRE>
+
+<P class="docText">The function <TT>mydg_echo</TT>, which is executed by all the children, is shown in <A class="docLink" HREF="#ch22fig18">Figure 22.18</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch22fig18"></A>Figure 22.18 <TT>mydg_echo</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">advio/udpserv03.c</span></P>
+
+<PRE>
+65 void
+66 mydg_echo(int sockfd, SA *pcliaddr, socklen_t clilen, SA *myaddr)
+67 {
+68     int     n;
+69     char    mesg[MAXLINE];
+70     socklen_t len;
+
+71     for ( ; ; ) {
+72         len = clilen;
+73         n = Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &amp;len);
+74         printf("child %d, datagram from %s", getpid(),
+75                Sock_ntop(pcliaddr, len));
+76         printf(", to %s\n", Sock_ntop(myaddr, clilen));
+
+77         Sendto(sockfd, mesg, n, 0, pcliaddr, len);
+78     }
+79 }
+</PRE>
+
+
+<A NAME="ch22lev3sec33"></A>
+<H4 class="docSection2Title"> New argument</H4>
+<p class="docText"><span class="docEmphasis"><TT>65–66</TT></span> The fourth argument to this function is the IP address that was bound to the socket. This socket should receive only datagrams destined to that IP address. If the IP address is the wildcard, then the socket should receive only datagrams that are not matched by some other socket bound to the same port.</p>
+
+<A NAME="ch22lev3sec34"></A>
+<H4 class="docSection2Title"> Read datagram and echo reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>71–78</TT></span> The datagram is read with <TT>recvfrom</TT> and sent back to the client with <TT>sendto</TT>.</p>
+<P class="docText">This function also prints the client's IP address and the IP address that was bound to the socket.</P>
+<P class="docText">We now run this program on our host <TT>solaris</TT> after establishing an alias address for the <TT>hme0</TT> Ethernet interface. The alias address is host number 200 on 10.0.0/24.</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>solaris %</TT> <span class="docEmphStrong"><TT>udpserv03</TT></span></P></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>bound 127.0.0.1:9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">loopback interface</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>bound 10.0.0.200:9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">unicast address of</span> <TT>hme0:1</TT> <span class="docEmphasis">interface</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>bound 10.0.0.255:9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">broadcast address of</span> <TT>hme0:1</TT> <span class="docEmphasis">interface</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>bound 192.168.1.20:9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">unicast address of</span> <TT>hme0</TT> <span class="docEmphasis">interface</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>bound 192.168.1.255:9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">broadcast address of</span> <TT>hme0</TT> <span class="docEmphasis">interface</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>bound 0.0.0.0.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">wildcard</span></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">We can check that all these sockets are bound to the indicated IP address and port using <TT>netstat</TT>.</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>solaris %</TT> <span class="docEmphStrong"><TT>netstat -na | grep 9877</TT></span></P></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>127.0.0.1.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>Idle</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>10.0.0.200.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>Idle</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>*.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>Idle</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>192.129.100.100.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>Idle</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>*.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>Idle</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>*.9877</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>Idle</TT></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">We should note that our design of one child process per socket is for simplicity and other designs are possible. For example, to reduce the number of processes, the program could manage all the descriptors itself using <TT>select</TT>, never calling <TT>fork</TT>. The problem with this design is the added code complexity. While it is easy to use <TT>select</TT> for all the descriptors, we would have to maintain some type of mapping of each descriptor to its bound IP address (probably an array of structures) so we could print the destination IP address when a datagram was read from a socket. It is often simpler to use a single process or a single thread for one operation or descriptor instead of having a single process multiplex many different operations or descriptors.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch22lev1sec5.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch22lev1sec7.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

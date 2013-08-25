@@ -1,0 +1,120 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="1.2 A Simple Daytime Client"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch01lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch01lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch01lev1sec2"></A>
+<H3 class="docSection1Title">1.2 A Simple Daytime Client</H3>
+<P class="docText">Let's consider a specific example to introduce many of the concepts and terms that we will encounter throughout the book. <A class="docLink" HREF="#ch01fig05">Figure 1.5</A> is an implementation of a TCP time-of-day client. This client establishes a TCP connection with a server and the server simply sends back the current time and date in a human-readable format.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch01fig05"></A>Figure 1.5 TCP daytime client.</H5>
+<P class="docText"><span class="docEmphasis">intro/daytimetcpcli.c</span></P>
+
+<PRE>
+ 1 #include  "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     sockfd, n;
+ 6     char    recvline[MAXLINE + 1];
+ 7     struct sockaddr_in servaddr;
+
+ 8     if (argc != 2)
+ 9         err_quit("usage: a.out &lt;IPaddress&gt;");
+
+10     if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) &lt; 0)
+11         err_sys("socket error");
+
+12     bzero(&amp;servaddr, sizeof(servaddr));
+13     servaddr.sin_family = AF_INET;
+14     servaddr.sin_port = htons(13);  /* daytime server */
+15     if (inet_pton(AF_INET, argv[1], &amp;servaddr.sin_addr) &lt;= 0)
+16         err_quit("inet_pton error for %s", argv[1]);
+
+17     if (connect(sockfd, (SA *) &amp;servaddr, sizeof(servaddr)) &lt; 0)
+18         err_sys("connect error");
+
+19     while ( (n = read(sockfd, recvline, MAXLINE)) &gt; 0) {
+20         recvline[n] = 0;        /* null terminate */
+21         if (fputs(recvline, stdout) == EOF)
+22             err_sys("fputs error");
+23     }
+24     if (n &lt; 0)
+25         err_sys("read error");
+
+26     exit(0);
+27 }
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList">This is the format that we will use for all the source code in the text. Each nonblank line is numbered. The text describing portions of the code notes the starting and ending line numbers in the left margin, as shown shortly. Sometimes a paragraph is preceded by a short, descriptive, bold heading, providing a summary statement of the code being described.</P></P><P><P class="docList">The horizontal rules at the beginning and end of a code fragment specify the source code filename: the file <TT>daytimetcpcli.c</TT> in the directory <TT>intro</TT> for this example. Since the source code for all the examples in the text is freely available (see the Preface), this lets you locate the appropriate source file. Compiling, running, and especially modifying these programs while reading this text is an excellent way to learn the concepts of network programming.</P></P><P><P class="docList">Throughout the text, we will use indented, parenthetical notes such as this to describe implementation details and historical points.</P></P></BLOCKQUOTE>
+<P class="docText">If we compile the program into the default <TT>a.out</TT> file and execute it, we will have the following output:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>solaris %</TT> <span class="docEmphStrong"><TT>a.out 206.168.112.96</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">our input</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>Mon May 26 20:58:40 2003</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">the program's output</span></P></TD></TR></COLGROUP></TABLE></P>
+<BLOCKQUOTE><P><P class="docList">Whenever we display interactive input and output, we will show our typed input in <span class="docEmphStrong"><TT>bold</TT></span> and the computer output <TT>like this</TT>. <span class="docEmphasis">Comments are added on the right side in italics</span>. We will always include the name of the system as part of the shell prompt (<TT>solaris</TT> in this example) to show on which host the command was run. <A class="docLink" HREF="0131411551_ch01lev1sec9.html#ch01fig16">Figure 1.16</A> shows the systems used to run most of the examples in this book. The hostnames usually describe the operating system (OS) as well.</P></P></BLOCKQUOTE>
+<P class="docText">There are many details to consider in this 27-line program. We mention them briefly here, in case this is your first encounter with a network program, and provide more information on these topics later in the text.</P>
+<A NAME="ch01lev3sec1"></A>
+<H4 class="docSection2Title"> Include our own header</H4>
+<p class="docText"><span class="docEmphasis"><TT>1</TT></span> We include our own header, <TT>unp.h</TT>, which we will show in <A class="docLink" HREF="0131411551_app04lev1sec1.html#app04lev1sec1">Section D.1</A>. This header includes numerous system headers that are needed by most network programs and defines various constants that we use (e.g., <TT>MAXLINE</TT>).</p>
+
+<A NAME="ch01lev3sec2"></A>
+<H4 class="docSection2Title"> Command-line arguments</H4>
+<p class="docText"><span class="docEmphasis"><TT>2–3</TT></span> This is the definition of the <TT>main</TT> function along with the command-line arguments. We have written the code in this text assuming an American National Standards Institute (ANSI) C compiler (also referred to as an ISO C compiler).</p>
+
+<A NAME="ch01lev3sec3"></A>
+<H4 class="docSection2Title"> Create TCP socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>10–11</TT></span> The <TT>socket</TT> function creates an Internet (<TT>AF_INET</TT>) stream (<TT>SOCK_STREAM</TT>) socket, which is a fancy name for a TCP socket. The function returns a small integer descriptor that we can use to identify the socket in all future function calls (e.g., the calls to <TT>connect</TT> and <TT>read</TT> that follow).</p>
+<BLOCKQUOTE><P><P class="docList">The <TT>if</TT> statement contains a call to the <TT>socket</TT> function, an assignment of the return value to the variable named <TT>sockfd</TT>, and then a test of whether this assigned value is less than 0. While we could break this into two C statements,</P><pre>
+
+</pre><pre>
+sockfd = socket(AF_INET, SOCK_STREAM, 0);
+if (sockfd &lt; 0)
+</pre><pre>
+</pre></P><P><P class="docList">it is a common C idiom to combine the two lines. The set of parentheses around the function call and assignment is required, given the precedence rules of C (the less-than operator has a higher precedence than assignment). As a matter of coding style, the authors always place a space between the two opening parentheses, as a visual indicator that the left-hand side of the comparison is also an assignment. (This style is copied from the Minix source code [Tanenbaum 1987].) We use this same style in the <TT>while</TT> statement later in the program.</P></P></BLOCKQUOTE>
+<P class="docText">We will encounter many different uses of the term "socket." First, the API that we are using is called the <span class="docEmphasis">sockets API</span>. In the preceding paragraph, we referred to a function named <TT>socket</TT> that is part of the sockets API. In the preceding paragraph, we also referred to a TCP socket, which is synonymous with a TCP endpoint.</P>
+<P class="docText">If the call to <TT>socket</TT> fails, we abort the program by calling our own <TT>err_sys</TT> function. It prints our error message along with a description of the system error that occurred (e.g., "Protocol not supported" is one possible error from <TT>socket</TT>) and terminates the process. This function, and a few others of our own that begin with <TT>err_</TT>, are called throughout the text. We will describe them in <A class="docLink" HREF="0131411551_app04lev1sec3.html#app04lev1sec3">Section D.3</A>.</P>
+
+<A NAME="ch01lev3sec4"></A>
+<H4 class="docSection2Title"> Specify server's IP address and port</H4>
+<p class="docText"><span class="docEmphasis"><TT>12–16</TT></span> We fill in an Internet socket address structure (a <TT>sockaddr_in</TT> structure named <TT>servaddr</TT>) with the server's IP address and port number. We set the entire structure to 0 using <TT>bzero</TT>, set the address family to <TT>AF_INET</TT>, set the port number to 13 (which is the well-known port of the daytime server on any TCP/IP host that supports this service, as shown in <A class="docLink" HREF="0131411551_ch02lev1sec12.html#ch02fig18">Figure 2.18</A>), and set the IP address to the value specified as the first command-line argument (<TT>argv[1]</TT>). The IP address and port number fields in this structure must be in specific formats: We call the library function <TT>htons</TT> ("host to network short") to convert the binary port number, and we call the library function <TT>inet_pton</TT> ("presentation to numeric") to convert the ASCII command-line argument (such as <TT>206.62.226.35</TT> when we ran this example) into the proper format.</p>
+<BLOCKQUOTE><P><P class="docList"><TT>bzero</TT> is not an ANSI C function. It is derived from early Berkeley networking code. Nevertheless, we use it throughout the text, instead of the ANSI C <TT>memset</TT> function, because <TT>bzero</TT> is easier to remember (with only two arguments) than <TT>memset</TT> (with three arguments). Almost every vendor that supports the sockets API also provides <TT>bzero</TT>, and if not, we provide a macro definition of it in our <TT>unp.h</TT> header.</P></P><P><P class="docList">Indeed, the author of TCPv3 made the mistake of swapping the second and third arguments to <TT>memset</TT> in 10 occurrences in the first printing. A C compiler cannot catch this error because both arguments are of the same type. (Actually, the second argument is an <TT>int</TT> and the third argument is <TT>size_t</TT>, which is typically an <TT>unsigned int</TT>, but the values specified, 0 and 16, respectively, are still acceptable for the other type of argument.) The call to <TT>memset</TT> still worked, but did nothing. The number of bytes to initialize was specified as 0. The programs still worked, because only a few of the socket functions actually require that the final 8 bytes of an Internet socket address structure be set to 0. Nevertheless, it was an error, and one that could be avoided by using <TT>bzero</TT>, because swapping the two arguments to <TT>bzero</TT> will always be caught by the C compiler if function prototypes are used.</P></P><P><P class="docList">This may be your first encounter with the <TT>inet_pton</TT> function. It is new with IPv6 (which we will talk more about in <A class="docLink" HREF="0131411551_app01.html#app01">Appendix A</A>). Older code uses the <TT>inet_addr</TT> function to convert an ASCII dotted-decimal string into the correct format, but this function has numerous limitations that <TT>inet_pton</TT> corrects. Do not worry if your system does not (yet) support this function; we will provide an implementation of it in <A class="docLink" HREF="0131411551_ch03lev1sec7.html#ch03lev1sec7">Section 3.7</A>.</P></P></BLOCKQUOTE>
+
+<A NAME="ch01lev3sec5"></A>
+<H4 class="docSection2Title"> Establish connection with server</H4>
+<p class="docText"><span class="docEmphasis"><TT>17–18</TT></span> The <TT>connect</TT> function, when applied to a TCP socket, establishes a TCP connection with the server specified by the socket address structure pointed to by the second argument. We must also specify the length of the socket address structure as the third argument to <TT>connect</TT>, and for Internet socket address structures, we always let the compiler calculate the length using C's <TT>sizeof</TT> operator.</p>
+<BLOCKQUOTE><P><P class="docList">In the <TT>unp.h</TT> header, we <TT>#define SA</TT> to be <TT>struct sockaddr</TT>, that is, a generic socket address structure. Everytime one of the socket functions requires a pointer to a socket address structure, that pointer must be cast to a pointer to a generic socket address structure. This is because the socket functions predate the ANSI C standard, so the <TT>void *</TT> pointer type was not available in the early 1980s when these functions were developed. The problem is that "<TT>struct sockaddr</TT>" is 15 characters and often causes the source code line to extend past the right edge of the screen (or page, in the case of a book), so we shorten it to <TT>SA</TT>. We will talk more about generic socket address structures when explaining <A class="docLink" HREF="0131411551_ch03lev1sec2.html#ch03fig03">Figure 3.3</A>.</P></P></BLOCKQUOTE>
+
+<A NAME="ch01lev3sec6"></A>
+<H4 class="docSection2Title"> Read and display server's reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>19–25</TT></span> We <TT>read</TT> the server's reply and display the result using the standard I/O <TT>fputs</TT> function. We must be careful when using TCP because it is a <span class="docEmphasis">byte-stream</span> protocol with no record boundaries. The server's reply is normally a 26-byte string of the form</p>
+<pre>
+
+</pre><pre>
+Mon May 26 20 : 58 : 40 2003\r\n
+</pre><pre>
+</pre>
+<P class="docText">where <TT>\r</TT> is the ASCII carriage return and <TT>\n</TT> is the ASCII linefeed. With a byte-stream protocol, these 26 bytes can be returned in numerous ways: a single TCP segment containing all 26 bytes of data, in 26 TCP segments each containing 1 byte of data, or any other combination that totals to 26 bytes. Normally, a single segment containing all 26 bytes of data is returned, but with larger data sizes, we cannot assume that the server's reply will be returned by a single <TT>read</TT>. Therefore, when reading from a TCP socket, we <span class="docEmphasis">always</span> need to code the <TT>read</TT> in a loop and terminate the loop when either <TT>read</TT> returns 0 (i.e., the other end closed the connection) or a value less than 0 (an error).</P>
+<P class="docText">In this example, the end of the record is being denoted by the server closing the connection. This technique is also used by version 1.0 of the Hypertext Transfer Protocol (HTTP). Other techniques are available. For example, the Simple Mail Transfer Protocol (SMTP) marks the end of a record with the two-byte sequence of an ASCII carriage return followed by an ASCII linefeed. Sun Remote Procedure Call (RPC) and the Domain Name System (DNS) place a binary count containing the record length in front of each record that is sent when using TCP. The important concept here is that TCP itself provides no record markers: If an application wants to delineate the ends of records, it must do so itself and there are a few common ways to accomplish this.</P>
+
+<A NAME="ch01lev3sec7"></A>
+<H4 class="docSection2Title"> Terminate program</H4>
+<p class="docText"><span class="docEmphasis"><TT>26</TT></span> <TT>exit</TT> terminates the program. Unix always closes all open descriptors when a process terminates, so our TCP socket is now closed.</p>
+<P class="docText">As we mentioned, the text will go into much more detail on all the points we just described.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch01lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch01lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,71 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="26.2 Basic Thread Functions: Creation and Termination"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch26lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch26lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch26lev1sec2"></A>
+<H3 class="docSection1Title">26.2 Basic Thread Functions: Creation and Termination</H3>
+<P class="docText">In this section, we will cover five basic thread functions and then use these in the next two sections to recode our TCP client/server using threads instead of <TT>fork</TT>.</P>
+<A NAME="ch26lev2sec1"></A>
+<H4 class="docSection2Title"> <TT>pthread_create</TT> Function</H4>
+<P class="docText">When a program is started by <TT>exec</TT>, a single thread is created, called the <span class="docEmphasis">initial thread</span> or <span class="docEmphasis">main thread</span>. Additional threads are created by <TT>pthread_create</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_create(pthread_t *</TT><span class="docEmphasis">tid</span><TT>, const pthread_attr_t *</TT><span class="docEmphasis">attr</span><TT>, void *(*</TT><span class="docEmphasis">func</span><TT>) (void *), void *</TT><span class="docEmphasis">arg</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Each thread within a process is identified by a <span class="docEmphasis">thread ID</span>, whose datatype is <TT>pthread_t</TT> (often an <TT>unsigned int</TT>). On successful creation of a new thread, its ID is returned through the pointer <span class="docEmphasis">tid</span>.</P>
+<P class="docText">Each thread has numerous <span class="docEmphasis">attributes</span>: its priority, its initial stack size, whether it should be a daemon thread or not, and so on. When a thread is created, we can specify these attributes by initializing a <TT>pthread_attr_t</TT> variable that overrides the default. We normally take the default, in which case, we specify the <span class="docEmphasis">attr</span> argument as a null pointer.</P>
+<P class="docText">Finally, when we create a thread, we specify a function for it to execute. The thread starts by calling this function and then terminates either explicitly (by calling <TT>pthread_exit</TT>) or implicitly (by letting the function return). The address of the function is specified as the <span class="docEmphasis">func</span> argument, and this function is called with a single pointer argument, <span class="docEmphasis">arg</span>. If we need multiple arguments to the function, we must package them into a structure and then pass the address of this structure as the single argument to the start function.</P>
+<P class="docText">Notice the declarations of <span class="docEmphasis">func</span> and <span class="docEmphasis">arg</span>. The function takes one argument, a generic pointer (<TT>void *</TT>), and returns a generic pointer (<TT>void *</TT>). This lets us pass one pointer (to anything we want) to the thread, and lets the thread return one pointer (again, to anything we want).</P>
+<P class="docText">The return value from the Pthread functions is normally 0 if successful or nonzero on an error. But unlike the socket functions, and most system calls, which return –1 on an error and set <TT>errno</TT> to a positive value, the Pthread functions return the positive error indication as the function's return value. For example, if <TT>pthread_create</TT> cannot create a new thread because of exceeding some system limit on the number of threads, the function return value is <TT>EAGAIN</TT>. The Pthread functions do not set <TT>errno</TT>. The convention of 0 for success or nonzero for an error is fine since all the <TT>E</TT><span class="docEmphasis">xxx</span> values in <TT>&lt;sys/errno.h&gt;</TT> are positive. A value of 0 is never assigned to one of the <TT>E</TT><span class="docEmphasis">xxx</span> names.</P>
+
+<A NAME="ch26lev2sec2"></A>
+<H4 class="docSection2Title"> <TT>pthread_join</TT> Function</H4>
+<P class="docText">We can wait for a given thread to terminate by calling <TT>pthread_join</TT>. Comparing threads to Unix processes, <TT>pthread_create</TT> is similar to <TT>fork</TT>, and <TT>pthread_join</TT> is similar to <TT>waitpid</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_join (pthread_t</TT> <span class="docEmphasis">tid</span><TT>, void **</TT> <span class="docEmphasis">status</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">We must specify the <span class="docEmphasis">tid</span> of the thread that we want to wait for. Unfortunately, there is no way to wait for any of our threads (similar to <TT>waitpid</TT> with a process ID argument of –1). We will return to this problem when we discuss <A class="docLink" HREF="0131411551_ch26lev1sec6.html#ch26fig14">Figure 26.14</A>.</P>
+<P class="docText">If the <span class="docEmphasis">status</span> pointer is non-null, the return value from the thread (a pointer to some object) is stored in the location pointed to by <span class="docEmphasis">status</span>.</P>
+
+<A NAME="ch26lev2sec3"></A>
+<H4 class="docSection2Title"> <TT>pthread_self</TT> Function</H4>
+<P class="docText">Each thread has an ID that identifies it within a given process. The thread ID is returned by <TT>pthread_create</TT> and we saw it was used by <TT>pthread_join</TT>. A thread fetches this value for itself using <TT>pthread_self</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>pthread_t pthread_self (void);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: thread ID of calling thread</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Comparing threads to Unix processes, <TT>pthread_self</TT> is similar to <TT>getpid</TT>.</P>
+
+<A NAME="ch26lev2sec4"></A>
+<H4 class="docSection2Title"> <TT>pthread_detach</TT> Function</H4>
+<P class="docText">A thread is either <span class="docEmphasis">joinable</span> (the default) or <span class="docEmphasis">detached</span>. When a joinable thread terminates, its thread ID and exit status are retained until another thread calls <TT>pthread_join</TT>. But a detached thread is like a daemon process: When it terminates, all its resources are released and we cannot wait for it to terminate. If one thread needs to know when another thread terminates, it is best to leave the thread as joinable.</P>
+<P class="docText">The <TT>pthread_detach</TT> function changes the specified thread so that it is detached.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_detach (pthread_t</TT> <span class="docEmphasis">tid</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">This function is commonly called by the thread that wants to detach itself, as in</P>
+<pre>
+
+</pre><pre>
+pthread_detach (pthread_self());
+</pre><pre>
+</pre>
+
+<A NAME="ch26lev2sec5"></A>
+<H4 class="docSection2Title"> <TT>pthread_exit</TT> Function</H4>
+<P class="docText">One way for a thread to terminate is to call <TT>pthread_exit</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void pthread_exit (void *</TT><span class="docEmphasis">status</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Does not return to caller</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">If the thread is not detached, its thread ID and exit status are retained for a later <TT>pthread_join</TT> by some other thread in the calling process.</P>
+<P class="docText">The pointer <span class="docEmphasis">status</span> must not point to an object that is local to the calling thread since that object disappears when the thread terminates.</P>
+<P class="docText">There are two other ways for a thread to terminate:</P>
+<UL><LI><P class="docList">The function that started the thread (the third argument to <TT>pthread_create</TT>) can return. Since this function must be declared as returning a <TT>void</TT> pointer, that return value is the exit status of the thread.</P></LI><LI><P class="docList">If the <TT>main</TT> function of the process returns or if any thread calls <TT>exit</TT>, the process terminates, including any threads.</P></LI></UL>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch26lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch26lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

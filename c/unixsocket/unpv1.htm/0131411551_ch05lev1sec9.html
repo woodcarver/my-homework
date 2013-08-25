@@ -1,0 +1,93 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="5.9 Handling 'SIGCHLD' Signals"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch05lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch05lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch05lev1sec9"></A>
+<H3 class="docSection1Title">5.9 Handling <TT>SIGCHLD</TT> Signals</H3>
+<P class="docText">The purpose of the zombie state is to maintain information about the child for the parent to fetch at some later time. This information includes the process ID of the child, its termination status, and information on the resource utilization of the child (CPU time, memory, etc.). If a process terminates, and that process has children in the zombie state, the parent process ID of all the zombie children is set to 1 (the <TT>init</TT> process), which will inherit the children and clean them up (i.e., <TT>init</TT> will <TT>wait</TT> for them, which removes the zombie). Some Unix systems show the COMMAND column for a zombie process as <TT>&lt;defunct&gt;</TT>.</P>
+<A NAME="ch05lev2sec3"></A>
+<H4 class="docSection2Title"> Handling Zombies</H4>
+<P class="docText">Obviously we do not want to leave zombies around. They take up space in the kernel and eventually we can run out of processes. Whenever we <TT>fork</TT> children, we must <TT>wait</TT> for them to prevent them from becoming zombies. To do this, we establish a signal handler to catch <TT>SIGCHLD</TT>, and within the handler, we call <TT>wait</TT>. (We will describe the <TT>wait</TT> and <TT>waitpid</TT> functions in <A class="docLink" HREF="0131411551_ch05lev1sec10.html#ch05lev1sec10">Section 5.10</A>.) We establish the signal handler by adding the function call</P>
+<pre>
+
+</pre><pre>
+Signal (SIGCHLD, sig_chld);
+</pre><pre>
+</pre>
+<P class="docText">in <A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05fig02">Figure 5.2</A>, after the call to <TT>listen</TT>. (It must be done sometime before we <TT>fork</TT> the first child and needs to be done only once.) We then define the signal handler, the function <TT>sig_chld</TT>, which we show in <A class="docLink" HREF="#ch05fig07">Figure 5.7</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch05fig07"></A>Figure 5.7 Version of <TT>SIGCHLD</TT> signal handler that calls <TT>wait</TT> (improved in <A class="docLink" HREF="0131411551_ch05lev1sec10.html#ch05fig11">Figure 5.11</A>).</H5>
+<P class="docText"><span class="docEmphasis">tcpcliserv/sigchldwait.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+ 
+ 2 void
+ 3 sig_chld(int signo)
+ 4 {
+ 5     pid_t   pid;
+ 6     int     stat;
+
+ 7     pid = wait(&amp;stat);
+ 8     printf("child %d terminated\", pid);
+ 9     return;
+10 }
+</PRE>
+
+<BLOCKQUOTE><P><P class="docList"><span class="docEmphasis">Warning</span>: Calling standard I/O functions such as <TT>printf</TT> in a signal handler is not recommended, for reasons that we will discuss in <A class="docLink" HREF="0131411551_ch11lev1sec18.html#ch11lev1sec18">Section 11.18</A>. We call <TT>printf</TT> here as a diagnostic tool to see when the child terminates.</P></P><P><P class="docList">Under System V and Unix 98, the child of a process does not become a zombie if the process sets the disposition of <TT>SIGCHLD</TT> to <TT>SIG_IGN</TT>. Unfortunately, this works only under System V and Unix 98. POSIX explicitly states that this behavior is unspecified. The portable way to handle zombies is to catch <TT>SIGCHLD</TT> and call <TT>wait</TT> or <TT>waitpid</TT>.</P></P></BLOCKQUOTE>
+<P class="docText">If we compile this program—<A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05fig02">Figure 5.2</A>, with the call to <TT>Signal</TT>, with our <TT>sig_chld</TT> handler—under Solaris 9 and use the <TT>signal</TT> function from the system library (not our version from <A class="docLink" HREF="0131411551_ch05lev1sec8.html#ch05fig06">Figure 5.6</A>), we have the following:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>solaris %</TT> <span class="docEmphStrong"><TT>tcpserv02 &amp;</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">start server in background</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>[2] 16939</TT></P></TD><TD class="docTableCell" valign="top">&nbsp;</TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>solaris %</TT> <span class="docEmphStrong"><TT>tcpcli01 127.0.0.1</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">then start client in foreground</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphStrong"><TT>hi there</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">we type this</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>hi there</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">and this is echoed</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphStrong"><TT>^D</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">we type our EOF character</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>child 16942 terminated</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">output by</span> <TT>printf</TT> <span class="docEmphasis">in signal handler</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>accept error: Interrupted system call</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><TT>main</TT> <span class="docEmphasis">function aborts</span></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The sequence of steps is as follows:</P>
+<A NAME="ch05pro04"></A>
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">We terminate the client by typing our EOF character. The client TCP sends a FIN to the server and the server responds with an ACK.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText">The receipt of the FIN delivers an EOF to the child's pending <TT>readline</TT>. The child terminates.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">The parent is blocked in its call to <TT>accept</TT> when the <TT>SIGCHLD</TT> signal is delivered. The <TT>sig_chld</TT> function executes (our signal handler), <TT>wait</TT> fetches the child's PID and termination status, and <TT>printf</TT> is called from the signal handler. The signal handler returns.</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docText">Since the signal was caught by the parent while the parent was blocked in a slow system call (<TT>accept</TT>), the kernel causes the <TT>accept</TT> to return an error of <TT>EINTR</TT> (interrupted system call). The parent does not handle this error (<A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05fig02">Figure 5.2</A>), so it aborts.</P>
+</span></LI></OL></span>
+<P class="docText">The purpose of this example is to show that when writing network programs that catch signals, we must be cognizant of interrupted system calls, and we must handle them. In this specific example, running under Solaris 9, the <TT>signal</TT> function provided in the standard C library does not cause an interrupted system call to be automatically restarted by the kernel. That is, the <TT>SA_RESTART</TT> flag that we set in <A class="docLink" HREF="0131411551_ch05lev1sec8.html#ch05fig06">Figure 5.6</A> is not set by the <TT>signal</TT> function in the system library. Some other systems automatically restart the interrupted system call. If we run the same example under 4.4BSD, using its library version of the <TT>signal</TT> function, the kernel restarts the interrupted system call and <TT>accept</TT> does not return an error. To handle this potential problem between different operating systems is one reason we define our own version of the <TT>signal</TT> function that we use throughout the text (<A class="docLink" HREF="0131411551_ch05lev1sec8.html#ch05fig06">Figure 5.6</A>).</P>
+<P class="docText">As part of the coding conventions used in this text, we always code an explicit <TT>return</TT> in our signal handlers (<A class="docLink" HREF="#ch05fig07">Figure 5.7</A>), even though falling off the end of the function does the same thing for a function returning <TT>void</TT>. When reading the code, the unnecessary return statement acts as a reminder that the return may interrupt a system call.</P>
+
+<A NAME="ch05lev2sec4"></A>
+<H4 class="docSection2Title"> Handling Interrupted System Calls</H4>
+<P class="docText">We used the term "slow system call" to describe <TT>accept</TT>, and we use this term for any system call that can block forever. That is, the system call need never return. Most networking functions fall into this category. For example, there is no guarantee that a server's call to <TT>accept</TT> will ever return, if there are no clients that will connect to the server. Similarly, our server's call to <TT>read</TT> in <A class="docLink" HREF="0131411551_ch05lev1sec4.html#ch05fig03">Figure 5.3</A> will never return if the client never sends a line for the server to echo. Other examples of slow system calls are reads and writes of pipes and terminal devices. A notable exception is disk I/O, which usually returns to the caller (assuming no catastrophic hardware failure).</P>
+<P class="docText">The basic rule that applies here is that when a process is blocked in a slow system call <span class="docEmphasis">and</span> the process catches a signal <span class="docEmphasis">and</span> the signal handler returns, the system call <span class="docEmphasis">can</span> return an error of <TT>EINTR</TT>. <span class="docEmphasis">Some</span> kernels automatically restart <span class="docEmphasis">some</span> interrupted system calls. For portability, when we write a program that catches signals (most concurrent servers catch <TT>SIGCHLD</TT>), we must be prepared for slow system calls to return <TT>EINTR</TT>. Portability problems are caused by the qualifiers "can" and "some," which were used earlier, and the fact that support for the POSIX <TT>SA_RESTART</TT> flag is optional. Even if an implementation supports the <TT>SA_RESTART</TT> flag, not all interrupted system calls may automatically be restarted. Most Berkeley-derived implementations, for example, never automatically restart <TT>select</TT>, and some of these implementations never restart <TT>accept</TT> or <TT>recvfrom</TT>.</P>
+<P class="docText">To handle an interrupted <TT>accept</TT>, we change the call to <TT>accept</TT> in <A class="docLink" HREF="0131411551_ch05lev1sec2.html#ch05fig02">Figure 5.2</A>, the beginning of the <TT>for</TT> loop, to the following:</P>
+<pre>
+
+</pre><pre>
+     for ( ; ; ) {
+         clilen = sizeof (cliaddr);
+         if ( (connfd = accept (listenfd, (SA *) &amp;cliaddr, &amp;clilen)) &lt; 0) {
+             if (errno == EINTR)
+                 continue;         /* back to for () */
+             else
+                 err_sys ("accept error");
+        }
+</pre><pre>
+</pre>
+<P class="docText">Notice that we call <TT>accept</TT> and not our wrapper function <TT>Accept</TT>, since we must handle the failure of the function ourselves.</P>
+<P class="docText">What we are doing in this piece of code is restarting the interrupted system call. This is fine for <TT>accept</TT>, along with functions such as <TT>read</TT>, <TT>write</TT>, <TT>select</TT>, and <TT>open</TT>. But there is one function that we cannot restart: <TT>connect</TT>. If this function returns <TT>EINTR</TT>, we cannot call it again, as doing so will return an immediate error. When <TT>connect</TT> is interrupted by a caught signal and is not automatically restarted, we must call <TT>select</TT> to wait for the connection to complete, as we will describe in <A class="docLink" HREF="0131411551_ch16lev1sec3.html#ch16lev1sec3">Section 16.3</A>.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch05lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch05lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

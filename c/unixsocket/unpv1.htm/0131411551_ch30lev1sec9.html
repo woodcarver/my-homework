@@ -1,0 +1,251 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.9 TCP Preforked Server, Descriptor Passing"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec9"></A>
+<H3 class="docSection1Title">30.9 TCP Preforked Server, Descriptor Passing</H3>
+<P class="docText">The final modification to our preforked server is to have only the parent call <TT>accept</TT> and then "pass" the connected socket to one child. This gets around the possible need for locking around the call to <TT>accept</TT> in all the children, but requires some form of descriptor passing from the parent to the children. This technique also complicates the code somewhat because the parent must keep track of which children are busy and which are free to pass a new socket to a free child.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig19"></A>Figure 30.19 <TT>my_lock_wait</TT> and <TT>my_lock_release</TT> functions using Pthread locking.</H5>
+<P class="docText"><span class="docEmphasis">server/lock_pthread.c</span></P>
+
+<PRE>
+17 void
+18 my_lock_wait()
+19 {
+20     Pthread_mutex_lock(mptr);
+21 }
+
+22 void
+23 my_lock_release()
+24 {
+25     Pthread_mutex_unlock(mptr);
+26 }
+</PRE>
+
+<P class="docText">In the previous preforked examples, the process never cared which child received a client connection. The OS handled this detail, giving one of the children the first call to <TT>accept</TT>, or giving one of the children the file lock or the mutex lock. The first two columns of <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A> also show that the OS that we are measuring does this in a fair, round-robin fashion.</P>
+<P class="docText">With this example, we need to maintain a structure of information about each child. We show our <TT>child.h</TT> header that defines our <TT>Child</TT> structure in <A class="docLink" HREF="#ch30fig20">Figure 30.20</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig20"></A>Figure 30.20 <TT>Child</TT> structure.</H5>
+<P class="docText"><span class="docEmphasis">server/child.h</span></P>
+
+<PRE>
+1 typedef struct {
+2     pid_t   child_pid;         /* process ID */
+3     int     child_pipefd;      /* parent's stream pipe to/from child */
+4     int     child_status;      /* 0 = ready */
+5     long    child_count;       /* # connections handled */
+6 } Child;
+
+7 Child *cptr;                   /* array of Child structures; calloc'ed */
+</PRE>
+
+<P class="docText">We store the child's PID, the parent's stream pipe descriptor that is connected to the child, the child's status, and a count of the number of clients the child has handled. We will print this counter in our <TT>SIGINT</TT> handler to see the distribution of the client requests among the children.</P>
+<P class="docText">Let us first look at the <TT>child_make</TT> function, which we show in <A class="docLink" HREF="#ch30fig21">Figure 30.21</A>. We create a stream pipe, a Unix domain stream socket (<A class="docLink" HREF="0131411551_ch15.html#ch15">Chapter 15</A>), before calling <TT>fork</TT>. After the child is created, the parent closes one descriptor (<TT>sockfd[1]</TT>) and the child closes the other descriptor (<TT>sockfd[0]</TT>). Furthermore, the child duplicates its end of the stream pipe (<TT>sockfd[1]</TT>) onto standard error, so that each child just reads and writes to standard error to communicate with the parent. This gives us the arrangement shown in <A class="docLink" HREF="#ch30fig22">Figure 30.22</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig21"></A>Figure 30.21 <TT>child_make</TT> function descriptor passing preforked server.</H5>
+<P class="docText"><span class="docEmphasis">server/child05.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+ 2 #include     "child.h"
+
+ 3 pid_t
+ 4 child_make(int i, int listenfd, int addrlen)
+ 5 {
+ 6     int     sockfd[2];
+ 7     pid_t   pid;
+ 8     void    child_main(int, int, int);
+
+ 9     Socketpair(AF_LOCAL, SOCK_STREAM, 0, sockfd);
+
+10     if ( (pid = Fork()) &gt; 0) {
+11         Close(sockfd[1]);
+12         cptr[i].child_pid = pid;
+13         cptr[i].child_pipefd = sockfd[0];
+14         cptr[i].child_status = 0;
+15         return (pid);           /* parent */
+16     }
+
+17     Dup2(sockfd[1], STDERR_FILENO); /* child's stream pipe to parent */
+18     Close(sockfd[0]);
+19     Close(sockfd[1]);
+20     Close(listenfd);            /* child does not need this open */
+21     child_main(i, listenfd, addrlen);   /* never returns */
+22 }
+</PRE>
+
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch30fig22"></A>Figure 30.22. Stream pipe after parent and child both close one end.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="278" HEIGHT="71" src="FILES/30fig22.gif" ALT="graphics/30fig22.gif"></p>
+
+</CENTER>
+<P class="docText">After all the children are created, we have the arrangement shown in <A class="docLink" HREF="#ch30fig23">Figure 30.23</A>. We close the listening socket in each child, as only the parent calls <TT>accept</TT>. We show that the parent must handle the listening socket along with all the stream sockets. As you might guess, the parent uses <TT>select</TT> to multiplex all these descriptors.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch30fig23"></A>Figure 30.23. Stream pipes after all children have been created.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="339" HEIGHT="328" src="FILES/30fig23.gif" ALT="graphics/30fig23.gif"></p>
+
+</CENTER>
+<P class="docText"><A class="docLink" HREF="#ch30fig24">Figure 30.24</A> shows the <TT>main</TT> function. The changes from previous versions of this function are that descriptor sets are allocated and the bits corresponding to the listening socket along with the stream pipe to each child are turned on in the set. The maximum descriptor value is also calculated. We allocate memory for the array of <TT>Child</TT> structures. The main loop is driven by a call to <TT>select</TT>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig24"></A>Figure 30.24 <TT>main</TT> function that uses descriptor passing.</H5>
+<P class="docText"><span class="docEmphasis">server/serv05.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+ 2 #include    "child.h"
+
+ 3 static int nchildren;
+
+ 4 int
+ 5 main(int argc, char **argv)
+ 6 {
+ 7     int     listenfd, i, navail, maxfd, nsel, connfd, rc;
+ 8     void    sig_int(int);
+ 9     pid_t   child_make(int, int, int);
+10     ssize_t n;
+11     fd_set  rset, masterset;
+12     socklen_t addrlen, clilen;
+13     struct sockaddr *cliaddr;
+
+14     if (argc == 3)
+15         listenfd = Tcp_listen(NULL, argv[1], &amp;addrlen);
+16     else if (argc == 4)
+17         listenfd = Tcp_listen(argv[1], argv[2], &amp;addrlen);
+18     else
+19         err_quit("usage: serv05 [ &lt;host&gt; ] &lt;port#&gt; &lt;#children&gt;");
+
+20     FD_ZERO(&amp;masterset);
+21     FD_SET(listenfd, &amp;masterset);
+22     maxfd = listenfd;
+23     cliaddr = Malloc(addrlen);
+
+24     nchildren = atoi(argv[argc - 1]);
+25     navail = nchildren;
+26     cptr = Calloc(nchildren, sizeof(Child));
+27         /* prefork all the children */
+28     for (i = 0; i &lt; nchildren; i++) {
+29         child_make(i, listenfd, addrlen);     /* parent returns */
+30         FD_SET(cptr[i].child_pipefd, &amp;masterset);
+31         maxfd = max(maxfd, cptr[i].child_pipefd);
+32     }
+
+33      Signal(SIGINT, sig_int);
+
+34      for ( ; ; ) {
+35          rset = masterset;
+36          if (navail &lt;= 0)
+37              FD_CLR(listenfd, &amp;rset);        /* turn off if no available children */
+38          nsel = Select(maxfd + 1, &amp;rset, NULL, NULL, NULL);
+
+39              /* check for new connections */
+40          if (FD_ISSET(listenfd, &amp;rset)) {
+41              clilen = addrlen;
+42              connfd = Accept(listenfd, cliaddr, &amp;clilen);
+
+43              for (i = 0; i &lt; nchildren; i++)
+44                  if (cptr[i].child_status == 0)
+45                      break;      /* available */
+
+46              if (i == nchildren)
+47                  err_quit("no available children");
+48              cptr[i].child_status = 1;   /* mark child as busy */
+49              cptr[i].child_count++;
+50              navail--;
+
+51              n = Write_fd(cptr[i].child_pipefd, "", 1, connfd);
+52              Close(connfd);
+53              if (--nsel == 0)
+54                  continue;       /* all done with select() results */
+55          }
+
+56              /* find any newly-available children */
+57          for (i = 0; i &lt; nchildren; i++) {
+58              if (FD_ISSET(cptr[i].child_pipefd, &amp;rset)) {
+59                  if ( (n = Read(cptr[i].child_pipefd, &amp;rc, 1)) == 0)
+60                      err_quit("child %d terminated unexpectedly", i);
+61                  cptr[i].child_status = 0;
+62                  navail++;
+63                  if (--nsel == 0)
+64                      break;      /* all done with select() results */
+65              }
+66          }
+67      }
+68 }
+</PRE>
+
+<A NAME="ch30lev3sec1"></A>
+<H4 class="docSection2Title"> Turn off listening socket if no available children</H4>
+<p class="docText"><span class="docEmphasis"><TT>36–37</TT></span> The counter <TT>navail</TT> keeps track of the number of available children. If this counter is 0, the listening socket is turned off in the descriptor set for <TT>select</TT>. This prevents us from <TT>accepting</TT> a new connection for which there is no available child. The kernel still queues these incoming connections, up to the <TT>listen</TT> backlog, but we do not want to <TT>accept</TT> them until we have a child ready to process the client.</p>
+
+<A NAME="ch30lev3sec2"></A>
+<H4 class="docSection2Title"> <TT>accept</TT> new connection</H4>
+<p class="docText"><span class="docEmphasis"><TT>39–55</TT></span> If the listening socket is readable, a new connection is ready to <TT>accept</TT>. We find the first available child and pass the connected socket to the child using our <TT>write_fd</TT> function from <A class="docLink" HREF="0131411551_ch15lev1sec7.html#ch15fig13">Figure 15.13</A>. We write one byte along with the descriptor, but the recipient does not look at the contents of this byte. The parent closes the connected socket.</p>
+<P class="docText">We always start looking for an available child with the first entry in the array of <TT>Child</TT> structures. This means the first children in the array always receive new connections to process before later elements in the array. We will verify this when we discuss <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A> and look at the <TT>child_count</TT> counters after the server terminates. If we didn't want this bias toward earlier children, we could remember which child received the most recent connection and start our search one element past that each time, circling back to the first element when we reach the end. There is no advantage in doing this (it really doesn't matter which child handles a client request if multiple children are available), unless the OS scheduling algorithm penalizes processes with longer total CPU times. Spreading the load more evenly among all the children would tend to average out their total CPU times.</P>
+
+<A NAME="ch30lev3sec3"></A>
+<H4 class="docSection2Title"> Handle any newly available children</H4>
+<p class="docText"><span class="docEmphasis"><TT>56–66</TT></span> We will see that our <TT>child_main</TT> function writes a single byte back to the parent across the stream pipe when the child has finished with a client. That makes the parent's end of the stream pipe readable. We <TT>read</TT> the single byte (ignoring its value) and then mark the child as available. Should the child terminate unexpectedly, its end of the stream pipe will be closed, and the <TT>read</TT> returns 0. We catch this and terminate, but a better approach is to log the error and spawn a new child to replace the one that terminated.</p>
+<P class="docText">Our <TT>child_main</TT> function is shown in <A class="docLink" HREF="#ch30fig25">Figure 30.25</A>.</P>
+
+<A NAME="ch30lev3sec4"></A>
+<H4 class="docSection2Title"> Wait for descriptor from parent</H4>
+<p class="docText"><span class="docEmphasis"><TT>32–33</TT></span> This function differs from the ones in the previous two sections because our child no longer calls <TT>accept</TT>. Instead, the child blocks in a call to <TT>read_fd</TT>, waiting for the parent to pass it a connected socket descriptor to process.</p>
+
+<A NAME="ch30lev3sec5"></A>
+<H4 class="docSection2Title"> Tell parent we are ready</H4>
+<p class="docText"><span class="docEmphasis"><TT>38</TT></span> When we have finished with the client, we <TT>write</TT> one byte across the stream pipe to tell the parent we are available.</p>
+<P class="docText">Comparing rows 4 and 5 in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A>, we see that this server is slower than the version in the previous section that used thread locking between the children. Passing a descriptor across the stream pipe to each child and writing a byte back across the stream pipe from the child takes more time than locking and unlocking either a mutex in shared memory or a file lock.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig25"></A>Figure 30.25 <TT>child_main</TT> function: descriptor passing, preforked server.</H5>
+<P class="docText"><span class="docEmphasis">server/child05.c</span></P>
+
+<PRE>
+23 void
+24 child_main(int i, int listenfd, int addrlen)
+25 {
+26     char    c;
+27     int     connfd;
+28     ssize_t n;
+29     void    web_child(int);
+
+30     printf("child %ld starting\n", (long) getpid());
+31     for ( ; ; ) {
+32         if ( (n = Read_fd(STDERR_FILENO, &amp;c, 1, &amp;connfd)) == 0)
+33             err_quit("read_fd returned 0");
+34         if (connfd &lt; 0)
+35             err_quit("no descriptor from read_fd");
+
+36         web_child(connfd);      /* process request */
+37         Close(connfd);
+
+38         Write(STDERR_FILENO, "", 1);    /* tell parent we're ready again */
+39     }
+40 }
+</PRE>
+
+<P class="docText"><A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig02">Figure 30.2</A> shows the distribution of the <TT>child_count</TT> counters in the <TT>Child</TT> structure, which we print in the <TT>SIGINT</TT> handler when the server is terminated. The earlier children do handle more clients, as we discussed with <A class="docLink" HREF="#ch30fig24">Figure 30.24</A>.</P>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

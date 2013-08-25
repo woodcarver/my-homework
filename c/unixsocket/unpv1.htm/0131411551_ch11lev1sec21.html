@@ -1,0 +1,40 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.21 Other Networking Information"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec20.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec22.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec21"></A>
+<H3 class="docSection1Title">11.21 Other Networking Information</H3>
+<P class="docText">Our focus in this chapter has been on hostnames and IP addresses and service names and their port numbers. But looking at the bigger picture, there are four types of information (related to networking) that an application might want to look up: hosts, networks, protocols, and services. Most lookups are for hosts (<TT>gethostbyname</TT> and <TT>geth&ograve;stbyaddr</TT>), with a smaller number for services (<TT>getservbyname</TT> and <TT>getservbyaddr</TT>), and an even smaller number for networks and protocols.</P>
+<P class="docText">All four types of information can be stored in a file and three functions are defined for each of the four types:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">A <TT>getXXXent</TT> function that reads the next entry in the file, opening the file if necessary.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">A <TT>setXXXent</TT> function that opens (if not already open) and rewinds the file.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">An <TT>endXXXent</TT> function that closes the file.</P></span></LI></OL></span>
+<P class="docText">Each of the four types of information defines its own structure, and the following definitions are provided by including the <TT>&lt;netdb.h&gt;</TT> header: the <TT>hostent</TT>, <TT>netent</TT>, <TT>protoent</TT>, and <TT>servent</TT> structures.</P>
+<P class="docText">In addition to the three <TT>get</TT>, <TT>set</TT>, and <TT>end</TT> functions, which allow sequential processing of the file, each of the four types of information provides some <span class="docEmphasis">keyed lookup</span> functions. These functions go through the file sequentially (calling the <TT>getXXXent</TT> function to read each line), but instead of returning each line to the caller, these functions look for an entry that matches an argument. These keyed lookup functions have names of the form <TT>getXXXbyYYY</TT>. For example, the two keyed lookup functions for the host information are <TT>gethostbyname</TT> (look for an entry that matches a hostname) and <TT>gethostbyaddr</TT> (look for an entry that matches an IP address). <A class="docLink" HREF="#ch11fig21">Figure 11.21</A> summarizes this information.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch11fig21"></A>Figure 11.21. Four types of network-related information.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="489" HEIGHT="84" src="FILES/11fig21.gif" ALT="graphics/11fig21.gif"></p>
+
+</CENTER>
+<P class="docText">How does this apply when the DNS is being used? First, only the host and network information is available through the DNS. The protocol and service information is always read from the corresponding file. We mentioned earlier in this chapter (with <A class="docLink" HREF="0131411551_ch11lev1sec2.html#ch11fig01">Figure 11.1</A>) that different implementations employ different ways for the administrator to specify whether to use the DNS or a file for the host and network information.</P>
+<P class="docText">Second, if the DNS is being used for the host and network information, then only the keyed lookup functions make sense. You cannot, for example, use <TT>gethostent</TT> and expect to sequence through all entries in the DNS! If <TT>gethostent</TT> is called, it reads only the <TT>/etc/hosts</TT> file and avoids the DNS.</P>
+<BLOCKQUOTE><P><P class="docList">Although the network information can be made available through the DNS, few people set this up. [Albitz and Liu 2001] describes this feature. Typically, however, administrators build and maintain an <TT>/etc/networks</TT> file and it is used instead of the DNS. The <TT>netstat</TT> program with the <TT>-i</TT> option uses this file, if present, and prints the name for each network. However, classless addressing (<A class="docLink" HREF="0131411551_app01.html#app01">Appendix A</A>) makes these functions fairly useless, and these functions do not support IPv6 at all, so new applications should avoid using network names.</P></P></BLOCKQUOTE>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec20.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec22.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

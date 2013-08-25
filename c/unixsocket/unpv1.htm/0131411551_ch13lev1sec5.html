@@ -1,0 +1,116 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="13.5 'inetd' Daemon"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch13lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch13lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch13lev1sec5"></A>
+<H3 class="docSection1Title">13.5 <TT>inetd</TT> Daemon</H3>
+<P class="docText">On a typical Unix system, there could be many servers in existence, just waiting for a client request to arrive. Examples are FTP, Telnet, Rlogin, TFTP, and so on. With systems before 4.3BSD, each of these services had a process associated with it. This process was started at boot-time from the file <TT>/etc/rc</TT>, and each process did nearly identical startup tasks: create a socket, <TT>bind</TT> the server's well-known port to the socket, wait for a connection (if TCP) or a datagram (if UDP), and then <TT>fork</TT>. The child process serviced the client and the parent waited for the next client request. There are two problems with this model:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">All these daemons contained nearly identical startup code, first with respect to socket creation, and also with respect to becoming a daemon process (similar to our <TT>daemon_init</TT> function).</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Each daemon took a slot in the process table, but each daemon was asleep most of the time.</P></span></LI></OL></span>
+<P class="docText">The 4.3BSD release simplified this by providing an Internet <span class="docEmphasis">superserver:</span> the <TT>inetd</TT> daemon. This daemon can be used by servers that use either TCP or UDP. It does not handle other protocols, such as Unix domain sockets. This daemon fixes the two problems just mentioned:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">It simplifies writing daemon processes since most of the startup details are handled by <TT>inetd</TT>. This obviates the need for each server to call our <TT>daemon_init</TT> function.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">It allows a single process (<TT>inetd</TT>) to be waiting for incoming client requests for multiple services, instead of one process for each service. This reduces the total number of processes in the system.</P></span></LI></OL></span>
+<P class="docText">The <TT>inetd</TT> process establishes itself as a daemon using the techniques that we described with our <TT>daemon_init</TT> function. It then reads and processes its configuration file, typically <TT>/etc/inetd.conf</TT>. This file specifies the services that the superserver is to handle, and what to do when a service request arrives. Each line contains the fields shown in <A class="docLink" HREF="#ch13fig06">Figure 13.6</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch13fig06"></A>Figure 13.6. Fields in <TT>inetd.conf</TT> file.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="491" HEIGHT="153" src="FILES/13fig06.gif" ALT="graphics/13fig06.gif"></p>
+
+</CENTER>
+<P class="docText">Some sample lines are</P>
+<pre>
+
+</pre><pre>
+ftp     stream  tcp  nowait  root     /usr/bin/ftpd      ftpd -1
+telnet  stream  tcp  nowait  root     /usr/bin/telnetd   telnetd
+login   stream  tcp  nowait  root     /usr/bin/rlogind   rlogind -s
+tftp    dgram   udp  wait    nobody   /usr/bin/tftpd     tftpd -s /tftpboot
+</pre><pre>
+</pre>
+<P class="docText">The actual name of the server is always passed as the first argument to a program when it is <TT>exec</TT>ed.</P>
+<BLOCKQUOTE><P><P class="docList">This figure and the sample lines are just examples. Most vendors have added their own features to <TT>inetd</TT>. Examples are the ability to handle RPC servers, in addition to TCP and UDP servers, and the ability to handle protocols other than TCP and UDP. Also, the pathname to <TT>exec</TT> and the command-line arguments to the server obviously depend on the implementation.</P></P><P><P class="docList">The <span class="docEmphasis">wait-flag</span> field can be a bit confusing. In general, it specifies whether the daemon started by <TT>inetd</TT> intends to take over the listening socket associated with the service. UDP services don't have separate listening and accepting sockets, and are virtually always configured as <TT>wait</TT>. TCP services could be handled either way, at the discretion of the person writing the daemon, but <TT>nowait</TT> is most common.</P></P><P><P class="docList">The interaction of IPv6 with <TT>/etc/inetd.conf</TT> depends on the vendor and special attention to detail is required to get what you want. Some use a <span class="docEmphasis">protocol</span> of <TT>tcp6</TT> or <TT>udp6</TT> to indicate that an IPv6 socket should be created for a service. Some allow <span class="docEmphasis">protocol</span> values of <TT>tcp46</TT> or <TT>udp46</TT> indicate the daemon wants sockets that allow both IPv6 and IPv4 connections. These special protocol names do not typically appear in the <TT>/etc/protocols</TT> file.</P></P></BLOCKQUOTE>
+<P class="docText">A picture of what the <TT>inetd</TT> daemon does is shown in <A class="docLink" HREF="#ch13fig07">Figure 13.7</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch13fig07"></A>Figure 13.7. Steps performed by <TT>inetd</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="729" src="FILES/13fig07.gif" ALT="graphics/13fig07.gif"></p>
+
+</CENTER>
+<A NAME="ch13pro02"></A>
+
+
+
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">On startup, it reads the <TT>/etc/inetd.conf</TT> file and creates a socket of the appropriate type (stream or datagram) for all the services specified in the file. The maximum number of servers that <TT>inetd</TT> can handle depends on the maximum number of descriptors that <TT>inetd</TT> can create. Each new socket is added to a descriptor set that will be used in a call to <TT>select</TT>.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText"><TT>bind</TT> is called for the socket, specifying the port for the server and the wildcard IP address. This TCP or UDP port number is obtained by calling <TT>getservbyname</TT> with the <span class="docEmphasis">service-name</span> and <span class="docEmphasis">protocol</span> fields from the configuration file as arguments.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">For TCP sockets, <TT>listen</TT> is called so that incoming connection requests are accepted. This step is not done for datagram sockets.</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docText">After all the sockets are created, <TT>select</TT> is called to wait for any of the sockets to become readable. Recall from <A class="docLink" HREF="0131411551_ch06lev1sec3.html#ch06lev1sec3">Section 6.3</A> that a listening TCP socket becomes readable when a new connection is ready to be <TT>accepted</TT> and a UDP socket becomes readable when a datagram arrives. <TT>inetd</TT> spends most of its time blocked in this call to <TT>select</TT>, waiting for a socket to be readable.</P>
+</span></LI><LI><span style="font-weight:normal" value="5"><P class="docText">When <TT>select</TT> returns that a socket is readable, if the socket is a TCP socket and the <TT>nowait</TT> flag is given, <TT>accept</TT> is called to accept the new connection.</P>
+</span></LI><LI><span style="font-weight:normal" value="6"><P class="docList">The <TT>inetd</TT> daemon <TT>forks</TT> and the child process handles the service request. This is similar to a standard concurrent server (<A class="docLink" HREF="0131411551_ch04lev1sec8.html#ch04lev1sec8">Section 4.8</A>).</P>
+<P class="docList">The child closes all descriptors except the socket descriptor it is handling: the new connected socket returned by <TT>accept</TT> for a TCP server or the original UDP socket. The child calls <TT>dup2</TT> three times, duplicating the socket onto descriptors 0, 1, and 2 (standard input, standard output, and standard error). The original socket descriptor is then closed. By doing this, the only descriptors that are open in the child are 0, 1, and 2. If the child reads from standard input, it is reading from the socket and anything it writes to standard output or standard error is written to the socket. The child calls <TT>getpwnam</TT> to get the password file entry for the <span class="docEmphasis">login-name</span> specified in the configuration file. If this field is not <TT>root</TT>, then the child becomes the specified user by executing the <TT>setgid</TT> and <TT>setuid</TT> function calls. (Since the <TT>inetd</TT> process is executing with a user ID of 0, the child process inherits this user ID across the <TT>fork</TT>, and is able to become any user that it chooses.)</P>
+<P class="docText">The child process now does an <TT>exec</TT> to execute the appropriate <span class="docEmphasis">server-program</span> to handle the request, passing the arguments specified in the configuration file.</P>
+</span></LI><LI><span style="font-weight:normal" value="7"><P class="docText">If the socket is a stream socket, the parent process must close the connected socket (like our standard concurrent server). The parent calls <TT>select</TT> again, waiting for the next socket to become readable.</P>
+</span></LI></OL></span>
+<P class="docText">If we look in more detail at the descriptor handling that is taking place, <A class="docLink" HREF="#ch13fig08">Figure 13.8</A> shows the descriptors in <TT>inetd</TT> when a new connection request arrives from an FTP client.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch13fig08"></A>Figure 13.8. <TT>inetd</TT> descriptors when connection request arrives for TCP port 21.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="217" src="FILES/13fig08.gif" ALT="graphics/13fig08.gif"></p>
+
+</CENTER>
+<P class="docText">The connection request is directed to TCP port 21, but a new connected socket is created by <TT>accept</TT>.</P>
+<P class="docText"><A class="docLink" HREF="#ch13fig09">Figure 13.9</A> shows the descriptors in the child, after the call to <TT>fork</TT>, after the child has closed all the descriptors except the connected socket.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch13fig09"></A>Figure 13.9. <TT>inetd</TT> descriptors in child.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="436" HEIGHT="222" src="FILES/13fig09.gif" ALT="graphics/13fig09.gif"></p>
+
+</CENTER>
+<P class="docText">The next step is for the child to duplicate the connected socket to descriptors 0, 1, and 2 and then close the connected socket. This gives us the descriptors shown in <A class="docLink" HREF="#ch13fig10">Figure 13.10</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch13fig10"></A>Figure 13.10. <TT>inetd</TT> descriptors after <TT>dup2</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="414" HEIGHT="228" src="FILES/13fig10.gif" ALT="graphics/13fig10.gif"></p>
+
+</CENTER>
+<P class="docText">The child then calls <TT>exec</TT>. Recall from <A class="docLink" HREF="0131411551_ch04lev1sec7.html#ch04lev1sec7">Section 4.7</A> that all descriptors normally remain open across an <TT>exec</TT>, so the real server that is <TT>exec</TT>ed uses any of the descriptors, 0, 1, or 2, to communicate with the client. These should be the only descriptors open in the server.</P>
+<P class="docText">The scenario we have described handles the case where the configuration file specifies <TT>nowait</TT> for the server. This is typical for all TCP services and it means that <TT>inetd</TT> need not wait for its child to terminate before accepting another connection for that service. If another connection request arrives for the same service, it is returned to the parent process as soon as it calls <TT>select</TT> again. Steps 4, 5, and 6 listed earlier are executed again, and another child process handles this new request.</P>
+<P class="docText">Specifying the <TT>wait</TT> flag for a datagram service changes the steps done by the parent process. This flag says that <TT>inetd</TT> must wait for its child to terminate before selecting on this socket again. The following changes occur:</P>
+<A NAME="ch13pro03"></A>
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">When <TT>fork</TT> returns in the parent, the parent saves the process ID of the child. This allows the parent to know when this specific child process terminates, by looking at the value returned by <TT>waitpid</TT>.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText">The parent disables the socket from future <TT>selects</TT> by using the <TT>FD_CLR</TT> macro to turn off the bit in its descriptor set. This means that the child process takes over the socket until it terminates.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">When the child terminates, the parent is notified by a <TT>SIGCHLD</TT> signal, and the parent's signal handler obtains the process ID of the terminating child. It reenables <TT>select</TT> for the corresponding socket by turning on the bit in its descriptor set for this socket.</P>
+</span></LI></OL></span>
+<P class="docText">The reason that a datagram server must take over the socket until it terminates, preventing <TT>inetd</TT> from <TT>selecting</TT> on that socket for readability (awaiting another client datagram), is because there is only one socket for a datagram server, unlike a TCP server that has a listening socket and one connected socket per client. If <TT>inetd</TT> did not turn off readability for the datagram socket, and if the parent (<TT>inetd</TT>) executed before the child, then the datagram from the client would still be in the socket receive buffer, causing <TT>select</TT> to return readable again, causing <TT>inetd</TT> to <TT>fork</TT> another (unneeded) child. <TT>inetd</TT> must ignore the datagram socket until it knows that the child has read the datagram from the socket receive queue. The way that <TT>inetd</TT> knows when that child is finished with the socket is by receiving <TT>SIGCHLD</TT>, indicating that the child has terminated. We will show an example of this in <A class="docLink" HREF="0131411551_ch22lev1sec7.html#ch22lev1sec7">Section 22.7</A>.</P>
+<P class="docText">The five standard Internet services that we described in <A class="docLink" HREF="0131411551_ch02lev1sec12.html#ch02fig18">Figure 2.18</A> are handled internally by <TT>inetd</TT> (see <A class="docLink" HREF="0131411551_ch13lev1sec8.html#ch13lev1sec8">Exercise 13.2</A>).</P>
+<P class="docText">Since <TT>inetd</TT> is the process that calls <TT>accept</TT> for a TCP server, the actual server that is invoked by <TT>inetd</TT> normally calls <TT>getpeername</TT> to obtain the IP address and port number of the client. Recall <A class="docLink" HREF="0131411551_ch04lev1sec10.html#ch04fig18">Figure 4.18</A> where we showed that after a <TT>fork</TT> and an <TT>exec</TT> (which is what <TT>inetd</TT> does), the only way for the actual server to obtain the identify of the client is to call <TT>getpeername</TT>.</P>
+<P class="docText"><TT>inetd</TT> is normally not used for high-volume servers, notably mail and Web servers. <TT>sendmail</TT>, for example, is normally run as a standard concurrent server, as we described in <A class="docLink" HREF="0131411551_ch04lev1sec8.html#ch04lev1sec8">Section 4.8</A>. In this mode, the process control cost for each client connection is just a <TT>fork</TT>, while the cost for a TCP server invoked by <TT>inetd</TT> is a <TT>fork</TT> and an <TT>exec</TT>. Web servers use a variety of techniques to minimize the process control overhead for each client connection, as we will discuss in <A class="docLink" HREF="0131411551_ch30.html#ch30">Chapter 30</A>.</P>
+<BLOCKQUOTE><P><P class="docList">It is now common to find an extended Internet services daemon, called <TT>xinetd</TT>, on Linux and other systems. <TT>xinetd</TT> provides the same basic function as <TT>inetd</TT>, but also includes a long list of other interesting features. Those features include options for logging, accepting or rejecting connections based on the client's address, configuring services one-per-file instead of a single monolithic configuration, and many more. It is not described further here since the basic <span class="docEmphasis">superserver</span> idea behind them both is the same.</P></P></BLOCKQUOTE>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch13lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch13lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

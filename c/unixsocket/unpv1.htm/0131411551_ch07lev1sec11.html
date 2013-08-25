@@ -1,0 +1,77 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="7.11 'fcntl' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch07lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch07lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch07lev1sec11"></A>
+<H3 class="docSection1Title">7.11 <TT>fcntl</TT> Function</H3>
+<P class="docText"><TT>fcntl</TT> stands for "file control" and this function performs various descriptor control operations. Before describing the function and how it affects a socket, we need to look at the bigger picture. <A class="docLink" HREF="#ch07fig20">Figure 7.20</A> summarizes the different operations performed by <TT>fcntl</TT>, <TT>ioctl</TT>, and routing sockets.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch07fig20"></A>Figure 7.20. Summary of <TT>fcntl</TT>, <TT>ioctl</TT>, and routing socket operations.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="206" src="FILES/07fig20.gif" ALT="graphics/07fig20.gif"></p>
+
+</CENTER>
+<P class="docText">The first six operations can be applied to sockets by any process; the second two (interface operations) are less common, but are still general-purpose; and the last two (ARP and routing table) are issued by administrative programs such as <TT>ifconfig</TT> and <TT>route</TT>. We will talk more about the various <TT>ioctl</TT> operations in <A class="docLink" HREF="0131411551_ch17.html#ch17">Chapter 17</A> and routing sockets in <A class="docLink" HREF="0131411551_ch18.html#ch18">Chapter 18</A>.</P>
+<P class="docText">There are multiple ways to perform the first four operations, but we note in the final column that POSIX specifies that <TT>fcntl</TT> is the preferred way. We also note that POSIX provides the <TT>sockatmark</TT> function (<A class="docLink" HREF="0131411551_ch24lev1sec3.html#ch24lev1sec3">Section 24.3</A>) as the preferred way to test for the out-of-band mark. The remaining operations, with a blank final column, have not been standardized by POSIX.</P>
+<BLOCKQUOTE><P><P class="docList">We also note that the first two operations, setting a socket for nonblocking I/O and for signal-driven I/O, have been set historically using the <TT>FNDELAY</TT> and <TT>FASYNC</TT> commands with <TT>fcntl</TT>. POSIX defines the <TT>O_</TT><span class="docEmphasis">XXX</span> constants.</P></P></BLOCKQUOTE>
+<P class="docText">The <TT>fcntl</TT> function provides the following features related to network programming:</P>
+<UL><LI><p class="docText"><span class="docEmphRoman">Nonblocking I/O—</span> We can set the <TT>O_NONBLOCK</TT> file status flag using the <TT>F_SETFL</TT> command to set a socket as nonblocking. We will describe nonblocking I/O in <A class="docLink" HREF="0131411551_ch16.html#ch16">Chapter 16</A>.</p></LI><LI><p class="docText"><span class="docEmphRoman">Signal-driven I/O—</span> We can set the <TT>O_ASYNC</TT> file status flag using the <TT>F_SETFL</TT> command, which causes the <TT>SIGIO</TT> signal to be generated when the status of a socket changes. We will discuss this in <A class="docLink" HREF="0131411551_ch25.html#ch25">Chapter 25</A>.</p></LI><LI><P class="docList">The <TT>F_SETOWN</TT> command lets us set the socket owner (the process ID or process group ID) to receive the <TT>SIGIO</TT> and <TT>SIGURG</TT> signals. The former signal is generated when signal-driven I/O is enabled for a socket (<A class="docLink" HREF="0131411551_ch25.html#ch25">Chapter 25</A>) and the latter signal is generated when new out-of-band data arrives for a socket</P><P class="docList">(<A class="docLink" HREF="0131411551_ch24.html#ch24">Chapter 24</A>). The <TT>F_GETOWN</TT> command returns the current owner of the socket.</P></LI></UL>
+<BLOCKQUOTE><P><P class="docList">The term "socket owner" is defined by POSIX. Historically, Berkeley-derived implementations have called this "the process group ID of the socket" because the variable that stores this ID is the <TT>so_pgid</TT> member of the <TT>socket</TT> structure (p. 438 of TCPv2).</P></P></BLOCKQUOTE>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;fcntl.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int fcntl(int</TT><span class="docEmphasis">fd</span>, <TT>int</TT> <span class="docEmphasis">cmd</span>, ... /* int <span class="docEmphasis">arg</span> <TT>*/ )</TT>;</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText">Returns: depends on <span class="docEmphasis">cmd</span> if OK, -1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">Each descriptor (including a socket) has a set of file flags that is fetched with the <TT>F_GETFL</TT> command and set with the <TT>F_SETFL</TT> command. The two flags that affect a socket are</P>
+<UL><LI><P class="docList"><TT>O_NONBLOCK</TT>—nonblocking I/O</P></LI><LI><P class="docList"><TT>O_ASYNC</TT>—signal-driven I/O</P></LI></UL>
+<P class="docText">We will describe both of these features in more detail later. For now, we note that typical code to enable nonblocking I/O, using <TT>fcntl</TT>, would be:</P>
+<pre>
+
+</pre><pre>
+int     flags;
+
+     /* Set a socket as nonblocking */
+if  ( (flags = fcntl (fd, F_GETFL, 0)) &lt; 0)
+    err_sys("F_GETFL error");
+flags |= O_NONBLOCK;
+if (fcntl(fd, F_SETFL, flags) &lt; 0)
+    err_sys("F_SETFL error");
+</pre><pre>
+</pre>
+<P class="docText">Beware of code that you may encounter that simply sets the desired flag.</P>
+<pre>
+
+</pre><pre>
+    /* Wrong way to set a socket as nonblocking */
+if (fcntl(fd, F_SETFL, O_NONBLOCK) &lt; 0)
+    err_sys("F_SETFL error");
+</pre><pre>
+</pre>
+<P class="docText">While this sets the nonblocking flag, it also clears all the other file status flags. The only correct way to set one of the file status flags is to fetch the current flags, logically OR in the new flag, and then set the flags.</P>
+<P class="docText">The following code turns off the nonblocking flag, assuming <TT>flags</TT> was set by the call to <TT>fcntl</TT> shown above:</P>
+<pre>
+
+</pre><pre>
+flags &amp;= ~O_NONBLOCK;
+if (fcntl(fd, F_SETFL, flags) &lt; 0)
+    err_sys("F_SETFL error");
+</pre><pre>
+</pre>
+<P class="docText">The two signals <TT>SIGIO</TT> and <TT>SIGURG</TT> are different from other signals in that they are generated for a socket only if the socket has been assigned an owner with the <TT>F_SETOWN</TT> command. The integer <span class="docEmphasis">arg</span> value for the <TT>F_SETOWN</TT> command can be either a positive integer, specifying the process ID to receive the signal, or a negative integer whose absolute value is the process group ID to receive the signal. The <TT>F_GETOWN</TT> command returns the socket owner as the return value from the <TT>fcntl</TT> function, either the process ID (a positive return value) or the process group ID (a negative value other than –1). The difference between specifying a process or a process group to receive the signal is that the former causes only a single process to receive the signal, while the latter causes all processes in the process group (perhaps more than one) to receive the signal.</P>
+<P class="docText">When a new socket is created by <TT>socket</TT>, it has no owner. But when a new socket is created from a listening socket, the socket owner is inherited from the listening socket by the connected socket (as are many socket options [pp. 462–463 of TCPv2]).</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch07lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch07lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

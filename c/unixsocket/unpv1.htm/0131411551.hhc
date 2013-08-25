@@ -1,0 +1,2301 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD>
+<BODY>
+   <OBJECT type="text/site properties">
+     <param name="Window Styles" value="0x800225">
+     <param name="comment" value="title:Online Help">
+     <param name="comment" value="base:index.htm">
+   </OBJECT>
+   <UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Main Page">
+            <param name="Local" value="0131411551_main.html">
+            <param name="ImageNumber" value="12">
+          </OBJECT>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Table of content">
+            <param name="Local" value="0131411551_toc.html">
+            <param name="ImageNumber" value="22">
+          </OBJECT>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Copyright">
+            <param name="Local" value="0131411551_copyrightpg.html">
+            <param name="ImageNumber" value="17">
+          </OBJECT>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Addison-Wesley Professional Computing Series">
+            <param name="Local" value="0131411551_pref01.html">
+            <param name="ImageNumber" value="17">
+          </OBJECT>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Foreword">
+            <param name="Local" value="0131411551_pref02.html">
+            <param name="ImageNumber" value="17">
+          </OBJECT>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Preface">
+            <param name="Local" value="0131411551_pref03.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Introduction">
+               <param name="Local" value="0131411551_pref03lev1sec1.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Changes from the Second Edition">
+               <param name="Local" value="0131411551_pref03lev1sec2.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Using This Book">
+               <param name="Local" value="0131411551_pref03lev1sec3.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Source Code and Errata Availability">
+               <param name="Local" value="0131411551_pref03lev1sec4.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Acknowledgments">
+               <param name="Local" value="0131411551_pref03lev1sec5.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Part 1: Introduction and TCP/IP">
+            <param name="Local" value="0131411551_part01.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 1. Introduction">
+               <param name="Local" value="0131411551_ch01.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.1 Introduction">
+                  <param name="Local" value="0131411551_ch01lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.2 A Simple Daytime Client">
+                  <param name="Local" value="0131411551_ch01lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.3 Protocol Independence">
+                  <param name="Local" value="0131411551_ch01lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.4 Error Handling: Wrapper Functions">
+                  <param name="Local" value="0131411551_ch01lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.5 A Simple Daytime Server">
+                  <param name="Local" value="0131411551_ch01lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.6 Roadmap to Client/Server Examples in the Text">
+                  <param name="Local" value="0131411551_ch01lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.7 OSI Model">
+                  <param name="Local" value="0131411551_ch01lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.8 BSD Networking History">
+                  <param name="Local" value="0131411551_ch01lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.9 Test Networks and Hosts">
+                  <param name="Local" value="0131411551_ch01lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.10 Unix Standards">
+                  <param name="Local" value="0131411551_ch01lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.11 64-Bit Architectures">
+                  <param name="Local" value="0131411551_ch01lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="1.12 Summary">
+                  <param name="Local" value="0131411551_ch01lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch01lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 2. The Transport Layer: TCP, UDP, and SCTP">
+               <param name="Local" value="0131411551_ch02.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.1 Introduction">
+                  <param name="Local" value="0131411551_ch02lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.2 The Big Picture">
+                  <param name="Local" value="0131411551_ch02lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.3 User Datagram Protocol (UDP)">
+                  <param name="Local" value="0131411551_ch02lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.4 Transmission Control Protocol (TCP)">
+                  <param name="Local" value="0131411551_ch02lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.5 Stream Control Transmission Protocol (SCTP)">
+                  <param name="Local" value="0131411551_ch02lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.6 TCP Connection Establishment and Termination">
+                  <param name="Local" value="0131411551_ch02lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.7 TIME_WAIT State">
+                  <param name="Local" value="0131411551_ch02lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.8 SCTP Association Establishment and Termination">
+                  <param name="Local" value="0131411551_ch02lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.9 Port Numbers">
+                  <param name="Local" value="0131411551_ch02lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.10 TCP Port Numbers and Concurrent Servers">
+                  <param name="Local" value="0131411551_ch02lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.11 Buffer Sizes and Limitations">
+                  <param name="Local" value="0131411551_ch02lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.12 Standard Internet Services">
+                  <param name="Local" value="0131411551_ch02lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.13 Protocol Usage by Common Internet Applications">
+                  <param name="Local" value="0131411551_ch02lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="2.14 Summary">
+                  <param name="Local" value="0131411551_ch02lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch02lev1sec15.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Part 2: Elementary Sockets">
+            <param name="Local" value="0131411551_part02.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 3. Sockets Introduction">
+               <param name="Local" value="0131411551_ch03.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.1 Introduction">
+                  <param name="Local" value="0131411551_ch03lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.2 Socket Address Structures">
+                  <param name="Local" value="0131411551_ch03lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.3 Value-Result Arguments">
+                  <param name="Local" value="0131411551_ch03lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.4 Byte Ordering Functions">
+                  <param name="Local" value="0131411551_ch03lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.5 Byte Manipulation Functions">
+                  <param name="Local" value="0131411551_ch03lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.6 'inet_aton', 'inet_addr', and 'inet_ntoa' Functions">
+                  <param name="Local" value="0131411551_ch03lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.7 'inet_pton' and 'inet_ntop' Functions">
+                  <param name="Local" value="0131411551_ch03lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.8 'sock_ntop' and Related Functions">
+                  <param name="Local" value="0131411551_ch03lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.9 'readn', 'writen', and 'readline' Functions">
+                  <param name="Local" value="0131411551_ch03lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="3.10 Summary">
+                  <param name="Local" value="0131411551_ch03lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch03lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 4. Elementary TCP Sockets">
+               <param name="Local" value="0131411551_ch04.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.1 Introduction">
+                  <param name="Local" value="0131411551_ch04lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.2 'socket' Function">
+                  <param name="Local" value="0131411551_ch04lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.3 'connect' Function">
+                  <param name="Local" value="0131411551_ch04lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.4 'bind' Function">
+                  <param name="Local" value="0131411551_ch04lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.5 'listen' Function">
+                  <param name="Local" value="0131411551_ch04lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.6 'accept' Function">
+                  <param name="Local" value="0131411551_ch04lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.7 'fork' and 'exec' Functions">
+                  <param name="Local" value="0131411551_ch04lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.8 Concurrent Servers">
+                  <param name="Local" value="0131411551_ch04lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.9 'close' Function">
+                  <param name="Local" value="0131411551_ch04lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.10 'getsockname' and 'getpeername' Functions">
+                  <param name="Local" value="0131411551_ch04lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="4.11 Summary">
+                  <param name="Local" value="0131411551_ch04lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch04lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 5. TCP Client/Server Example">
+               <param name="Local" value="0131411551_ch05.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.1 Introduction">
+                  <param name="Local" value="0131411551_ch05lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.2 TCP Echo Server: 'main' Function">
+                  <param name="Local" value="0131411551_ch05lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.3 TCP Echo Server: 'str_echo' Function">
+                  <param name="Local" value="0131411551_ch05lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.4 TCP Echo Client: 'main' Function">
+                  <param name="Local" value="0131411551_ch05lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.5 TCP Echo Client: 'str_cli' Function">
+                  <param name="Local" value="0131411551_ch05lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.6 Normal Startup">
+                  <param name="Local" value="0131411551_ch05lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.7 Normal Termination">
+                  <param name="Local" value="0131411551_ch05lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.8 POSIX Signal Handling">
+                  <param name="Local" value="0131411551_ch05lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.9 Handling 'SIGCHLD' Signals">
+                  <param name="Local" value="0131411551_ch05lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.10 'wait' and 'waitpid' Functions">
+                  <param name="Local" value="0131411551_ch05lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.11 Connection Abort before 'accept' Returns">
+                  <param name="Local" value="0131411551_ch05lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.12 Termination of Server Process">
+                  <param name="Local" value="0131411551_ch05lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.13 'SIGPIPE' Signal">
+                  <param name="Local" value="0131411551_ch05lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.14 Crashing of Server Host">
+                  <param name="Local" value="0131411551_ch05lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.15 Crashing and Rebooting of Server Host">
+                  <param name="Local" value="0131411551_ch05lev1sec15.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.16 Shutdown of Server Host">
+                  <param name="Local" value="0131411551_ch05lev1sec16.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.17 Summary of TCP Example">
+                  <param name="Local" value="0131411551_ch05lev1sec17.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.18 Data Format">
+                  <param name="Local" value="0131411551_ch05lev1sec18.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="5.19 Summary">
+                  <param name="Local" value="0131411551_ch05lev1sec19.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch05lev1sec20.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 6. I/O Multiplexing: The 'select' and 'poll' Functions">
+               <param name="Local" value="0131411551_ch06.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.1 Introduction">
+                  <param name="Local" value="0131411551_ch06lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.2 I/O Models">
+                  <param name="Local" value="0131411551_ch06lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.3 'select' Function">
+                  <param name="Local" value="0131411551_ch06lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.4 'str_cli' Function (Revisited)">
+                  <param name="Local" value="0131411551_ch06lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.5 Batch Input and Buffering">
+                  <param name="Local" value="0131411551_ch06lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.6 'shutdown' Function">
+                  <param name="Local" value="0131411551_ch06lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.7 'str_cli' Function (Revisited Again)">
+                  <param name="Local" value="0131411551_ch06lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.8 TCP Echo Server (Revisited)">
+                  <param name="Local" value="0131411551_ch06lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.9 'pselect' Function">
+                  <param name="Local" value="0131411551_ch06lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.10 'poll' Function">
+                  <param name="Local" value="0131411551_ch06lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.11 TCP Echo Server (Revisited Again)">
+                  <param name="Local" value="0131411551_ch06lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="6.12 Summary">
+                  <param name="Local" value="0131411551_ch06lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch06lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 7. Socket Options">
+               <param name="Local" value="0131411551_ch07.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.1 Introduction">
+                  <param name="Local" value="0131411551_ch07lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.2 'getsockopt' and 'setsockopt' Functions">
+                  <param name="Local" value="0131411551_ch07lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.3 Checking if an Option Is Supported and Obtaining the Default">
+                  <param name="Local" value="0131411551_ch07lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.4 Socket States">
+                  <param name="Local" value="0131411551_ch07lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.5 Generic Socket Options">
+                  <param name="Local" value="0131411551_ch07lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.6 IPv4 Socket Options">
+                  <param name="Local" value="0131411551_ch07lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.7 ICMPv6 Socket Option">
+                  <param name="Local" value="0131411551_ch07lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.8 IPv6 Socket Options">
+                  <param name="Local" value="0131411551_ch07lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.9 TCP Socket Options">
+                  <param name="Local" value="0131411551_ch07lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.10 SCTP Socket Options">
+                  <param name="Local" value="0131411551_ch07lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.11 'fcntl' Function">
+                  <param name="Local" value="0131411551_ch07lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="7.12 Summary">
+                  <param name="Local" value="0131411551_ch07lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch07lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 8. Elementary UDP Sockets">
+               <param name="Local" value="0131411551_ch08.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.1 Introduction">
+                  <param name="Local" value="0131411551_ch08lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.2 'recvfrom' and 'sendto' Functions">
+                  <param name="Local" value="0131411551_ch08lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.3 UDP Echo Server: 'main' Function">
+                  <param name="Local" value="0131411551_ch08lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.4 UDP Echo Server: 'dg_echo' Function">
+                  <param name="Local" value="0131411551_ch08lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.5 UDP Echo Client: 'main' Function">
+                  <param name="Local" value="0131411551_ch08lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.6 UDP Echo Client: 'dg_cli' Function">
+                  <param name="Local" value="0131411551_ch08lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.7 Lost Datagrams">
+                  <param name="Local" value="0131411551_ch08lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.8 Verifying Received Response">
+                  <param name="Local" value="0131411551_ch08lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.9 Server Not Running">
+                  <param name="Local" value="0131411551_ch08lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.10 Summary of UDP Example">
+                  <param name="Local" value="0131411551_ch08lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.11 'connect' Function with UDP">
+                  <param name="Local" value="0131411551_ch08lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.12 'dg_cli' Function (Revisited)">
+                  <param name="Local" value="0131411551_ch08lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.13 Lack of Flow Control with UDP">
+                  <param name="Local" value="0131411551_ch08lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.14 Determining Outgoing Interface with UDP">
+                  <param name="Local" value="0131411551_ch08lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.15 TCP and UDP Echo Server Using 'select'">
+                  <param name="Local" value="0131411551_ch08lev1sec15.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="8.16 Summary">
+                  <param name="Local" value="0131411551_ch08lev1sec16.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch08lev1sec17.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 9. Elementary SCTP Sockets">
+               <param name="Local" value="0131411551_ch09.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.1 Introduction">
+                  <param name="Local" value="0131411551_ch09lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.2 Interface Models">
+                  <param name="Local" value="0131411551_ch09lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.3 'sctp_bindx' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.4 'sctp_connectx' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.5 'sctp_getpaddrs' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.6 'sctp_freepaddrs' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.7 'sctp_getladdrs' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.8 'sctp_freeladdrs' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.9 'sctp_sendmsg' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.10 'sctp_recvmsg' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.11 'sctp_opt_info' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.12 'sctp_peeloff' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.13 'shutdown' Function">
+                  <param name="Local" value="0131411551_ch09lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.14 Notifications">
+                  <param name="Local" value="0131411551_ch09lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="9.15 Summary">
+                  <param name="Local" value="0131411551_ch09lev1sec15.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch09lev1sec16.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 10. SCTP Client/Server Example">
+               <param name="Local" value="0131411551_ch10.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.1 Introduction">
+                  <param name="Local" value="0131411551_ch10lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.2 SCTP One-to-Many-Style Streaming Echo Server: 'main' Function">
+                  <param name="Local" value="0131411551_ch10lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.3 SCTP One-to-Many-Style Streaming Echo Client: 'main' Function">
+                  <param name="Local" value="0131411551_ch10lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.4 SCTP Streaming Echo Client: 'str_cli' Function">
+                  <param name="Local" value="0131411551_ch10lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.5 Exploring Head-of-Line Blocking">
+                  <param name="Local" value="0131411551_ch10lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.6 Controlling the Number of Streams">
+                  <param name="Local" value="0131411551_ch10lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.7 Controlling Termination">
+                  <param name="Local" value="0131411551_ch10lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="10.8 Summary">
+                  <param name="Local" value="0131411551_ch10lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch10lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 11. Name and Address Conversions">
+               <param name="Local" value="0131411551_ch11.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.1 Introduction">
+                  <param name="Local" value="0131411551_ch11lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.2 Domain Name System (DNS)">
+                  <param name="Local" value="0131411551_ch11lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.3 'gethostbyname' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.4 'gethostbyaddr' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.5 'getservbyname' and 'getservbyport' Functions">
+                  <param name="Local" value="0131411551_ch11lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.6 'getaddrinfo' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.7 'gai_strerror' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.8 'freeaddrinfo' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.9 'getaddrinfo' Function: IPv6">
+                  <param name="Local" value="0131411551_ch11lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.10 'getaddrinfo' Function: Examples">
+                  <param name="Local" value="0131411551_ch11lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.11 'host_serv' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.12 'tcp_connect' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.13 'tcp_listen' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.14 'udp_client' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.15 'udp_connect' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec15.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.16 'udp_server' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec16.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.17 'getnameinfo' Function">
+                  <param name="Local" value="0131411551_ch11lev1sec17.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.18 Re-entrant Functions">
+                  <param name="Local" value="0131411551_ch11lev1sec18.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.19 'gethostbyname_r' and 'gethostbyaddr_r' Functions">
+                  <param name="Local" value="0131411551_ch11lev1sec19.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.20 Obsolete IPv6 Address Lookup Functions">
+                  <param name="Local" value="0131411551_ch11lev1sec20.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.21 Other Networking Information">
+                  <param name="Local" value="0131411551_ch11lev1sec21.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="11.22 Summary">
+                  <param name="Local" value="0131411551_ch11lev1sec22.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch11lev1sec23.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Part 3: Advanced Sockets">
+            <param name="Local" value="0131411551_part03.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 12. IPv4 and IPv6 Interoperability">
+               <param name="Local" value="0131411551_ch12.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="12.1 Introduction">
+                  <param name="Local" value="0131411551_ch12lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="12.2 IPv4 Client, IPv6 Server">
+                  <param name="Local" value="0131411551_ch12lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="12.3 IPv6 Client, IPv4 Server">
+                  <param name="Local" value="0131411551_ch12lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="12.4 IPv6 Address-Testing Macros">
+                  <param name="Local" value="0131411551_ch12lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="12.5 Source Code Portability">
+                  <param name="Local" value="0131411551_ch12lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="12.6 Summary">
+                  <param name="Local" value="0131411551_ch12lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch12lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 13. Daemon Processes and the 'inetd' Superserver">
+               <param name="Local" value="0131411551_ch13.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.1 Introduction">
+                  <param name="Local" value="0131411551_ch13lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.2 'syslogd' Daemon">
+                  <param name="Local" value="0131411551_ch13lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.3 'syslog' Function">
+                  <param name="Local" value="0131411551_ch13lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.4 'daemon_init' Function">
+                  <param name="Local" value="0131411551_ch13lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.5 'inetd' Daemon">
+                  <param name="Local" value="0131411551_ch13lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.6 'daemon_inetd' Function">
+                  <param name="Local" value="0131411551_ch13lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="13.7 Summary">
+                  <param name="Local" value="0131411551_ch13lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch13lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 14. Advanced I/O Functions">
+               <param name="Local" value="0131411551_ch14.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.1 Introduction">
+                  <param name="Local" value="0131411551_ch14lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.2 Socket Timeouts">
+                  <param name="Local" value="0131411551_ch14lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.3 'recv' and 'send' Functions">
+                  <param name="Local" value="0131411551_ch14lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.4 'readv' and 'writev' Functions">
+                  <param name="Local" value="0131411551_ch14lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.5 'recvmsg' and 'sendmsg' Functions">
+                  <param name="Local" value="0131411551_ch14lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.6 Ancillary Data">
+                  <param name="Local" value="0131411551_ch14lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.7 How Much Data Is Queued?">
+                  <param name="Local" value="0131411551_ch14lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.8 Sockets and Standard I/O">
+                  <param name="Local" value="0131411551_ch14lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.9 Advanced Polling">
+                  <param name="Local" value="0131411551_ch14lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="14.10 Summary">
+                  <param name="Local" value="0131411551_ch14lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch14lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 15. Unix Domain Protocols">
+               <param name="Local" value="0131411551_ch15.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.1 Introduction">
+                  <param name="Local" value="0131411551_ch15lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.2 Unix Domain Socket Address Structure">
+                  <param name="Local" value="0131411551_ch15lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.3 'socketpair' Function">
+                  <param name="Local" value="0131411551_ch15lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.4 Socket Functions">
+                  <param name="Local" value="0131411551_ch15lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.5 Unix Domain Stream Client/Server">
+                  <param name="Local" value="0131411551_ch15lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.6 Unix Domain Datagram Client/Server">
+                  <param name="Local" value="0131411551_ch15lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.7 Passing Descriptors">
+                  <param name="Local" value="0131411551_ch15lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.8 Receiving Sender Credentials">
+                  <param name="Local" value="0131411551_ch15lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="15.9 Summary">
+                  <param name="Local" value="0131411551_ch15lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch15lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 16. Nonblocking I/O">
+               <param name="Local" value="0131411551_ch16.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.1 Introduction">
+                  <param name="Local" value="0131411551_ch16lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.2 Nonblocking Reads and Writes: 'str_cli' Function (Revisited)">
+                  <param name="Local" value="0131411551_ch16lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.3 Nonblocking 'connect'">
+                  <param name="Local" value="0131411551_ch16lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.4 Nonblocking 'connect:' Daytime Client">
+                  <param name="Local" value="0131411551_ch16lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.5 Nonblocking 'connect:' Web Client">
+                  <param name="Local" value="0131411551_ch16lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.6 Nonblocking 'accept'">
+                  <param name="Local" value="0131411551_ch16lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="16.7 Summary">
+                  <param name="Local" value="0131411551_ch16lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch16lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 17. 'ioctl' Operations">
+               <param name="Local" value="0131411551_ch17.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.1 Introduction">
+                  <param name="Local" value="0131411551_ch17lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.2 'ioctl' Function">
+                  <param name="Local" value="0131411551_ch17lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.3 Socket Operations">
+                  <param name="Local" value="0131411551_ch17lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.4 File Operations">
+                  <param name="Local" value="0131411551_ch17lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.5 Interface Configuration">
+                  <param name="Local" value="0131411551_ch17lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.6 'get_ifi_info' Function">
+                  <param name="Local" value="0131411551_ch17lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.7 Interface Operations">
+                  <param name="Local" value="0131411551_ch17lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.8 ARP Cache Operations">
+                  <param name="Local" value="0131411551_ch17lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.9 Routing Table Operations">
+                  <param name="Local" value="0131411551_ch17lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="17.10 Summary">
+                  <param name="Local" value="0131411551_ch17lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch17lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 18. Routing Sockets">
+               <param name="Local" value="0131411551_ch18.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.1 Introduction">
+                  <param name="Local" value="0131411551_ch18lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.2 Datalink Socket Address Structure">
+                  <param name="Local" value="0131411551_ch18lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.3 Reading and Writing">
+                  <param name="Local" value="0131411551_ch18lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.4 'sysctl' Operations">
+                  <param name="Local" value="0131411551_ch18lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.5 'get_ifi_info' Function (Revisited)">
+                  <param name="Local" value="0131411551_ch18lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.6 Interface Name and Index Functions">
+                  <param name="Local" value="0131411551_ch18lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="18.7 Summary">
+                  <param name="Local" value="0131411551_ch18lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch18lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 19. Key Management Sockets">
+               <param name="Local" value="0131411551_ch19.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="19.1 Introduction">
+                  <param name="Local" value="0131411551_ch19lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="19.2 Reading and Writing">
+                  <param name="Local" value="0131411551_ch19lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="19.3 Dumping the Security Association Database (SADB)">
+                  <param name="Local" value="0131411551_ch19lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="19.4 Creating a Static Security Association (SA)">
+                  <param name="Local" value="0131411551_ch19lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="19.5 Dynamically Maintaining SAs">
+                  <param name="Local" value="0131411551_ch19lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="19.6 Summary">
+                  <param name="Local" value="0131411551_ch19lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch19lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 20. Broadcasting">
+               <param name="Local" value="0131411551_ch20.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="20.1 Introduction">
+                  <param name="Local" value="0131411551_ch20lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="20.2 Broadcast Addresses">
+                  <param name="Local" value="0131411551_ch20lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="20.3 Unicast versus Broadcast">
+                  <param name="Local" value="0131411551_ch20lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="20.4 'dg_cli' Function Using Broadcasting">
+                  <param name="Local" value="0131411551_ch20lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="20.5 Race Conditions">
+                  <param name="Local" value="0131411551_ch20lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="20.6 Summary">
+                  <param name="Local" value="0131411551_ch20lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch20lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 21. Multicasting">
+               <param name="Local" value="0131411551_ch21.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.1 Introduction">
+                  <param name="Local" value="0131411551_ch21lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.2 Multicast Addresses">
+                  <param name="Local" value="0131411551_ch21lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.3 Multicasting versus Broadcasting on a LAN">
+                  <param name="Local" value="0131411551_ch21lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.4 Multicasting on a WAN">
+                  <param name="Local" value="0131411551_ch21lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.5 Source-Specific Multicast">
+                  <param name="Local" value="0131411551_ch21lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.6 Multicast Socket Options">
+                  <param name="Local" value="0131411551_ch21lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.7 'mcast_join' and Related Functions">
+                  <param name="Local" value="0131411551_ch21lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.8 'dg_cli' Function Using Multicasting">
+                  <param name="Local" value="0131411551_ch21lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.9 Receiving IP Multicast Infrastructure Session Announcements">
+                  <param name="Local" value="0131411551_ch21lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.10 Sending and Receiving">
+                  <param name="Local" value="0131411551_ch21lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.11 Simple Network Time Protocol (SNTP)">
+                  <param name="Local" value="0131411551_ch21lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="21.12 Summary">
+                  <param name="Local" value="0131411551_ch21lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch21lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 22. Advanced UDP Sockets">
+               <param name="Local" value="0131411551_ch22.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.1 Introduction">
+                  <param name="Local" value="0131411551_ch22lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.2 Receiving Flags, Destination IP Address, and Interface Index">
+                  <param name="Local" value="0131411551_ch22lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.3 Datagram Truncation">
+                  <param name="Local" value="0131411551_ch22lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.4 When to Use UDP Instead of TCP">
+                  <param name="Local" value="0131411551_ch22lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.5 Adding Reliability to a UDP Application">
+                  <param name="Local" value="0131411551_ch22lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.6 Binding Interface Addresses">
+                  <param name="Local" value="0131411551_ch22lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.7 Concurrent UDP Servers">
+                  <param name="Local" value="0131411551_ch22lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.8 IPv6 Packet Information">
+                  <param name="Local" value="0131411551_ch22lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.9 IPv6 Path MTU Control">
+                  <param name="Local" value="0131411551_ch22lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="22.10 Summary">
+                  <param name="Local" value="0131411551_ch22lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch22lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 23. Advanced SCTP Sockets">
+               <param name="Local" value="0131411551_ch23.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.1 Introduction">
+                  <param name="Local" value="0131411551_ch23lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.2 An Autoclosing One-to-Many-Style Server">
+                  <param name="Local" value="0131411551_ch23lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.3 Partial Delivery">
+                  <param name="Local" value="0131411551_ch23lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.4 Notifications">
+                  <param name="Local" value="0131411551_ch23lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.5 Unordered Data">
+                  <param name="Local" value="0131411551_ch23lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.6 Binding a Subset of Addresses">
+                  <param name="Local" value="0131411551_ch23lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.7 Determining Peer and Local Address Information">
+                  <param name="Local" value="0131411551_ch23lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.8 Finding an Association ID Given an IP Address">
+                  <param name="Local" value="0131411551_ch23lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.9 Heartbeating and Address Failure">
+                  <param name="Local" value="0131411551_ch23lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.10 Peeling Off an Association">
+                  <param name="Local" value="0131411551_ch23lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.11 Controlling Timing">
+                  <param name="Local" value="0131411551_ch23lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.12 When to Use SCTP Instead of TCP">
+                  <param name="Local" value="0131411551_ch23lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="23.13 Summary">
+                  <param name="Local" value="0131411551_ch23lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch23lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 24. Out-of-Band Data">
+               <param name="Local" value="0131411551_ch24.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="24.1 Introduction">
+                  <param name="Local" value="0131411551_ch24lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="24.2 TCP Out-of-Band Data">
+                  <param name="Local" value="0131411551_ch24lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="24.3 'sockatmark' Function">
+                  <param name="Local" value="0131411551_ch24lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="24.4 TCP Out-of-Band Data Recap">
+                  <param name="Local" value="0131411551_ch24lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="24.5 Summary">
+                  <param name="Local" value="0131411551_ch24lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch24lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 25. Signal-Driven I/O">
+               <param name="Local" value="0131411551_ch25.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="25.1 Introduction">
+                  <param name="Local" value="0131411551_ch25lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="25.2 Signal-Driven I/O for Sockets">
+                  <param name="Local" value="0131411551_ch25lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="25.3 UDP Echo Server Using 'SIGIO'">
+                  <param name="Local" value="0131411551_ch25lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="25.4 Summary">
+                  <param name="Local" value="0131411551_ch25lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch25lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 26. Threads">
+               <param name="Local" value="0131411551_ch26.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.1 Introduction">
+                  <param name="Local" value="0131411551_ch26lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.2 Basic Thread Functions: Creation and Termination">
+                  <param name="Local" value="0131411551_ch26lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.3 'str_cli' Function Using Threads">
+                  <param name="Local" value="0131411551_ch26lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.4 TCP Echo Server Using Threads">
+                  <param name="Local" value="0131411551_ch26lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.5 Thread-Specific Data">
+                  <param name="Local" value="0131411551_ch26lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.6 Web Client and Simultaneous Connections (Continued)">
+                  <param name="Local" value="0131411551_ch26lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.7 Mutexes: Mutual Exclusion">
+                  <param name="Local" value="0131411551_ch26lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.8 Condition Variables">
+                  <param name="Local" value="0131411551_ch26lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.9 Web Client and Simultaneous Connections (Continued)">
+                  <param name="Local" value="0131411551_ch26lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="26.10 Summary">
+                  <param name="Local" value="0131411551_ch26lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch26lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 27. IP Options">
+               <param name="Local" value="0131411551_ch27.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.1 Introduction">
+                  <param name="Local" value="0131411551_ch27lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.2 IPv4 Options">
+                  <param name="Local" value="0131411551_ch27lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.3 IPv4 Source Route Options">
+                  <param name="Local" value="0131411551_ch27lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.4 IPv6 Extension Headers">
+                  <param name="Local" value="0131411551_ch27lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.5 IPv6 Hop-by-Hop Options and Destination Options">
+                  <param name="Local" value="0131411551_ch27lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.6 IPv6 Routing Header">
+                  <param name="Local" value="0131411551_ch27lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.7 IPv6 Sticky Options">
+                  <param name="Local" value="0131411551_ch27lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.8 Historical IPv6 Advanced API">
+                  <param name="Local" value="0131411551_ch27lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="27.9 Summary">
+                  <param name="Local" value="0131411551_ch27lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch27lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 28. Raw Sockets">
+               <param name="Local" value="0131411551_ch28.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.1 Introduction">
+                  <param name="Local" value="0131411551_ch28lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.2 Raw Socket Creation">
+                  <param name="Local" value="0131411551_ch28lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.3 Raw Socket Output">
+                  <param name="Local" value="0131411551_ch28lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.4 Raw Socket Input">
+                  <param name="Local" value="0131411551_ch28lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.5 'ping' Program">
+                  <param name="Local" value="0131411551_ch28lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.6 'traceroute' Program">
+                  <param name="Local" value="0131411551_ch28lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.7 An ICMP Message Daemon">
+                  <param name="Local" value="0131411551_ch28lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="28.8 Summary">
+                  <param name="Local" value="0131411551_ch28lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch28lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 29. Datalink Access">
+               <param name="Local" value="0131411551_ch29.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.1 Introduction">
+                  <param name="Local" value="0131411551_ch29lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.2 BSD Packet Filter (BPF)">
+                  <param name="Local" value="0131411551_ch29lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.3 Datalink Provider Interface (DLPI)">
+                  <param name="Local" value="0131411551_ch29lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.4 Linux: 'SOCK_PACKET' and 'PF_PACKET'">
+                  <param name="Local" value="0131411551_ch29lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.5 'libpcap': Packet Capture Library">
+                  <param name="Local" value="0131411551_ch29lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.6 'libnet': Packet Creation and Injection Library">
+                  <param name="Local" value="0131411551_ch29lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.7 Examining the UDP Checksum Field">
+                  <param name="Local" value="0131411551_ch29lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="29.8 Summary">
+                  <param name="Local" value="0131411551_ch29lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch29lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 30. Client/Server Design Alternatives">
+               <param name="Local" value="0131411551_ch30.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.1 Introduction">
+                  <param name="Local" value="0131411551_ch30lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.2 TCP Client Alternatives">
+                  <param name="Local" value="0131411551_ch30lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.3 TCP Test Client">
+                  <param name="Local" value="0131411551_ch30lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.4 TCP Iterative Server">
+                  <param name="Local" value="0131411551_ch30lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.5 TCP Concurrent Server, One Child per Client">
+                  <param name="Local" value="0131411551_ch30lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.6 TCP Preforked Server, No Locking Around 'accept'">
+                  <param name="Local" value="0131411551_ch30lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.7 TCP Preforked Server, File Locking Around 'accept'">
+                  <param name="Local" value="0131411551_ch30lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.8 TCP Preforked Server, Thread Locking Around 'accept'">
+                  <param name="Local" value="0131411551_ch30lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.9 TCP Preforked Server, Descriptor Passing">
+                  <param name="Local" value="0131411551_ch30lev1sec9.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.10 TCP Concurrent Server, One Thread per Client">
+                  <param name="Local" value="0131411551_ch30lev1sec10.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.11 TCP Prethreaded Server, per-Thread 'accept'">
+                  <param name="Local" value="0131411551_ch30lev1sec11.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.12 TCP Prethreaded Server, Main Thread 'accept'">
+                  <param name="Local" value="0131411551_ch30lev1sec12.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="30.13 Summary">
+                  <param name="Local" value="0131411551_ch30lev1sec13.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch30lev1sec14.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 31. Streams">
+               <param name="Local" value="0131411551_ch31.html">
+             </OBJECT>
+         <UL>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.1 Introduction">
+                  <param name="Local" value="0131411551_ch31lev1sec1.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.2 Overview">
+                  <param name="Local" value="0131411551_ch31lev1sec2.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.3 'getmsg' and 'putmsg' Functions">
+                  <param name="Local" value="0131411551_ch31lev1sec3.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.4 'getpmsg' and 'putpmsg' Functions">
+                  <param name="Local" value="0131411551_ch31lev1sec4.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.5 'ioctl' Function">
+                  <param name="Local" value="0131411551_ch31lev1sec5.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.6 Transport Provider Interface (TPI)">
+                  <param name="Local" value="0131411551_ch31lev1sec6.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="31.7 Summary">
+                  <param name="Local" value="0131411551_ch31lev1sec7.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+            <LI><OBJECT type="text/sitemap">
+                  <param name="Name" value="Exercises">
+                  <param name="Local" value="0131411551_ch31lev1sec8.html">
+                  <param name="ImageNumber" value="11">
+                </OBJECT>
+         </UL>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Appendix A. IPv4, IPv6, ICMPv4, and ICMPv6">
+            <param name="Local" value="0131411551_app01.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="A.1 Introduction">
+               <param name="Local" value="0131411551_app01lev1sec1.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="A.2 IPv4 Header">
+               <param name="Local" value="0131411551_app01lev1sec2.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="A.3 IPv6 Header">
+               <param name="Local" value="0131411551_app01lev1sec3.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="A.4 IPv4 Addresses">
+               <param name="Local" value="0131411551_app01lev1sec4.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="A.5 IPv6 Addresses">
+               <param name="Local" value="0131411551_app01lev1sec5.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="A.6 Internet Control Message Protocols (ICMPv4 and ICMPv6)">
+               <param name="Local" value="0131411551_app01lev1sec6.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Appendix B. Virtual Networks">
+            <param name="Local" value="0131411551_app02.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="B.1 Introduction">
+               <param name="Local" value="0131411551_app02lev1sec1.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="B.2 The MBone">
+               <param name="Local" value="0131411551_app02lev1sec2.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="B.3 The 6bone">
+               <param name="Local" value="0131411551_app02lev1sec3.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="B.4 IPv6 Transition: 6to4">
+               <param name="Local" value="0131411551_app02lev1sec4.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Appendix C. Debugging Techniques">
+            <param name="Local" value="0131411551_app03.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.1 System Call Tracing">
+               <param name="Local" value="0131411551_app03lev1sec1.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.2 Standard Internet Services">
+               <param name="Local" value="0131411551_app03lev1sec2.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.3 'sock' Program">
+               <param name="Local" value="0131411551_app03lev1sec3.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.4 Small Test Programs">
+               <param name="Local" value="0131411551_app03lev1sec4.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.5 'tcpdump' Program">
+               <param name="Local" value="0131411551_app03lev1sec5.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.6 'netstat' Program">
+               <param name="Local" value="0131411551_app03lev1sec6.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="C.7 'lsof' Program">
+               <param name="Local" value="0131411551_app03lev1sec7.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Appendix D. Miscellaneous Source Code">
+            <param name="Local" value="0131411551_app04.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="D.1 'unp.h' Header">
+               <param name="Local" value="0131411551_app04lev1sec1.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="D.2 'config.h' Header">
+               <param name="Local" value="0131411551_app04lev1sec2.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="D.3 Standard Error Functions">
+               <param name="Local" value="0131411551_app04lev1sec3.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Appendix E. Solutions to Selected Exercises">
+            <param name="Local" value="0131411551_app05.html">
+          </OBJECT>
+      <UL>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 1">
+               <param name="Local" value="0131411551_app05lev1sec1.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 2">
+               <param name="Local" value="0131411551_app05lev1sec2.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 3">
+               <param name="Local" value="0131411551_app05lev1sec3.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 4">
+               <param name="Local" value="0131411551_app05lev1sec4.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 5">
+               <param name="Local" value="0131411551_app05lev1sec5.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 6">
+               <param name="Local" value="0131411551_app05lev1sec6.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 7">
+               <param name="Local" value="0131411551_app05lev1sec7.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 8">
+               <param name="Local" value="0131411551_app05lev1sec8.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 9">
+               <param name="Local" value="0131411551_app05lev1sec9.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 10">
+               <param name="Local" value="0131411551_app05lev1sec10.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 11">
+               <param name="Local" value="0131411551_app05lev1sec11.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 12">
+               <param name="Local" value="0131411551_app05lev1sec12.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 13">
+               <param name="Local" value="0131411551_app05lev1sec13.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 14">
+               <param name="Local" value="0131411551_app05lev1sec14.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 15">
+               <param name="Local" value="0131411551_app05lev1sec15.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 16">
+               <param name="Local" value="0131411551_app05lev1sec16.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 17">
+               <param name="Local" value="0131411551_app05lev1sec17.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 18">
+               <param name="Local" value="0131411551_app05lev1sec18.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 20">
+               <param name="Local" value="0131411551_app05lev1sec19.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 21">
+               <param name="Local" value="0131411551_app05lev1sec20.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 22">
+               <param name="Local" value="0131411551_app05lev1sec21.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 24">
+               <param name="Local" value="0131411551_app05lev1sec22.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 25">
+               <param name="Local" value="0131411551_app05lev1sec23.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 26">
+               <param name="Local" value="0131411551_app05lev1sec24.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 27">
+               <param name="Local" value="0131411551_app05lev1sec25.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 28">
+               <param name="Local" value="0131411551_app05lev1sec26.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 29">
+               <param name="Local" value="0131411551_app05lev1sec27.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 30">
+               <param name="Local" value="0131411551_app05lev1sec28.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+         <LI><OBJECT type="text/sitemap">
+               <param name="Name" value="Chapter 31">
+               <param name="Local" value="0131411551_app05lev1sec29.html">
+               <param name="ImageNumber" value="11">
+             </OBJECT>
+      </UL>
+      <LI><OBJECT type="text/sitemap">
+            <param name="Name" value="Bibliography">
+            <param name="Local" value="0131411551_bib01.html">
+            <param name="ImageNumber" value="21">
+          </OBJECT>
+   </UL>
+</BODY>
+</HTML>

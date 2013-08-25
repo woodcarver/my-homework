@@ -1,0 +1,36 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.9 'getaddrinfo' Function: IPv6"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec9"></A>
+<H3 class="docSection1Title">11.9 <TT>getaddrinfo</TT> Function: IPv6</H3>
+<P class="docText">The POSIX specification defines the <TT>getaddrinfo</TT> function and the information it returns for both IPv4 and IPv6. We note the following points before summarizing these return values in <A class="docLink" HREF="#ch11fig08">Figure 11.8</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch11fig08"></A>Figure 11.8. Summary of <TT>getaddrinfo</TT> and its actions and results.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="525" src="FILES/11fig08.jpg" ALT="graphics/11fig08.jpg"></p>
+
+</CENTER>
+<UL><LI><P class="docList"><TT>getaddrinfo</TT> is dealing with two different inputs: the type of socket address structure the caller wants back and the type of records that should be searched for in the DNS or other database.</P></LI><LI><P class="docList">The address family in the <span class="docEmphasis">hints</span> structure provided by the caller specifies the type of socket address structure that the caller expects to be returned. If the caller specifies <TT>AF_INET</TT>, the function must not return any <TT>sockaddr_in6</TT> structures; if the caller specifies <TT>AF_INET6</TT>, the function must not return any <TT>sockaddr_in</TT> structures.</P></LI><LI><P class="docList">POSIX says that specifying <TT>AF_UNSPEC</TT> will return addresses that can be used with <span class="docEmphasis">any</span> protocol family that can be used with the hostname and service name. This implies that if a host has both AAAA records and A records, the AAAA records are returned as <TT>sockaddr_in6</TT> structures and the A records are returned as <TT>sockaddr_in</TT> structures. It makes no sense to also return the A records as IPv4-mapped IPv6 addresses in <TT>sockaddr_in6</TT> structures because no additional information is being returned: These addresses are already being returned in <TT>sockaddr_in</TT> structures.</P></LI><LI><P class="docList">This statement in the POSIX specification also implies that if the <TT>AI_PASSIVE</TT> flag is specified without a hostname, then the IPv6 wildcard address (<TT>IN6ADDR_ANY_INIT</TT> or 0::0) should be returned as a <TT>sockaddr_in6</TT> structure, along with the IPv4 wildcard address (<TT>INADDR_ANY</TT> or 0.0.0.0), which is returned as a <TT>sockaddr_in</TT> structure. It also makes sense to return the IPv6 wildcard address first because we will see in <A class="docLink" HREF="0131411551_ch12lev1sec2.html#ch12lev1sec2">Section 12.2</A> that an IPv6 server socket can handle both IPv6 and IPv4 clients on a dual-stack host.</P></LI><LI><P class="docList">The address family specified in the <span class="docEmphasis">hint</span> structure's <TT>ai_family</TT> member, along with the flags such as <TT>AI_V4MAPPED</TT> and <TT>AI_ALL</TT> specified in the <TT>ai_flags</TT> member, dictate the type of records that are searched for in the DNS (A and/or AAAA) and what type of addresses are returned (IPv4, IPv6, and/or IPv4-mapped IPv6). We summarize this in <A class="docLink" HREF="#ch11fig08">Figure 11.8</A>.</P></LI><LI><P class="docList">The hostname can also be either an IPv6 hex string or an IPv4 dotted-decimal string. The validity of this string depends on the address family specified by the caller. An IPv6 hex string is not acceptable if <TT>AF_INET</TT> is specified, and an IPv4 dotted-decimal string is not acceptable if <TT>AF_INET6</TT> is specified. But, if <TT>AF_UNSPEC</TT> is specified, either is acceptable and the appropriate type of socket address structure is returned.</P><BLOCKQUOTE><P><P class="docList">One could argue that if <TT>AF_INET6</TT> is specified, then a dotted-decimal string should be returned as an IPv4-mapped IPv6 address in a <TT>sockaddr_in6</TT> structure. But, another way to obtain this result is to prefix the dotted-decimal string with <TT>0::ffff:</TT>.</P></P></BLOCKQUOTE></LI></UL>
+<P class="docText"><A class="docLink" HREF="#ch11fig08">Figure 11.8</A> summarizes how we expect <TT>getaddrinfo</TT> to handle IPv4 and IPv6 addresses. The "Result" column is what we want returned to the caller, given the variables in the first three columns. The "Action" column is how we obtain this result.</P>
+<P class="docText">Note that <A class="docLink" HREF="#ch11fig08">Figure 11.8</A> specifies only how <TT>getaddrinfo</TT> handles IPv4 and IPv6; that is, the number of addresses returned to the caller. The actual number of <TT>addrinfo</TT> structures returned to the caller also depends on the socket type specified and the service name, as summarized earlier in <A class="docLink" HREF="0131411551_ch11lev1sec6.html#ch11fig06">Figure 11.6</A>.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

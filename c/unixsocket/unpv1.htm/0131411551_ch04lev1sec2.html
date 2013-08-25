@@ -1,0 +1,64 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="4.2 'socket' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch04lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch04lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch04lev1sec2"></A>
+<H3 class="docSection1Title">4.2 <TT>socket</TT> Function</H3>
+<P class="docText">To perform network I/O, the first thing a process must do is call the <TT>socket</TT> function, specifying the type of communication protocol desired (TCP using IPv4, UDP using IPv6, Unix domain stream protocol, etc.).</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int socket (int</TT> <span class="docEmphasis">family</span>, <TT>int</TT> <span class="docEmphasis">type</span>, <TT>int</TT> <span class="docEmphasis">protocol</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-negative descriptor if OK, -1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><span class="docEmphasis">family</span> specifies the protocol family and is one of the constants shown in <A class="docLink" HREF="#ch04fig02">Figure 4.2</A>. This argument is often referred to as <span class="docEmphasis">domain</span> instead of <span class="docEmphasis">family</span>. The socket <span class="docEmphasis">type</span> is one of the constants shown in <A class="docLink" HREF="#ch04fig03">Figure 4.3</A>. The <span class="docEmphasis">protocol</span> argument to the <TT>socket</TT> function should be set to the specific protocol type found in <A class="docLink" HREF="#ch04fig04">Figure 4.4</A>, or 0 to select the system's default for the given combination of <span class="docEmphasis">family</span> and <span class="docEmphasis">type</span>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig02"></A>Figure 4.2. Protocol <span class="docEmphasis">family</span> constants for <TT>socket</TT> function.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="315" HEIGHT="116" src="FILES/04fig02.gif" ALT="graphics/04fig02.gif"></p>
+
+</CENTER>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig03"></A>Figure 4.3. <span class="docEmphasis">type</span> of socket for <TT>socket</TT> function.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="296" HEIGHT="100" src="FILES/04fig03.gif" ALT="graphics/04fig03.gif"></p>
+
+</CENTER>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig04"></A>Figure 4.4. <span class="docEmphasis">protocol</span> of sockets for <TT>AF_INET</TT> or <TT>AF_INET6</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="253" HEIGHT="74" src="FILES/04fig04.gif" ALT="graphics/04fig04.gif"></p>
+
+</CENTER>
+<P class="docText">Not all combinations of socket <span class="docEmphasis">family</span> and <span class="docEmphasis">type</span> are valid. <A class="docLink" HREF="#ch04fig05">Figure 4.5</A> shows the valid combinations, along with the actual protocols that are valid for each pair. The boxes marked "Yes" are valid but do not have handy acronyms. The blank boxes are not supported.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig05"></A>Figure 4.5. Combinations of <span class="docEmphasis">family</span> and <span class="docEmphasis">type</span> for the <TT>socket</TT> function.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="449" HEIGHT="89" src="FILES/04fig05.gif" ALT="graphics/04fig05.gif"></p>
+
+</CENTER>
+<BLOCKQUOTE><P><P class="docList">You may also encounter the corresponding <TT>PF_</TT><span class="docEmphasis">xxx</span> constant as the first argument to <TT>socket</TT>. We will say more about this at the end of this section.</P></P><P><P class="docList">We note that you may encounter <TT>AF_UNIX</TT> (the historical Unix name) instead of <TT>AF_LOCAL</TT> (the POSIX name), and we will say more about this in <A class="docLink" HREF="0131411551_ch15.html#ch15">Chapter 15</A>.</P></P><P><P class="docList">There are other values for the <span class="docEmphasis">family</span> and <span class="docEmphasis">type</span> arguments. For example, 4.4BSD supports both <TT>AF_NS</TT> (the Xerox NS protocols, often called XNS) and <TT>AF_ISO</TT> (the OSI protocols). Similarly, the <span class="docEmphasis">type</span> of <TT>SOCK_SEQPACKET</TT>, a sequenced-packet socket, is implemented by both the Xerox NS protocols and the OSI protocols, and we will describe its use with SCTP in <A class="docLink" HREF="0131411551_ch09lev1sec2.html#ch09lev1sec2">Section 9.2</A>. But, TCP is a byte stream protocol, and supports only <TT>SOCK_STREAM</TT> sockets.</P></P><P><P class="docList">Linux supports a new socket type, <TT>SOCK_PACKET</TT>, that provides access to the datalink, similar to BPF and DLPI in <A class="docLink" HREF="0131411551_ch02lev1sec2.html#ch02fig01">Figure 2.1</A>. We will say more about this in <A class="docLink" HREF="0131411551_ch29.html#ch29">Chapter 29</A>.</P></P><P><P class="docList">The key socket, <TT>AF_KEY</TT>, is newer than the others. It provides support for cryptographic security. Similar to the way that a routing socket (<TT>AF_ROUTE</TT>) is an interface to the kernel's routing table, the key socket is an interface into the kernel's key table. See <A class="docLink" HREF="0131411551_ch19.html#ch19">Chapter 19</A> for details.</P></P></BLOCKQUOTE>
+<P class="docText">On success, the <TT>socket</TT> function returns a small non-negative integer value, similar to a file descriptor. We call this a <span class="docEmphasis">socket descriptor</span>, or a <span class="docEmphasis">sockfd</span>. To obtain this socket descriptor, all we have specified is a protocol family (IPv4, IPv6, or Unix) and the socket type (stream, datagram, or raw). We have not yet specified either the local protocol address or the foreign protocol address.</P>
+<A NAME="ch04lev2sec1"></A>
+<H4 class="docSection2Title"> <TT>AF</TT>_<span class="docEmphasis">xxx</span> <span class="docEmphStrong">Versus</span> <TT>PF</TT>_<span class="docEmphasis">xxx</span></H4>
+<P class="docText">The "<TT>AF_</TT>" prefix stands for "address family" and the "<TT>PF_</TT>" prefix stands for "protocol family." Historically, the intent was that a single protocol family might support multiple address families and that the <TT>PF_</TT> value was used to create the socket and the <TT>AF_</TT> value was used in socket address structures. But in actuality, a protocol family supporting multiple address families has never been supported and the <TT>&lt;sys/socket.h&gt;</TT> header defines the <TT>PF_</TT> value for a given protocol to be equal to the <TT>AF_</TT> value for that protocol. While there is no guarantee that this equality between the two will always be true, should anyone change this for existing protocols, lots of existing code would break. To conform to existing coding practice, we use only the <TT>AF_</TT> constants in this text, although you may encounter the <TT>PF_</TT> value, mainly in calls to <TT>socket</TT>.</P>
+<BLOCKQUOTE><P><P class="docList">Looking at 137 programs that call <TT>socket</TT> in the BSD/OS 2.1 release shows 143 calls that specify the <TT>AF_</TT> value and only 8 that specify the <TT>PF_</TT> value.</P></P><P><P class="docList">Historically, the reason for the similar sets of constants with the <TT>AF_</TT> and <TT>PF_</TT> prefixes goes back to 4.1cBSD [Lanciani 1996] and a version of the <TT>socket</TT> function that predates the one we are describing (which appeared with 4.2BSD). The 4.1cBSD version of <TT>socket</TT> took four arguments, one of which was a pointer to a <TT>sockproto</TT> structure. The first member of this structure was named <TT>sp_family</TT> and its value was one of the <TT>PF_</TT> values. The second member, <TT>sp_protocol</TT>, was a protocol number, similar to the third argument to <TT>socket</TT> today. Specifying this structure was the only way to specify the protocol family. Therefore, in this early system, the <TT>PF_</TT> values were used as structure tags to specify the protocol family in the <TT>sockproto</TT> structure, and the <TT>AF_</TT> values were used as structure tags to specify the address family in the socket address structures. The <TT>sockproto</TT> structure is still in 4.4BSD (pp. 626–627 of TCPv2), but is only used internally by the kernel. The original definition had the comment "protocol family" for the <TT>sp_family</TT> member, but this has been changed to "address family" in the 4.4BSD source code.</P></P><P><P class="docList">To confuse this difference between the <TT>AF_</TT> and <TT>PF_</TT> constants even more, the Berkeley kernel data structure that contains the value that is compared to the first argument to <TT>socket</TT> (the <TT>dom_family</TT> member of the <TT>domain</TT> structure, p. 187 of TCPv2) has the comment that it contains an <TT>AF_</TT> value. But, some of the <TT>domain</TT> structures within the kernel are initialized to the corresponding <TT>AF_</TT> value (p. 192 of TCPv2) while others are initialized to the <TT>PF_</TT> value (p. 646 of TCPv2 and p. 229 of TCPv3).</P></P><P><P class="docList">As another historical note, the 4.2BSD man page for <TT>socket</TT>, dated July 1983, calls its first argument <span class="docEmphasis">af</span> and lists the possible values as the <TT>AF_</TT> constants.</P></P><P><P class="docList">Finally, we note that the POSIX standard specifies that the first argument to <TT>socket</TT> be a <TT>PF_</TT> value, and the <TT>AF_</TT> value be used for a socket address structure. But, it then defines only one family value in the <TT>addrinfo</TT> structure (<A class="docLink" HREF="0131411551_ch11lev1sec6.html#ch11lev1sec6">Section 11.6</A>), intended for use in either a call to <TT>socket</TT> or in a socket address structure!</P></P></BLOCKQUOTE>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch04lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch04lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

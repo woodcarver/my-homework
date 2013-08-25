@@ -1,0 +1,40 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="5.15 Crashing and Rebooting of Server Host"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch05lev1sec14.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch05lev1sec16.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch05lev1sec15"></A>
+<H3 class="docSection1Title">5.15 Crashing and Rebooting of Server Host</H3>
+<P class="docText">In this scenario, we will establish a connection between the client and server and then assume the server host crashes and reboots. In the previous section, the server host was still down when we sent it data. Here, we will let the server host reboot before sending it data. The easiest way to simulate this is to establish the connection, disconnect the server from the network, shut down the server host and then reboot it, and then reconnect the server host to the network. We do not want the client to see the server host shut down (which we will cover in <A class="docLink" HREF="0131411551_ch05lev1sec16.html#ch05lev1sec16">Section 5.16</A>).</P>
+<P class="docText">As stated in the previous section, if the client is not actively sending data to the server when the server host crashes, the client is not aware that the server host has crashed. (This assumes we are not using the <TT>SO_KEEPALIVE</TT> socket option.) The following steps take place:</P>
+<A NAME="ch05pro07"></A>
+
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">We start the server and then the client. We type a line to verify that the connection is established.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText">The server host crashes and reboots.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">We type a line of input to the client, which is sent as a TCP data segment to the server host.</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docText">When the server host reboots after crashing, its TCP loses all information about connections that existed before the crash. Therefore, the server TCP responds to the received data segment from the client with an RST.</P>
+</span></LI><LI><span style="font-weight:normal" value="5"><P class="docText">Our client is blocked in the call to <TT>readline</TT> when the RST is received, causing <TT>readline</TT> to return the error <TT>ECONNRESET</TT>.</P>
+</span></LI></OL></span>
+<P class="docText">If it is important for our client to detect the crashing of the server host, even if the client is not actively sending data, then some other technique (such as the <TT>SO_KEEPALIVE</TT> socket option or some client/server heartbeat function) is required.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch05lev1sec14.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch05lev1sec16.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

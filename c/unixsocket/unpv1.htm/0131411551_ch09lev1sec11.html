@@ -1,0 +1,29 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="9.11 'sctp_opt_info' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch09lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch09lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch09lev1sec11"></A>
+<H3 class="docSection1Title" id="162666-991">9.11 <TT>sctp_opt_info</TT> Function</H3>
+<P class="docText">The <TT>sctp_opt_info</TT> function is provided for implementations that cannot use the <TT>getsockopt</TT> functions for SCTP. This inability to use the <TT>getsockopt</TT> function is because some of the SCTP socket options, for example, <TT>SCTP_STATUS</TT>, need an in-out variable to pass the association identification. For systems that cannot provide an in-out variable to the <TT>getsockopt</TT> function, the user will need to use <TT>sctp_opt_info</TT>. For systems like FreeBSD that do allow in-out variables in the socket option call, the <TT>sctp_opt_info</TT> call is a library call that repackages the arguments into the appropriate <TT>getsockopt</TT> call. For portability's sake, applications should use <TT>sctp_opt_info</TT> for all the options that require in-out variables (<A class="docLink" HREF="0131411551_ch07lev1sec10.html#ch07lev1sec10">Section 7.10</A>).</P>
+<P class="docText">The call has the following format:</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int sctp_opt_info(int</TT> <span class="docEmphasis">sockfd</span>, <TT>sctp_assoc_t</TT> <span class="docEmphasis">assoc_id</span>, <TT>int</TT> <span class="docEmphasis">opt</span> <TT>void *</TT><span class="docEmphasis">arg</span>, <TT>socklen_t *</TT><span class="docEmphasis">siz</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 for success, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><span class="docEmphasis">sockfd</span> is the socket descriptor that the user would like the socket option to affect. <span class="docEmphasis">assoc_id</span> is the identification of the association (if any) on which the user is performing the option. <span class="docEmphasis">opt</span> is the socket option (as defined in <A class="docLink" HREF="0131411551_ch07lev1sec10.html#ch07lev1sec10">Section 7.10</A>) for SCTP. <span class="docEmphasis">arg</span> is the socket option argument, and <span class="docEmphasis">siz</span> is a pointer to a <span class="docEmphasis">socklen_t</span> which holds the size of the argument.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch09lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch09lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

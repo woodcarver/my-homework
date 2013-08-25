@@ -1,0 +1,52 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.5 Batch Input and Buffering"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec5"></A>
+<H3 class="docSection1Title">6.5 Batch Input and Buffering</H3>
+<P class="docText">Unfortunately, our <TT>str_cli</TT> function is still not correct. First, let's go back to our original version, <A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A>. It operates in a stop-and-wait mode, which is fine for interactive use: It sends a line to the server and then waits for the reply. This amount of time is one RTT plus the server's processing time (which is close to 0 for a simple echo server). We can therefore estimate how long it will take for a given number of lines to be echoed if we know the RTT between the client and server.</P>
+<P class="docText">The <TT>ping</TT> program is an easy way to measure RTTs. If we run <TT>ping</TT> to the host <TT>connix.com</TT> from our host <TT>solaris</TT>, the average RTT over 30 measurements is 175 ms. Page 89 of TCPv1 shows that these <TT>ping</TT> measurements are for an IP datagram whose length is 84 bytes. If we take the first 2,000 lines of the Solaris <TT>termcap</TT> file, the resulting file size is 98,349 bytes, for an average of 49 bytes per line. If we add the sizes of the IP header (20 bytes) and the TCP header (20), the average TCP segment will be about 89 bytes, nearly the same as the <TT>ping</TT> packet sizes. We can therefore estimate that the total clock time will be around 350 seconds for 2,000 lines (2,000x0.175<span class="docEmphasis">sec</span>). If we run our TCP echo client from <A class="docLink" HREF="0131411551_ch05.html#ch05">Chapter 5</A>, the actual time is about 354 seconds, which is very close to our estimate.</P>
+<P class="docText">If we consider the network between the client and server as a full-duplex pipe, with requests going from the client to the server and replies in the reverse direction, then <A class="docLink" HREF="#ch06fig10">Figure 6.10</A> shows our stop-and-wait mode.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig10"></A>Figure 6.10. Time line of stop-and-wait mode: interactive input.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="386" HEIGHT="626" src="FILES/06fig10.gif" ALT="graphics/06fig10.gif"></p>
+
+</CENTER>
+<P class="docText">A request is sent by the client at time 0 and we assume an RTT of 8 units of time. The reply sent at time 4 is received at time 7. We also assume that there is no server processing time and that the size of the request is the same as the reply. We show only the data packets between the client and server, ignoring the TCP acknowledgments that are also going across the network.</P>
+<P class="docText">Since there is a delay between sending a packet and that packet arriving at the other end of the pipe, and since the pipe is full-duplex, in this example, we are only using one-eighth of the pipe's capacity. This stop-and-wait mode is fine for interactive input, but since our client reads from standard input and writes to standard output, and since it is trivial under the Unix shells to redirect the input and output, we can easily run our client in a batch mode. When we redirect the input and output, however, the resulting output file is always smaller than the input file (and they should be identical for an echo server).</P>
+<P class="docText">To see what's happening, realize that in a batch mode, we can keep sending requests as fast as the network can accept them. The server processes them and sends back the replies at the same rate. This leads to the full pipe at time 7, as shown in <A class="docLink" HREF="#ch06fig11">Figure 6.11</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig11"></A>Figure 6.11. Filling the pipe between the client and server: batch mode.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="326" HEIGHT="160" src="FILES/06fig11.gif" ALT="graphics/06fig11.gif"></p>
+
+</CENTER>
+<P class="docText">Here we assume that after sending the first request, we immediately send another, and then another. We also assume that we can keep sending requests as fast as the network can accept them, along with processing replies as fast as the network supplies them.</P>
+<BLOCKQUOTE><P><P class="docList">There are numerous subtleties dealing with TCP's bulk data flow that we are ignoring here, such as its slow-start algorithm, which limits the rate at which data is sent on a new or idle connection, and the returning ACKs. These are all covered in Chapter 20 of TCPv1.</P></P></BLOCKQUOTE>
+<P class="docText">To see the problem with our revised <TT>str_cli</TT> function in <A class="docLink" HREF="0131411551_ch06lev1sec4.html#ch06fig09">Figure 6.9</A>, assume that the input file contains only nine lines. The last line is sent at time 8, as shown in <A class="docLink" HREF="#ch06fig11">Figure 6.11</A>. But we cannot close the connection after writing this request because there are still other requests and replies in the pipe. The cause of the problem is our handling of an EOF on input: The function returns to the <TT>main</TT> function, which then terminates. But in a batch mode, an EOF on input does not imply that we have finished reading from the socket; there might still be requests on the way to the server, or replies on the way back from the server.</P>
+<P class="docText">What we need is a way to close one-half of the TCP connection. That is, we want to send a FIN to the server, telling it we have finished sending data, but leave the socket descriptor open for reading. This is done with the <TT>shutdown</TT> function, which is described in the next section.</P>
+<P class="docText">In general, buffering for performance adds complexity to a network application, and the code in <A class="docLink" HREF="0131411551_ch06lev1sec4.html#ch06fig09">Figure 6.9</A> suffers from this complexity. Consider the case when several lines of input are available from the standard input. <TT>select</TT> will cause the code at line 20 to read the input using <TT>fgets</TT> and that, in turn, will read the available lines into a buffer used by stdio. But, <TT>fgets</TT> only returns a single line and leaves any remaining data sitting in the stdio buffer. The code at line 22 of <A class="docLink" HREF="0131411551_ch06lev1sec4.html#ch06fig09">Figure 6.9</A> writes that single line to the server and then <TT>select</TT> is called again to wait for more work, even if there are additional lines to consume in the stdio buffer. The reason for this is that <TT>select</TT> knows nothing of the buffers used by stdio—it will only show readability from the viewpoint of the <TT>read</TT> system call, not calls like <TT>fgets</TT>. For this reason, mixing stdio and <TT>select</TT> is considered very error-prone and should only be done with great care.</P>
+<P class="docText">The same problem exists with the call to <TT>readline</TT> in the example in <A class="docLink" HREF="0131411551_ch06lev1sec4.html#ch06fig09">Figure 6.9</A>. Instead of data being hidden from <TT>select</TT> in a stdio buffer, it is hidden in <TT>readline</TT>'s buffer. Recall that in <A class="docLink" HREF="0131411551_ch03lev1sec9.html#ch03lev1sec9">Section 3.9</A> we provided a function that gives visibility into <TT>readline</TT>'s buffer, so one possible solution is to modify our code to use that function <span class="docEmphasis">before</span> calling <TT>select</TT> to see if data has already been read but not consumed. But again, the complexity grows out of hand quickly when we have to handle the case where the <TT>readline</TT> buffer contains a partial line (meaning we still need to read more) as well as when it contains one or more complete lines (which we can consume).</P>
+<P class="docText">We will address these buffering concerns in the improved version of <TT>str_cli</TT> shown in <A class="docLink" HREF="0131411551_ch06lev1sec7.html#ch06lev1sec7">Section 6.7</A>.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

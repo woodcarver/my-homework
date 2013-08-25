@@ -1,0 +1,88 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.4 'str_cli' Function (Revisited)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec4"></A>
+<H3 class="docSection1Title">6.4 <TT>str_cli</TT> Function (Revisited)</H3>
+<P class="docText">We can now rewrite our <TT>str_cli</TT> function from <A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05lev1sec5">Section 5.5</A>, this time using <TT>select</TT>, so we are notified as soon as the server process terminates. The problem with that earlier version was that we could be blocked in the call to <TT>fgets</TT> when something happened on the socket. Our new version blocks in a call to <TT>select</TT> instead, waiting for either standard input or the socket to be readable. <A class="docLink" HREF="#ch06fig08">Figure 6.8</A> shows the various conditions that are handled by our call to <TT>select</TT>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch06fig08"></A>Figure 6.8. Conditions handled by <TT>select</TT> in <TT>str_cli</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="412" HEIGHT="300" src="FILES/06fig08.gif" ALT="graphics/06fig08.gif"></p>
+
+</CENTER>
+<P class="docText">Three conditions are handled with the socket:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">If the peer TCP sends data, the socket becomes readable and <TT>read</TT> returns greater than 0 (i.e., the number of bytes of data).</P></span></LI><LI><span style="font-weight:normal"><P class="docList">If the peer TCP sends a FIN (the peer process terminates), the socket becomes readable and <TT>read</TT> returns 0 (EOF).</P></span></LI><LI><span style="font-weight:normal"><P class="docList">If the peer TCP sends an RST (the peer host has crashed and rebooted), the socket becomes readable, <TT>read</TT> returns –1, and <TT>errno</TT> contains the specific error code.</P></span></LI></OL></span>
+<P class="docText"><A class="docLink" HREF="#ch06fig09">Figure 6.9</A> shows the source code for this new version.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch06fig09"></A>Figure 6.9 Implementation of <TT>str_cli</TT> function using <TT>select</TT> (improved in <A class="docLink" HREF="0131411551_ch06lev1sec7.html#ch06fig13">Figure 6.13</A>).</H5>
+<P class="docText"><span class="docEmphasis">select/strcliselect01.c</span></P>
+<pre>
+
+</pre><pre>
+ 1 #include    "unp.h"
+
+ 2 void
+ 3 str_cli(FILE *fp, int sockfd)
+ 4 {
+ 5     int     maxfdp1;
+ 6     fd_set  rset;
+ 7     char    sendline[MAXLINE], recvline[MAXLINE];
+
+ 8     FD_ZERO(&amp;rset);
+ 9     for ( ; ; )  {
+10         FD_SET(fileno(fp), &amp;rset);
+11         FD_SET(sockfd, &amp;rset);
+12         maxfdp1 = max(fileno(fp), sockfd)  +  1;
+13         Select(maxfdp1,  &amp;rset,  NULL,  NULL,  NULL);
+
+14         if (FD_ISSET(sockfd,  &amp;rset))  {  /* socket is readable */
+15             if (Readline(sockfd, recvline, MAXLINE) == 0)
+16                 err_quit("str_cli: server terminated prematurely");
+17             Fputs(recvline, stdout);
+18         }
+
+19         if (FD_ISSET(fileno(fp), &amp;rset))  {  /*  input is readable */
+20             if (Fgets(sendline, MAXLINE, fp) == NULL)
+21                 return;          /* all done */
+22             Writen(sockfd, sendline, strlen(sendline));
+23         }
+24     }
+25 }
+</pre><pre>
+</pre>
+
+<A NAME="ch06lev3sec1"></A>
+<H4 class="docSection2Title"> Call <TT>select</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>8–13</TT></span> We only need one descriptor set—to check for readability. This set is initialized by <TT>FD_ZERO</TT> and then two bits are turned on using <TT>FD_SET:</TT> the bit corresponding to the standard I/O file pointer, <TT>fp</TT>, and the bit corresponding to the socket, <TT>sockfd</TT>. The function <TT>fileno</TT> converts a standard I/O file pointer into its corresponding descriptor. <TT>select</TT> (and <TT>poll</TT>) work only with descriptors.</p>
+<P class="docText"><TT>select</TT> is called after calculating the maximum of the two descriptors. In the call, the write-set pointer and the exception-set pointer are both null pointers. The final argument (the time limit) is also a null pointer since we want the call to block until something is ready.</P>
+
+<A NAME="ch06lev3sec2"></A>
+<H4 class="docSection2Title"> Handle readable socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–18</TT></span> If, on return from <TT>select</TT>, the socket is readable, the echoed line is read with <TT>readline</TT> and output by <TT>fputs</TT>.</p>
+
+<A NAME="ch06lev3sec3"></A>
+<H4 class="docSection2Title"> Handle readable input</H4>
+<p class="docText"><span class="docEmphasis"><TT>19–23</TT></span> If the standard input is readable, a line is read by <TT>fgets</TT> and written to the socket using <TT>writen</TT>.</p>
+<P class="docText">Notice that the same four I/O functions are used as in <A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A>, <TT>fgets</TT>, <TT>writen</TT>, <TT>readline</TT>, and <TT>fputs</TT>, but the order of flow within the function has changed. Instead of the function flow being driven by the call to <TT>fgets</TT>, it is now driven by the call to <TT>select</TT>. With only a few additional lines of code in <A class="docLink" HREF="#ch06fig09">Figure 6.9</A>, compared to <A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A>, we have added greatly to the robustness of our client.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

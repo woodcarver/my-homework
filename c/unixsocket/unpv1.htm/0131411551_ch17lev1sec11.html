@@ -1,0 +1,26 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Exercises"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch17lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch18.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch17lev1sec11"></A>
+<H3 class="docSection1Title"> Exercises</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><A NAME="ch17q01"></A><B><A class="docLink" HREF="0131411551_app05lev1sec17.html#ch17a01">17.1</A></B></TD><TD><P class="docText">In <A class="docLink" HREF="0131411551_ch17lev1sec7.html#ch17lev1sec7">Section 17.7</A>, we said that the broadcast address returned by the <TT>SIOCGIFBRDADDR</TT> request is returned in the <TT>ifr_broadaddr</TT> member. But on p. 173 of TCPv2, notice that it is returned in the <TT>ifr_dstaddr</TT> member. Does this matter?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch17q02"></A><B>17.2</B></TD><TD><P class="docText">Modify the <TT>get_ifi_info</TT> program to issue its first <TT>SIOCGIFCONF</TT> request for one <TT>ifreq</TT> structure and then increment the length each time around the loop by the size of one of these structures. Next, put some statements in the loop to print the buffer size each time the request is issued, whether or not <TT>ioctl</TT> returns an error, and upon success print the returned buffer length. Run the <TT>prifinfo</TT> program and see how your system handles this request when the buffer size is too small. Also print the address family for any returned structures whose address family is not the desired value to see what other structures are returned by your system.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch17q03"></A><B>17.3</B></TD><TD><P class="docText">Modify the <TT>get_ifi_info</TT> function to return information about an alias address if the additional address is on a different subnet from the previous address for this interface. That is, our version in <A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17lev1sec6">Section 17.6</A> ignored the aliases 206.62.226.44 through 206.62.226.46, which is acceptable since they are on the same subnet as the primary address for the interface, 206.62.226.33. But if, in this example, an alias is on a different subnet, say 192.3.4.5, return an <TT>ifi_info</TT> structure with the information about the additional address.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch17q04"></A><B>17.4</B></TD><TD><P class="docText">If your system supports the <TT>SIOCGIFNUM ioctl</TT>, then modify <A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17fig07">Figure 17.7</A> to issue this request and use the return value as the initial buffer size guess.</P></TD></TR></TABLE></P><br>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch17lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch18.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

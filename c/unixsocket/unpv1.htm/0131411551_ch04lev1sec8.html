@@ -1,0 +1,90 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="4.8 Concurrent Servers"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch04lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch04lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch04lev1sec8"></A>
+<H3 class="docSection1Title">4.8 Concurrent Servers</H3>
+<P class="docText">The server in <A class="docLink" HREF="0131411551_ch04lev1sec6.html#ch04fig11">Figure 4.11</A> is an <span class="docEmphasis">iterative server</span>. For something as simple as a daytime server, this is fine. But when a client request can take longer to service, we do not want to tie up a single server with one client; we want to handle multiple clients at the same time. The simplest way to write a <span class="docEmphasis">concurrent server</span> under Unix is to <TT>fork</TT> a child process to handle each client. <A class="docLink" HREF="#ch04fig13">Figure 4.13</A> shows the outline for a typical concurrent server.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch04fig13"></A>Figure 4.13 Outline for typical concurrent server.</H5>
+
+<PRE>
+pid_t pid;
+int   listenfd,  connfd;
+
+listenfd = Socket( ... );
+
+    /* fill in sockaddr_in{} with server's well-known port */
+Bind(listenfd, ... );
+Listen(listenfd, LISTENQ);
+
+for ( ; ; ) {
+    connfd = Accept (listenfd, ... );    /* probably blocks */
+
+    if( (pid = Fork()) == 0) {
+       Close(listenfd);    /* child closes listening socket */
+       doit(connfd);       /* process the request */
+       Close(connfd);      /* done with this client */
+       exit(0);            /* child terminates */
+    }
+
+    Close(connfd);         /* parent closes connected socket */
+}
+</PRE>
+
+<P class="docText">When a connection is established, <TT>accept</TT> returns, the server calls <TT>fork</TT>, and the child process services the client (on <TT>connfd</TT>, the connected socket) and the parent process waits for another connection (on <TT>listenfd</TT>, the listening socket). The parent closes the connected socket since the child handles the new client.</P>
+<P class="docText">In <A class="docLink" HREF="#ch04fig13">Figure 4.13</A>, we assume that the function <TT>doit</TT> does whatever is required to service the client. When this function returns, we explicitly <TT>close</TT> the connected socket in the child. This is not required since the next statement calls <TT>exit</TT>, and part of process termination is to close all open descriptors by the kernel. Whether to include this explicit call to <TT>close</TT> or not is a matter of personal programming taste.</P>
+<P class="docText">We said in <A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02lev1sec6">Section 2.6</A> that calling <TT>close</TT> on a TCP socket causes a FIN to be sent, followed by the normal TCP connection termination sequence. Why doesn't the <TT>close</TT> of <TT>connfd</TT> in <A class="docLink" HREF="#ch04fig13">Figure 4.13</A> by the parent terminate its connection with the client? To understand what's happening, we must understand that every file or socket has a reference count. The reference count is maintained in the file table entry (pp. 57–60 of APUE). This is a count of the number of descriptors that are currently open that refer to this file or socket. In <A class="docLink" HREF="#ch04fig13">Figure 4.13</A>, after <TT>socket</TT> returns, the file table entry associated with <TT>listenfd</TT> has a reference count of 1. After <TT>accept</TT> returns, the file table entry associated with <TT>connfd</TT> has a reference count of 1. But, after <TT>fork</TT> returns, both descriptors are shared (i.e., duplicated) between the parent and child, so the file table entries associated with both sockets now have a reference count of 2. Therefore, when the parent closes <TT>connfd</TT>, it just decrements the reference count from 2 to 1 and that is all. The actual cleanup and de-allocation of the socket does not happen until the reference count reaches 0. This will occur at some time later when the child closes <TT>connfd</TT>.</P>
+<P class="docText">We can also visualize the sockets and connection that occur in <A class="docLink" HREF="#ch04fig13">Figure 4.13</A> as follows. First, <A class="docLink" HREF="#ch04fig14">Figure 4.14</A> shows the status of the client and server while the server is blocked in the call to <TT>accept</TT> and the connection request arrives from the client.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig14"></A>Figure 4.14. Status of client/server before call to <TT>accept</TT> returns.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="455" HEIGHT="96" src="FILES/04fig14.gif" ALT="graphics/04fig14.gif"></p>
+
+</CENTER>
+<P class="docText">Immediately after <TT>accept</TT> returns, we have the scenario shown in <A class="docLink" HREF="#ch04fig15">Figure 4.15</A>. The connection is accepted by the kernel and a new socket, <TT>connfd</TT>, is created. This is a connected socket and data can now be read and written across the connection.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig15"></A>Figure 4.15. Status of client/server after return from <TT>accept</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="452" HEIGHT="101" src="FILES/04fig15.gif" ALT="graphics/04fig15.gif"></p>
+
+</CENTER>
+<P class="docText">The next step in the concurrent server is to call <TT>fork</TT>. <A class="docLink" HREF="#ch04fig16">Figure 4.16</A> shows the status after <TT>fork</TT> returns.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig16"></A>Figure 4.16. Status of client/server after <TT>fork</TT> returns.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="459" HEIGHT="255" src="FILES/04fig16.gif" ALT="graphics/04fig16.gif"></p>
+
+</CENTER>
+<P class="docText">Notice that both descriptors, <TT>listenfd</TT> and <TT>connfd</TT>, are shared (duplicated) between the parent and child.</P>
+<P class="docText">The next step is for the parent to close the connected socket and the child to close the listening socket. This is shown in <A class="docLink" HREF="#ch04fig17">Figure 4.17</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig17"></A>Figure 4.17. Status of client/server after parent and child close appropriate sockets.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="282" src="FILES/04fig17.gif" ALT="graphics/04fig17.gif"></p>
+
+</CENTER>
+<P class="docText">This is the desired final state of the sockets. The child is handling the connection with the client and the parent can call <TT>accept</TT> again on the listening socket, to handle the next client connection.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch04lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch04lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

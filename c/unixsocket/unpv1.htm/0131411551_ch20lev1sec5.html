@@ -1,0 +1,384 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="20.5 Race Conditions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch20lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch20lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch20lev1sec5"></A>
+<H3 class="docSection1Title">20.5 Race Conditions</H3>
+<P class="docText">A <span class="docEmphasis">race condition</span> is usually when multiple processes are accessing data that is shared among them, but the correct outcome depends on the execution order of the processes. Since the execution order of processes on typical Unix systems depends on many factors that may vary between executions, sometimes the outcome is correct, but sometimes the outcome is wrong. The hardest type of race conditions to debug are those in which the outcome is normally correct and only occasionally is the outcome wrong. We will talk more about these types of race conditions in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>, when we discuss mutual exclusion variables and condition variables. Race conditions are always a concern with threads programming since so much data is shared among all the threads (e.g., all the global variables).</P>
+<P class="docText">Race conditions of a different type often exist when dealing with signals. The problem occurs because a signal can normally be delivered at anytime while our program is executing. POSIX allows us to <span class="docEmphasis">block</span> a signal from being delivered, but this is often of little use while we are performing I/O operations.</P>
+<P class="docText">An example is an easy way to see this problem. A race condition exists in <A class="docLink" HREF="0131411551_ch20lev1sec4.html#ch20fig05">Figure 20.5</A>; take a few minutes and see if you can find it. (<span class="docEmphasis">Hint:</span> Where can we be executing when the signal is delivered?) You can also force the condition to occur as follows: Change the argument to <TT>alarm</TT> from 5 to 1, and add <TT>sleep(1)</TT> immediately before the <TT>printf</TT>.</P>
+<P class="docText">When we make these changes to the function and then type the first line of input, the line is sent as a broadcast and we set the <TT>alarm</TT> for one second in the future. We block in the call to <TT>recvfrom</TT>, and the first reply then arrives for our socket, probably within a few milliseconds. The reply is returned by <TT>recvfrom</TT>, but we then go to sleep for one second. Additional replies are received, and they are placed into our socket's receive buffer. But while we are asleep, the <TT>alarm</TT> timer expires and the <TT>SIGALRM</TT> signal is generated: Our signal handler is called, and it just returns and interrupts the <TT>sleep</TT> in which we are blocked. We then loop around and read the queued replies with a one-second pause each time we print a reply. When we have read all the replies, we block again in the call to <TT>recvfrom</TT>, but the timer is not running. Thus, we will block forever in <TT>recvfrom</TT>. The fundamental problem is that our intent is for our signal handler to interrupt a blocked <TT>recvfrom</TT>, but the signal can be delivered at any time, and we can be executing anywhere in the infinite <TT>for</TT> loop when the signal is delivered.</P>
+<P class="docText">We now examine four different solutions to this problem: one incorrect solution and three different correct solutions.</P>
+<A NAME="ch20lev2sec2"></A>
+<H4 class="docSection2Title"> Blocking and Unblocking the Signal</H4>
+<P class="docText">Our first (incorrect) solution reduces the window of error by blocking the signal from being delivered while we are executing the remainder of the <TT>for</TT> loop. <A class="docLink" HREF="#ch20fig06">Figure 20.6</A> shows the new version.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch20fig06"></A>Figure 20.6 Block signals while executing within the <TT>for</TT> loop (incorrect solution).</H5>
+<P class="docText"><span class="docEmphasis">bcast/dgclibcast3.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 static void recvfrom_alarm(int);
+
+ 3 void
+ 4 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 5 {
+ 6     int     n;
+ 7     const int on = 1;
+ 8     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+ 9     sigset_t sigset_alrm;
+10     socklen_t len;
+11     struct sockaddr *preply_addr;
+
+12     preply_addr = Malloc(servlen);
+
+13     Setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &amp;on, sizeof(on));
+
+14     Sigemptyset(&amp;sigset_alrm);
+15     Sigaddset(&amp;sigset_alrm, SIGALRM);
+
+16     Signal(SIGALRM, recvfrom_alarm);
+
+17     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+18         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+19         alarm(5);
+20         for ( ; ; ) {
+21             len = servlen;
+22             Sigprocmask(SIG_UNBLOCK, &amp;sigset_alrm, NULL);
+23             n = recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+24             Sigprocmask(SIG_BLOCK, &amp;sigset_alrm, NULL);
+25             if (n &lt; 0) {
+26                 if (errno == EINTR)
+27                     break;     /* waited long enough for replies */
+28                 else
+29                      err_sys("recvfrom error");
+30             } else {
+31                 recvline[n] = 0;     /* null terminate */
+32                 printf("from %s: %s",
+33                        Sock_ntop_host(preply_addr, len), recvline);
+34             }
+35         }
+36     }
+37     free(preply_addr);
+38 }
+
+39 static void
+40 recvfrom_alarm(int signo)
+41 {
+42     return;                 /* just interrupt the recvfrom() */
+43 }
+</PRE>
+
+<A NAME="ch20lev3sec4"></A>
+<H5 class="docSection3Title"> Declare signal set and initialize</H5>
+<p class="docText"><span class="docEmphasis"><TT>14–15</TT></span> We declare a signal set, initialize it to the empty set (<TT>sigemptyset</TT>), and then turn on the bit corresponding to <TT>SIGALRM</TT> (<TT>sigaddset</TT>).</p>
+
+<A NAME="ch20lev3sec5"></A>
+<H5 class="docSection3Title"> Unblock and block signal</H5>
+<p class="docText"><span class="docEmphasis"><TT>21–24</TT></span> Before calling <TT>recvfrom</TT>, we unblock the signal (so that it can be delivered while we are blocked) and then block it as soon as <TT>recvfrom</TT> returns. If the signal is generated (i.e., the timer expires) while it is blocked, the kernel remembers this fact, but cannot deliver the signal (i.e., call our signal handler) until it is unblocked. This is the fundamental difference between the <span class="docEmphasis">generation</span> of a signal and its <span class="docEmphasis">delivery</span>. Chapter 10 of APUE provides additional details on all these facets of POSIX signal handling.</p>
+<P class="docText">If we compile and run this program, it appears to work fine, but then most programs with a race condition work most of the time! There is still a problem: The unblocking of the signal, the call to <TT>recvfrom</TT>, and the blocking of the signal are all independent system calls. Assume <TT>recvfrom</TT> returns with the final datagram reply and the signal is delivered between the <TT>recvfrom</TT> and the blocking of the signal. The next call to <TT>recvfrom</TT> will block forever. We have reduced the window, but the problem still exists.</P>
+<P class="docText">A variation of this solution is to have the signal handler set a global flag when the signal is delivered.</P>
+<pre>
+
+</pre><pre>
+static void
+recvfrom_alarm(int signo)
+{
+    had_alarm = 1;
+    return;
+}
+</pre><pre>
+</pre>
+<P class="docText">The flag is initialized to 0 each time <TT>alarm</TT> is called. Our <TT>dg_cli</TT> function checks this flag before calling <TT>recvfrom</TT> and does not call it if the flag is nonzero.</P>
+<pre>
+
+</pre><pre>
+for ( ; ; ) {
+    len = servlen;
+    Sigprocmask(SIG_UNBLOCK, &amp;sigset_alrm, NULL);
+    if (had_alarm == 1)
+        break;
+    n = recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+</pre><pre>
+</pre>
+<P class="docText">If the signal was generated during the time it was blocked (after the previous return from <TT>recvfrom</TT>), and when the signal is unblocked in this piece of code, it will be delivered before <TT>sigprocmask</TT> returns, setting our flag. But there is still a small window of time between the testing of the flag and the call to <TT>recvfrom</TT> when the signal can be generated and delivered, and if this happens, the call to <TT>recvfrom</TT> will block forever (assuming, of course, no additional replies are received).</P>
+
+
+<A NAME="ch20lev2sec3"></A>
+<H4 class="docSection2Title"> Blocking and Unblocking the Signal with <TT>pselect</TT></H4>
+<P class="docText">One correct solution is to use <TT>pselect</TT> (<A class="docLink" HREF="0131411551_ch06lev1sec9.html#ch06lev1sec9">Section 6.9</A>), as shown in <A class="docLink" HREF="#ch20fig07">Figure 20.7</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch20fig07"></A>Figure 20.7 Blocking and unblocking signals with <TT>pselect</TT>.</H5>
+<P class="docText"><span class="docEmphasis">bcast/dgclibcast4.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 static void recvfrom_alarm(int);
+
+ 3 void
+ 4 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 5 {
+ 6     int     n;
+ 7     const int on = 1;
+ 8     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+ 9     fd_set  rset;
+10     sigset_t sigset_alrm, sigset_empty;
+11     socklen_t len;
+12     struct sockaddr *preply_addr;
+
+13     preply_addr = Malloc(servlen);
+
+14     Setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &amp;on, sizeof(on));
+
+15     FD_ZERO(&amp;rset);
+
+16     Sigemptyset(&amp;sigset_empty);
+17     Sigemptyset(&amp;sigset_alrm);
+18     Sigaddset(&amp;sigset_alrm, SIGALRM);
+
+19     Signal(SIGALRM, recvfrom_alarm);
+
+20     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+21         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+22         Sigprocmask(SIG_BLOCK, &amp;sigset_alrm, NULL);
+23         alarm(5);
+24         for ( ; ; ) {
+25             FD_SET(sockfd, &amp;rset);
+26             n = pselect(sockfd + 1, &amp;rset, NULL, NULL, NULL, &amp;sigset_empty);
+27             if (n &lt; 0) {
+28                 if (errno == EINTR)
+29                     break;
+30                 else
+31                    err_sys("pselect error");
+32             } else if (n != 1)
+33                 err_sys("pselect error: returned %d", n);
+
+34             len = servlen;
+35             n = Recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+36             recvline[n] = 0;     /* null terminate */
+37             printf("from %s: %s",
+38                    Sock_ntop_host(preply_addr, len), recvline);
+39         }
+40      }
+41      free(preply_addr);
+42 }
+43 static void
+44 recvfrom_alarm(int signo)
+45 {
+46     return;                     /* just interrupt the recvfrom() */
+47 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>22–33</TT></span> We block <TT>SIGALRM</TT> and call <TT>pselect</TT>. The final argument to <TT>pselect</TT> is a pointer to our <TT>sigset_empty</TT> variable, which is a signal set with no signals blocked, that is, all signals are unblocked. <TT>pselect</TT> will save the current signal mask (which has <TT>SIGALRM</TT> blocked), test the specified descriptors, and block if necessary with the signal mask set to the empty set. Before returning, the signal mask of the process is reset to its value when <TT>pselect</TT> was called. The key to <TT>pselect</TT> is that the setting of the signal mask, the testing of the descriptors, and the resetting of the signal mask are atomic operations with regard to the calling process.</p>
+<p class="docText"><span class="docEmphasis"><TT>34–38</TT></span> If our socket is readable, we call <TT>recvfrom</TT>, knowing it will not block.</p>
+<P class="docText">As we mentioned in <A class="docLink" HREF="0131411551_ch06lev1sec9.html#ch06lev1sec9">Section 6.9</A>, <TT>pselect</TT> is new with the POSIX specification; of all the systems in <A class="docLink" HREF="0131411551_ch01lev1sec9.html#ch01fig16">Figure 1.16</A>, only FreeBSD and Linux support the function. Nevertheless, <A class="docLink" HREF="#ch20fig08">Figure 20.8</A> shows a simple, albeit incorrect, implementation. Our reason for showing this incorrect implementation is to show the three steps involved: setting the signal mask to the value specified by the caller along with saving the current mask, testing the descriptors, and resetting the signal mask.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch20fig08"></A>Figure 20.8 Simple, incorrect implementation of <TT>pselect</TT>.</H5>
+<P class="docText"><span class="docEmphasis">lib/pselect.c</span></P>
+
+<PRE>
+ 9 #include     "unp.h"
+
+10 int
+11 pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset,
+12         const struct timespec *ts, const sigset_t *sigmask)
+13 {
+14     int     n;
+15     struct timeval tv;
+16     sigset_t savemask;
+
+17     if (ts != NULL) {
+18         tv.tv_sec = ts-&gt;tv_sec;
+19         tv.tv_usec = ts-&gt;tv_nsec / 1000;     /* nanosec -&gt; microsec */
+20     }
+
+21     sigprocmask(SIG_SETMASK, sigmask, &amp;savemask);     /* caller's mask */
+22     n = select(nfds, rset, wset, xset, (ts == NULL) ? NULL : &amp;tv);
+23     sigprocmask(SIG_SETMASK, &amp;savemask, NULL); /* restore mask */
+
+24     return (n);
+25 }
+</PRE>
+
+
+<A NAME="ch20lev2sec4"></A>
+<H4 class="docSection2Title"> Using <TT>sigsetjmp</TT> and <TT>siglongjmp</TT></H4>
+<P class="docText">Another correct way to solve our problem is not to use the ability of a signal handler to interrupt a blocked system call, but to call <TT>siglongjmp</TT> from the signal handler instead. This is called a <span class="docEmphasis">nonlocal goto</span> because we can use it to jump from one function back to another. <A class="docLink" HREF="#ch20fig09">Figure 20.9</A> demonstrates this technique.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch20fig09"></A>Figure 20.9 Use of <TT>sigsetjmp</TT> and <TT>siglongjmp</TT> from signal handler.</H5>
+<P class="docText"><span class="docEmphasis">bcast/dgclibcast5.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+ 2 #include     &lt;setjmp.h&gt;
+
+ 3 static void recvfrom_alarm(int);
+ 4 static sigjmp_buf jmpbuf;
+
+ 5 void
+ 6 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 7 {
+ 8     int     n;
+ 9     const int on = 1;
+10     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+11     socklen_t len;
+12     struct sockaddr *preply_addr;
+
+13     preply_addr = Malloc(servlen);
+
+14     Setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &amp;on, sizeof(on));
+
+15     Signal(SIGALRM, recvfrom_alarm);
+
+16     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+17         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+18         alarm(5);
+19         for ( ; ; ) {
+20             if (sigsetjmp(jmpbuf, 1) != 0)
+21                 break;
+22             len = servlen;
+23             n = Recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+24             recvline[n] = 0;     /* null terminate */
+25             printf("from %s: %s",
+26                    Sock_ntop_host(preply_addr, len), recvline);
+27         }
+28      }
+29      free(preply_addr);
+30 }
+
+31 static void
+32 recvfrom_alarm(int signo)
+33 {
+34     siglongjmp(jmpbuf, 1);
+35 }
+</PRE>
+
+<A NAME="ch20lev3sec6"></A>
+<H5 class="docSection3Title"> Allocate jump buffer</H5>
+<p class="docText"><span class="docEmphasis"><TT>4</TT></span> We allocate a jump buffer that will be used by our function and its signal handler.</p>
+
+<A NAME="ch20lev3sec7"></A>
+<H5 class="docSection3Title"> Call <TT>sigsetjmp</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>20–23</TT></span> When we call <TT>sigsetjmp</TT> directly from our <TT>dg_cli</TT> function, it establishes the jump buffer and returns 0. We proceed on and call <TT>recvfrom</TT>.</p>
+
+<A NAME="ch20lev3sec8"></A>
+<H5 class="docSection3Title"> Handle <TT>SIGALRM</TT> and call <TT>siglongjmp</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>31–35</TT></span> When the signal is delivered, we call <TT>siglongjmp</TT>. This causes the <TT>sigsetjmp</TT> in the <TT>dg_cli</TT> function to return with a return value equal to the second argument (1), which must be a nonzero value. This will cause the <TT>for</TT> loop in <TT>dg_cli</TT> to terminate.</p>
+<P class="docText">Using <TT>sigsetjmp</TT> and <TT>siglongjmp</TT> in this fashion guarantees that we will not block forever in <TT>recvfrom</TT> because of a signal delivered at an inopportune time. However, this introduces another potential problem: If the signal is delivered while <TT>printf</TT> is in the middle of its output, we will effectively jump out of the middle of <TT>printf</TT> and back to our <TT>sigsetjmp</TT>. This may leave <TT>printf</TT> with inconsistent private data structures, for example. To prevent this, we should combine the signal blocking and unblocking from <A class="docLink" HREF="#ch20fig06">Figure 20.6</A> with the nonlocal goto. This makes this solution unwieldy, as the signal blocking has to occur around any function that may behave poorly as a result of being interrupted in the middle.</P>
+
+
+<A NAME="ch20lev2sec5"></A>
+<H4 class="docSection2Title"> Using IPC from Signal Handler to Function</H4>
+<P class="docText">There is yet another correct way to solve our problem. Instead of having the signal handler just return and hopefully interrupt a blocked <TT>recvfrom</TT>, we have the signal handler use IPC to notify our <TT>dg_cli</TT> function that the timer has expired. This is somewhat similar to the proposal we made earlier for the signal handler to set the global <TT>had_alarm</TT> when the timer expired, because that global variable was being used as a form of IPC (shared memory between our function and the signal handler). The problem with that solution, however, was our function had to test this variable, and this led to timing problems if the signal was delivered at about the same time.</P>
+<P class="docText">What we use in <A class="docLink" HREF="#ch20fig10">Figure 20.10</A> is a pipe within our process, with the signal handler writing one byte to the pipe when the timer expires and our <TT>dg_cli</TT> function reading that byte to know when to terminate its <TT>for</TT> loop. What makes this such a nice solution is that the testing for the pipe being readable is done using <TT>select</TT>. We test for either the socket being readable or the pipe being readable.</P>
+<A NAME="ch20lev3sec9"></A>
+<H5 class="docSection3Title"> Create pipe</H5>
+<p class="docText"><span class="docEmphasis"><TT>15</TT></span> We create a normal Unix pipe and two descriptors are returned. <TT>pipefd[0]</TT> is the read end and <TT>pipefd[1]</TT> is the write end.</p>
+<BLOCKQUOTE><P><P class="docList">We could also use <TT>socketpair</TT> and get a full-duplex pipe. On some systems, notably SVR4, a normal Unix pipe is always full-duplex and we can read from either end and write to either end.</P></P></BLOCKQUOTE>
+
+<A NAME="ch20lev3sec10"></A>
+<H5 class="docSection3Title"> <TT>select</TT> on both socket and read end of pipe</H5>
+<p class="docText"><span class="docEmphasis"><TT>23–30</TT></span> We <TT>select</TT> on both <TT>sockfd</TT>, the socket, and <TT>pipefd[0]</TT>, the read end of the pipe.</p>
+<p class="docText"><span class="docEmphasis"><TT>47–52</TT></span> When <TT>SIGALRM</TT> is delivered, our signal handler writes one byte to the pipe, making the read end readable. Our signal handler also returns, possibly interrupting <TT>select</TT>. Therefore, if <TT>select</TT> returns <TT>EINTR</TT>, we ignore the error, knowing that the read end of the pipe will also be readable, and that will terminate the <TT>for</TT> loop.</p>
+
+<A NAME="ch20lev3sec11"></A>
+<H5 class="docSection3Title"> <TT>read</TT> from pipe</H5>
+<p class="docText"><span class="docEmphasis"><TT>39–42</TT></span> When the read end of the pipe is readable, we <TT>read</TT> the null byte that the signal handler wrote and ignore it. But this tells us that the timer expired, so we <TT>break</TT> out of the infinite <TT>for</TT> loop.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch20fig10"></A>Figure 20.10 Using a pipe as IPC from signal handler to our function.</H5>
+<P class="docText"><span class="docEmphasis">bcast/dgclibcast6.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 static void recvfrom_alarm(int);
+ 3 static int pipefd[2];
+
+ 4 void
+ 5 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 6 {
+ 7     int     n, maxfdp1;
+ 8     const int on = 1;
+ 9     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+10     fd_set  rset;
+11     socklen_t len;
+12     struct sockaddr *preply_addr;
+
+13     preply_addr = Malloc(servlen);
+
+14     Setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &amp;on, sizeof(on));
+
+15     Pipe(pipefd);
+16     maxfdp1 = max(sockfd, pipefd[0]) + 1;
+
+17     FD_ZERO(&amp;rset);
+
+18     Signal(SIGALRM, recvfrom_alarm);
+
+19     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+20         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+21         alarm(5);
+22         for ( ; ; ) {
+23             FD_SET(sockfd, &amp;rset);
+24             FD_SET(pipefd[0], &amp;rset);
+25             if ( (n = select(maxfdp1, &amp;rset, NULL, NULL, NULL)) &lt; 0) {
+26                 if (errno == EINTR)
+27                     continue;
+28                 else
+29                     err_sys("select error");
+30             }
+
+31             if (FD_ISSET(sockfd, &amp;rset)) {
+32                 len = servlen;
+33                 n = Recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr,
+34                              &amp;len);
+35                 recvline[n] = 0;     /* null terminate */
+36                 printf("from %s: %s",
+37                        Sock_ntop_host(preply_addr, len), recvline);
+38             }
+
+39             if (FD_ISSET(pipefd[0], &amp;rset)) {
+40                 Read(pipefd[0], &amp;n, 1); /* timer expired */
+41                 break;
+42             }
+43          }
+44      }
+45      free(preply_addr);
+46 }
+47 static void
+48 recvfrom_alarm(int signo)
+49 {
+50     Write(pipefd[1], "", 1);     /* write one null byte to pipe */
+51     return;
+52 }
+</PRE>
+
+
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch20lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch20lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

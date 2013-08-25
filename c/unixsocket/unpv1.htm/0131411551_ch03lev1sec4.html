@@ -1,0 +1,112 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="3.4 Byte Ordering Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch03lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch03lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch03lev1sec4"></A>
+<H3 class="docSection1Title">3.4 Byte Ordering Functions</H3>
+<P class="docText">Consider a 16-bit integer that is made up of 2 bytes. There are two ways to store the two bytes in memory: with the low-order byte at the starting address, known as <span class="docEmphasis">little-endian</span> byte order, or with the high-order byte at the starting address, known as <span class="docEmphasis">big-endian</span> byte order. We show these two formats in <A class="docLink" HREF="#ch03fig09">Figure 3.9</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch03fig09"></A>Figure 3.9. Little-endian byte order and big-endian byte order for a 16-bit integer.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="313" src="FILES/03fig09.gif" ALT="graphics/03fig09.gif"></p>
+
+</CENTER>
+<P class="docText">In this figure, we show increasing memory addresses going from right to left in the top, and from left to right in the bottom. We also show the most significant bit (MSB) as the leftmost bit of the 16-bit value and the least significant bit (LSB) as the rightmost bit.</P>
+<BLOCKQUOTE><P><P class="docList">The terms "little-endian" and "big-endian" indicate which end of the multibyte value, the little end or the big end, is stored at the starting address of the value.</P></P></BLOCKQUOTE>
+<P class="docText">Unfortunately, there is no standard between these two byte orderings and we encounter systems that use both formats. We refer to the byte ordering used by a given system as the <span class="docEmphasis">host byte order</span>. The program shown in <A class="docLink" HREF="#ch03fig10">Figure 3.10</A> prints the host byte order.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch03fig10"></A>Figure 3.10 Program to determine host byte order.</H5>
+<P class="docText"><span class="docEmphasis">intro/byteorder.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     union {
+ 6         short   s;
+ 7         char    c[sizeof(short)];
+ 8     } un;
+
+ 9     un.s = 0x0102;
+10     printf("%s: ", CPU_VENDOR_OS);
+11     if (sizeof(short) == 2) {
+12         if (un.c[0] == 1 &amp;&amp; un.c[1] == 2)
+13             printf("big-endian\n");
+14         else if (un.c[0] == 2 &amp;&amp; un.c[1] == 1)
+15             printf("little-endian\n");
+16         else
+17             printf("unknown\n");
+18     } else
+19         printf("sizeof(short) = %d\n", sizeof(short));
+
+20     exit(0);
+21 }
+</PRE>
+
+<P class="docText">We store the two-byte value <TT>0x0102</TT> in the short integer and then look at the two consecutive bytes, <TT>c[0]</TT> (the address <span class="docEmphasis">A</span> in <A class="docLink" HREF="#ch03fig09">Figure 3.9</A>) and <TT>c[1]</TT> (the address <span class="docEmphasis">A+1</span> in <A class="docLink" HREF="#ch03fig09">Figure 3.9</A>), to determine the byte order.</P>
+<P class="docText">The string <TT>CPU_VENDOR_OS</TT> is determined by the GNU <TT>autoconf</TT> program when the software in this book is configured, and it identifies the CPU type, vendor, and OS release. We show some examples here in the output from this program when run on the various systems in <A class="docLink" HREF="0131411551_ch01lev1sec9.html#ch01fig16">Figure 1.16</A>.</P>
+<pre>
+
+</pre><pre>
+freebsd4 % <span class="docEmphStrong">byteorder</span>
+i386-unknown-freebsd4.8: little-endian
+
+macosx % <span class="docEmphStrong">byteorder</span>
+powerpc-apple-darwin6.6: big-endian
+
+freebsd5 % <span class="docEmphStrong">byteorder</span>
+sparc64-unknown-freebsd5.1: big-endian
+
+aix % <span class="docEmphStrong">byteorder</span>
+powerpc-ibm-aix5.1.0.0: big-endian
+
+hpux % <span class="docEmphStrong">byteorder</span>
+hppa1.1-hp-hpux11.11: big-endian
+
+linux % <span class="docEmphStrong">byteorder</span>
+i586-pc-linux-gnu: little-endian
+
+solaris % <span class="docEmphStrong">byteorder</span>
+sparc-sun-solaris2.9: big-endian
+</pre><pre>
+</pre>
+<P class="docText">We have talked about the byte ordering of a 16-bit integer; obviously, the same discussion applies to a 32-bit integer.</P>
+<BLOCKQUOTE><P><P class="docList">There are currently a variety of systems that can change between little-endian and big-endian byte ordering, sometimes at system reset, sometimes at run-time.</P></P></BLOCKQUOTE>
+<P class="docText">We must deal with these byte ordering differences as network programmers because networking protocols must specify a <span class="docEmphasis">network byte order</span>. For example, in a TCP segment, there is a 16-bit port number and a 32-bit IPv4 address. The sending protocol stack and the receiving protocol stack must agree on the order in which the bytes of these multibyte fields will be transmitted. The Internet protocols use big-endian byte ordering for these multibyte integers.</P>
+<P class="docText">In theory, an implementation could store the fields in a socket address structure in host byte order and then convert to and from the network byte order when moving the fields to and from the protocol headers, saving us from having to worry about this detail. But, both history and the POSIX specification say that certain fields in the socket address structures must be maintained in network byte order. Our concern is therefore converting between host byte order and network byte order. We use the following four functions to convert between these two byte orders.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netinet/in.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>uint16_t htons(uint16_t</TT> <span class="docEmphasis">host16bitvalue</span>) ;</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>uint32_t htonl(uint32_t</TT> <span class="docEmphasis">host32bitvalue</span>) ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: value in network byte order</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>uint16_t ntohs(uint16_t</TT> <span class="docEmphasis">net16bitvalue</span>) ;</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>uint32_t ntohl(uint32_t</TT> <span class="docEmphasis">net32bitvalue</span>) ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: value in host byte order</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">In the names of these functions, <TT>h</TT> stands for <span class="docEmphasis">host</span>, <TT>n</TT> stands for <span class="docEmphasis">network</span>, <TT>s</TT> stands for <span class="docEmphasis">short</span>, and <TT>l</TT> stands for <span class="docEmphasis">long</span>. The terms "short" and "long" are historical artifacts from the Digital VAX implementation of 4.2BSD. We should instead think of <TT>s</TT> as a 16-bit value (such as a TCP or UDP port number) and <TT>l</TT> as a 32-bit value (such as an IPv4 address). Indeed, on the 64-bit Digital Alpha, a long integer occupies 64 bits, yet the <TT>htonl</TT> and <TT>ntohl</TT> functions operate on 32-bit values.</P>
+<P class="docText">When using these functions, we do not care about the actual values (big-endian or little-endian) for the host byte order and the network byte order. What we must do is call the appropriate function to convert a given value between the host and network byte order. On those systems that have the same byte ordering as the Internet protocols (big-endian), these four functions are usually defined as null macros.</P>
+<P class="docText">We will talk more about the byte ordering problem, with respect to the data contained in a network packet as opposed to the fields in the protocol headers, in <A class="docLink" HREF="0131411551_ch05lev1sec18.html#ch05lev1sec18">Section 5.18</A> and <A class="docLink" HREF="0131411551_ch05lev1sec20.html#ch05lev1sec20">Exercise 5.8</A>.</P>
+<P class="docText">We have not yet defined the term "byte." We use the term to mean an 8-bit quantity since almost all current computer systems use 8-bit bytes. Most Internet standards use the term <span class="docEmphasis">octet</span> instead of byte to mean an 8-bit quantity. This started in the early days of TCP/IP because much of the early work was done on systems such as the DEC-10, which did not use 8-bit bytes.</P>
+<P class="docText">Another important convention in Internet standards is bit ordering. In many Internet standards, you will see "pictures" of packets that look similar to the following (this is the first 32 bits of the IPv4 header from RFC 791):</P>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="83" src="FILES/080fig01.gif" ALT="graphics/080fig01.gif"></p>
+
+<P class="docText">This represents four bytes in the order in which they appear on the wire; the leftmost bit is the most significant. However, the numbering starts with zero assigned to the most significant bit. This is a notation that you should become familiar with to make it easier to read protocol definitions in RFCs.</P>
+<blockquote>
+<p class="docText">A common network programming error in the 1980s was to develop code on Sun workstations (big-endian Motorola 68000s) and forget to call any of these four functions. The code worked fine on these workstations, but would not work when ported to little-endian machines (such as VAXes).</p>
+</blockquote>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch03lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch03lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

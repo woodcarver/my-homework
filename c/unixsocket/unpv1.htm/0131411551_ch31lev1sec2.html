@@ -1,0 +1,82 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="31.2 Overview"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch31lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch31lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch31lev1sec2"></A>
+<H3 class="docSection1Title">31.2 Overview</H3>
+<P class="docText">STREAMS provide a full-duplex connection between a process and a <span class="docEmphasis">driver</span>, as shown in <A class="docLink" HREF="#ch31fig01">Figure 31.1</A>. Although we describe the bottom box as a driver, this does not need to be associated with a hardware device; it can also be a pseudo-device driver (e.g., a software driver).</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch31fig01"></A>Figure 31.1. A stream shown between a process and a driver.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="200" HEIGHT="212" src="FILES/31fig01.gif" ALT="graphics/31fig01.gif"></p>
+
+</CENTER>
+<P class="docText">The <span class="docEmphasis">stream head</span> consists of the kernel routines that are invoked when the application makes a system call for a STREAMS descriptor (e.g., <TT>read</TT>, <TT>putmsg</TT>, <TT>ioctl</TT>, and the like).</P>
+<P class="docText">A process can dynamically add and remove intermediate processing <span class="docEmphasis">modules</span> between the stream head and the driver. A module performs some type of filtering on the messages going up and down a stream. We show this in <A class="docLink" HREF="#ch31fig02">Figure 31.2</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch31fig02"></A>Figure 31.2. A stream with a processing module.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="223" HEIGHT="312" src="FILES/31fig02.gif" ALT="graphics/31fig02.gif"></p>
+
+</CENTER>
+<P class="docText">Any number of modules can be pushed onto a stream. When we say "<span class="docEmphasis">push</span>," we mean that each new module gets inserted just below the stream head.</P>
+<P class="docText">A special type of pseudo-device driver is a <span class="docEmphasis">multiplexor</span>, which accepts data from multiple sources. A STREAMS-based implementation of the TCP/IP protocol suite, as found on SVR4, for example, could be set up as shown in <A class="docLink" HREF="#ch31fig03">Figure 31.3</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch31fig03"></A>Figure 31.3. A potential implementation of TCP/IP using STREAMS.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="426" src="FILES/31fig03.gif" ALT="graphics/31fig03.gif"></p>
+
+</CENTER>
+<UL><LI><P class="docList">When a socket is created, the module <TT>sockmod</TT> is pushed onto the stream by the sockets library. It is the combination of the sockets library and the <TT>sockmod</TT> STREAMS module that provides the sockets API to the process.</P></LI><LI><P class="docList">When an XTI endpoint is created, the module <TT>timod</TT> is pushed onto the stream by the XTI library. It is the combination of the XTI library and the <TT>timod</TT> STREAMS module that provides the X/Open Transport Interface (XTI) API to the process.</P><BLOCKQUOTE><P><P class="docList">This is one of the few places where we mention XTI. An earlier edition of this book described the XTI API in great detail, but it fell out of common use and even the POSIX specification no longer covers it, so we dropped the coverage from this book. <A class="docLink" HREF="#ch31fig03">Figure 31.3</A> shows where the XTI implemention typically lives and we touch on it briefly in this chapter, but we stop short of providing any detail since there's rarely a reason to use XTI anymore.</P></P></BLOCKQUOTE></LI><LI><P class="docList">The STREAMS module <TT>tirdwr</TT> must normally be pushed onto a stream to use <TT>read</TT> and <TT>write</TT> with an XTI endpoint. The middle process using TCP in <A class="docLink" HREF="#ch31fig03">Figure 31.3</A> has done this. This process has probably abandoned the use of XTI by doing this, so we have not shown the XTI library there.</P></LI><LI><P class="docList">Various service interfaces define the format of the networking messages exchanged up and down a stream. We describe the three most common. TPI [Unix International 1992b] defines the interface provided by a transport-layer provider (e.g., TCP and UDP) to the modules above it. The <span class="docEmphasis">Network Provider Interface</span> (NPI) [Unix International 1992a] defines the interface provided by a network-layer provider (e.g., IP). DLPI is the <span class="docEmphasis">Data Link Provider Interface</span> [Unix International 1991]. An alternate reference for TPI and DLPI, which contains sample C code, is [Rago 1993].</P></LI></UL>
+<P class="docText">Each component in a stream—the stream head, all processing modules, and the driver—contains at least one pair of <span class="docEmphasis">queues</span>: a write queue and a read queue. We show this in <A class="docLink" HREF="#ch31fig04">Figure 31.4</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch31fig04"></A>Figure 31.4. Each component in a stream has at least one pair of queues.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="405" HEIGHT="316" src="FILES/31fig04.gif" ALT="graphics/31fig04.gif"></p>
+
+</CENTER>
+<A NAME="ch31lev2sec1"></A>
+<H4 class="docSection2Title"> Message Types</H4>
+<P class="docText">STREAMS messages can be categorized as <span class="docEmphasis">high priority</span>, <span class="docEmphasis">priority band</span>, or <span class="docEmphasis">normal</span>. There are 256 different priority bands, between 0 and 255, with normal messages in band 0. The priority of a STREAMS message is used for both queueing and flow control. By convention, high-priority messages are unaffected by flow control.</P>
+<P class="docText"><A class="docLink" HREF="#ch31fig05">Figure 31.5</A> shows the ordering of the messages on a given queue.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch31fig05"></A>Figure 31.5. Ordering of STREAMS messages on a queue, based on priority.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="167" src="FILES/31fig05.gif" ALT="graphics/31fig05.gif"></p>
+
+</CENTER>
+<P class="docText">Although the STREAMS system supports 256 different priority bands, networking protocols often use band 1 for expedited data and band 0 for normal data.</P>
+<BLOCKQUOTE><P><P class="docList">TCP's out-of-band data is not considered true expedited data by TPI. Indeed, TCP uses band 0 for both normal data and its out-of-band data. The use of band 1 for expedited data is for protocols in which the expedited data (not just the urgent pointer, as in TCP) is sent ahead of normal data.</P></P><P><P class="docList">Beware of the term "<span class="docEmphasis">normal</span>". In releases before SVR4, there were no priority bands; there were just normal messages and priority messages. SVR4 implemented priority bands, requiring the <TT>getpmsg</TT> and <TT>putpmsg</TT> functions, which we will describe shortly. The older priority messages were renamed high-priority. The question is what to call the new messages, with priority bands between 1 and 255. Common terminology [Rago 1993] refers to everything other than high-priority messages as normal-priority messages and then subdivides these normal-priority messages into priority bands. The term "<span class="docEmphasis">normal message</span>" should always refer to a message with a band of 0.</P></P></BLOCKQUOTE>
+<P class="docText">Although we talk about normal-priority messages and high-priority messages, there are about a dozen normal-priority message types and around 18 high-priority message types. From an application's perspective, and the <TT>getmsg</TT> and <TT>putmsg</TT> functions we are about to describe, we are interested in only three different types of messages: <TT>M_DATA</TT>, <TT>M_PROTO</TT>, and <TT>M_PCPROTO</TT> (<TT>PC</TT> stands for "priority control" and implies a high-priority message). <A class="docLink" HREF="#ch31fig06">Figure 31.6</A> shows how these three different message types are generated by the <TT>write</TT> and <TT>putmsg</TT> functions.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch31fig06"></A>Figure 31.6. STREAMS message types generated by <TT>write</TT> and <TT>putmsg</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="429" HEIGHT="123" src="FILES/31fig06.gif" ALT="graphics/31fig06.gif"></p>
+
+</CENTER>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch31lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch31lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

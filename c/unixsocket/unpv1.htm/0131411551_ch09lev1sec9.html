@@ -1,0 +1,38 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="9.9 'sctp_sendmsg' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch09lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch09lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch09lev1sec9"></A>
+<H3 class="docSection1Title">9.9 <TT>sctp_sendmsg</TT> Function</H3>
+<P class="docText">An application can control various features of SCTP by using the <TT>sendmsg</TT> function along with ancillary data (described in <A class="docLink" HREF="0131411551_ch14.html#ch14">Chapter 14</A>). However, because the use of ancillary data may be inconvenient, many SCTP implementations provide an auxiliary library call (possibly implemented as a system call) that eases an application's use of SCTP's advanced features. The call takes the following form:</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t sctp_sendmsg(int</TT> <span class="docEmphasis">sockfd</span>, <TT>const void *</TT><span class="docEmphasis">msg</span>, <TT>size_t</TT> <span class="docEmphasis">msgsz</span>, <TT>const struct sockaddr *</TT><span class="docEmphasis">to</span>, <TT>socklen_t</TT> <span class="docEmphasis">tolen</span>, <TT>uint32_t</TT> <span class="docEmphasis">ppid</span>, <TT>uint32_t</TT> <span class="docEmphasis">flags</span>, <TT>uint16_t</TT> <span class="docEmphasis">stream</span>, <TT>uint32_t</TT> <span class="docEmphasis">timetolive</span>, <TT>uint32_t</TT> <span class="docEmphasis">context</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: the number of bytes written, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The user of <TT>sctp_sendmsg</TT> has a greatly simplified sending method at the cost of more arguments. The <span class="docEmphasis">sockfd</span> field holds the socket descriptor returned from a <TT>socket</TT> system call. The <span class="docEmphasis">msg</span> field points to a buffer of <span class="docEmphasis">msgsz</span> bytes to be sent to the peer endpoint <span class="docEmphasis">to</span>. The <span class="docEmphasis">tolen</span> field holds the length of the address stored in <span class="docEmphasis">to</span>. The <span class="docEmphasis">ppid</span> field holds the pay-load protocol identifier that will be passed with the data chunk. The <span class="docEmphasis">flags</span> field will be passed to the SCTP stack to identify any SCTP options; valid values for this field may be found in <A class="docLink" HREF="0131411551_ch07lev1sec10.html#ch07fig16">Figure 7.16</A>.</P>
+<P class="docText">A caller specifies an SCTP stream number by filling in the <span class="docEmphasis">stream</span>. The caller may specify the lifetime of the message in milliseconds in the <span class="docEmphasis">lifetime</span> field, where 0 represents an infinite lifetime. A user context, if any, may be specified in <span class="docEmphasis">context</span>. A user context associates a failed message transmission, received via a message notification, with some local application-specific context. For example, to send a message to stream number 1, with the send flags set to <TT>MSG_PR_SCTP_TTL</TT>, the lifetime set to 1000 milliseconds, a payload protocol identifier of 24, and a context of 52, a user would formulate the following call:</P>
+<pre>
+
+</pre><pre>
+ret = sctp_sendmsg(sockfd,
+                   data, datasz, &amp;dest, sizeof(dest),
+                   24, MSG_PR_SCTP_TTL, 1, 1000, 52);
+</pre><pre>
+</pre>
+<P class="docText">This approach is much easier than allocating the necessary ancillary data and setting up the appropriate structures in the <TT>msghdr</TT> structure. Note that if an implementation maps the <TT>sctp_sendmsg</TT> to a <TT>sendmsg</TT> function call, the <span class="docEmphasis">flags</span> field of the <TT>sendmsg</TT> call is set to 0.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch09lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch09lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

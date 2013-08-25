@@ -1,0 +1,28 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Exercises"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch15lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch16.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch15lev1sec10"></A>
+<H3 class="docSection1Title"> Exercises</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><A NAME="ch15q01"></A><B><A class="docLink" HREF="0131411551_app05lev1sec15.html#ch15a01">15.1</A></B></TD><TD><P class="docText">What happens if a Unix domain server calls <TT>unlink</TT> after calling <TT>bind</TT>?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch15q02"></A><B><A class="docLink" HREF="0131411551_app05lev1sec15.html#ch15a02">15.2</A></B></TD><TD><P class="docText">What happens if a Unix domain server does not <TT>unlink</TT> its well-known pathname when it terminates, and a client tries to <TT>connect</TT> to the server sometime after the server terminates?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch15q03"></A><B><A class="docLink" HREF="0131411551_app05lev1sec15.html#ch15a03">15.3</A></B></TD><TD><P class="docText">Start with <A class="docLink" HREF="0131411551_ch11lev1sec12.html#ch11fig11">Figure 11.11</A> and modify it to call <TT>sleep(5)</TT> after the peer's protocol address is printed, and to also print the number of bytes returned by <TT>read</TT> each time <TT>read</TT> returns a positive value.</P><P class="docText">Start with <A class="docLink" HREF="0131411551_ch11lev1sec13.html#ch11fig14">Figure 11.14</A> and modify it to call <TT>write</TT> for each byte of the result that is sent to the client. (We discussed similar modifications in the solution to <A class="docLink" HREF="0131411551_ch01lev1sec13.html#ch01lev1sec13">Exercise 1.5</A>.) Run the client and server on the same host using TCP. How many bytes are <TT>read</TT> by the client?</P>
+<P class="docText">Run the client and server on the same host using a Unix domain socket. Does anything change?</P>
+<P class="docText">Now call <TT>send</TT> instead of <TT>write</TT> in the server and specify the <TT>MSG_EOR</TT> flag. (You need a Berkeley-derived implementation to finish this exercise.) Run the client and server on the same host using a Unix domain socket. Does anything change?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch15q04"></A><B><A class="docLink" HREF="0131411551_app05lev1sec15.html#ch15a04">15.4</A></B></TD><TD><P class="docText">Write a program to determine the values shown in <A class="docLink" HREF="0131411551_ch04lev1sec5.html#ch04fig10">Figure 4.10</A>. One approach is to create a stream pipe and then <TT>fork</TT> into a parent and child. The parent enters a <TT>for</TT> loop, incrementing the backlog from 0 through 14. Each time through the loop, the parent first writes the value of the backlog to the stream pipe. The child reads this value, creates a listening socket bound to the loopback address, and sets the backlog to that value. The child then writes to the stream pipe, just to tell the parent it is ready. The parent then attempts as many connections as possible, detecting when it has hit the backlog limit because the <TT>connect</TT> blocks. The parent may use an <TT>alarm</TT> set at two seconds to detect the blocking <TT>connect</TT>. The child never calls <TT>accept</TT> to let the kernel queue the connections from the parent. When the parent's <TT>alarm</TT> expires, it knows from the loop counter which <TT>connect</TT> hit the backlog limit. The parent then closes its sockets and writes the next new backlog value to the stream pipe for the child. When the child reads this next value, it closes its listening socket and creates a new listening socket, starting the procedure again.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch15q05"></A><B><A class="docLink" HREF="0131411551_app05lev1sec15.html#ch15a05">15.5</A></B></TD><TD><P class="docText">Verify that omitting the call to <TT>bind</TT> in <A class="docLink" HREF="0131411551_ch15lev1sec6.html#ch15fig06">Figure 15.6</A> causes an error in the server.</P></TD></TR></TABLE></P><br>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch15lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch16.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

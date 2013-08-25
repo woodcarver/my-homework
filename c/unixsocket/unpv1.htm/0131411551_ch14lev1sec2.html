@@ -1,0 +1,266 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="14.2 Socket Timeouts"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch14lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch14lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch14lev1sec2"></A>
+<H3 class="docSection1Title">14.2 Socket Timeouts</H3>
+<P class="docText">There are three ways to place a timeout on an I/O operation involving a socket:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">Call <TT>alarm</TT>, which generates the <TT>SIGALRM</TT> signal when the specified time has expired. This involves signal handling, which can differ from one implementation to the next, and it may interfere with other existing calls to <TT>alarm</TT> in the process.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Block waiting for I/O in <TT>select</TT>, which has a time limit built-in, instead of blocking in a call to <TT>read</TT> or <TT>write</TT>.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Use the newer <TT>SO_RCVTIMEO</TT> and <TT>SO_SNDTIMEO</TT> socket options. The problem with this approach is that not all implementations support these two socket options.</P></span></LI></OL></span>
+<P class="docText">All three techniques work with input and output operations (e.g., <TT>read</TT>, <TT>write</TT>, and other variations such as <TT>recvfrom</TT> and <TT>sendto</TT>), but we would also like a technique that we can use with <TT>connect</TT>, since a TCP connect can take a long time to time out (typically 75 seconds). <TT>select</TT> can be used to place a timeout on <TT>connect</TT> only when the socket is in a nonblocking mode (which we show in <A class="docLink" HREF="0131411551_ch16lev1sec3.html#ch16lev1sec3">Section 16.3</A>), and the two socket options do not work with <TT>connect</TT>. We also note that the first two techniques work with any descriptor, while the third technique works only with socket descriptors.</P>
+<P class="docText">We now show examples of all three techniques.</P>
+<A NAME="ch14lev2sec1"></A>
+<H4 class="docSection2Title"> <TT>connect</TT> with a Timeout Using <TT>SIGALRM</TT></H4>
+<P class="docText"><A class="docLink" HREF="#ch14fig01">Figure 14.1</A> shows our function <TT>connect_timeo</TT> that calls <TT>connect</TT> with an upper limit specified by the caller. The first three arguments are the three required by <TT>connect</TT> and the fourth argument is the number of seconds to wait.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch14fig01"></A>Figure 14.1 <TT>connect</TT> with a timeout.</H5>
+<P class="docText"><span class="docEmphasis">lib/connect_timeo.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 static void connect_alarm(int);
+
+ 3 int
+ 4 connect_timeo(int sockfd, const SA *saptr, socklen_t salen, int nsec)
+ 5 {
+ 6     Sigfunc *sigfunc;
+ 7     int     n;
+
+ 8     sigfunc = Signal(SIGALRM, connect_alarm);
+ 9     if (alarm(nsec) != 0)
+10         err_msg("connect_timeo: alarm was already set");
+
+11     if ( (n = connect(sockfd, saptr, salen)) &lt; 0) {
+12         close(sockfd);
+13         if(errno == EINTR)
+14            errno = ETIMEDOUT;
+15     }
+16     alarm(0);                   /* turn off the alarm */
+17     Signal(SIGALRM, sigfunc);   /* restore previous signal handler */
+
+18     return (n);
+19 }
+
+20 static void
+21 connect_alarm(int signo)
+22 {
+23     return;                     /* just interrupt the connect() */
+24 }
+</PRE>
+
+<A NAME="ch14lev3sec1"></A>
+<H5 class="docSection3Title"> Establish signal handler</H5>
+<p class="docText"><span class="docEmphasis"><TT>8</TT></span> A signal handler is established for <TT>SIGALRM</TT>. The current signal handler (if any) is saved, so we can restore it at the end of the function.</p>
+
+<A NAME="ch14lev3sec2"></A>
+<H5 class="docSection3Title"> Set alarm</H5>
+<p class="docText"><span class="docEmphasis"><TT>9–10</TT></span> The alarm clock for the process is set to the number of seconds specified by the caller. The return value from <TT>alarm</TT> is the number of seconds currently remaining in the alarm clock for the process (if one has already been set by the process) or 0 (if there is no current alarm). In the former case we print a warning message since we are wiping out that previously set alarm (see <A class="docLink" HREF="0131411551_ch14lev1sec11.html#ch14lev1sec11">Exercise 14.2</A>).</p>
+
+<A NAME="ch14lev3sec3"></A>
+<H5 class="docSection3Title"> Call <TT>connect</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>11–15</TT></span> <TT>connect</TT> is called and if the function is interrupted (<TT>EINTR</TT>), we set the <TT>errno</TT> value to <TT>ETIMEDOUT</TT> instead. The socket is closed to prevent the three-way handshake from continuing.</p>
+
+<A NAME="ch14lev3sec4"></A>
+<H5 class="docSection3Title"> Turn off alarm and restore any previous signal handler</H5>
+<p class="docText"><span class="docEmphasis"><TT>16–18</TT></span> The alarm is turned off by setting it to 0 and the previous signal handler (if any) is restored.</p>
+
+<A NAME="ch14lev3sec5"></A>
+<H5 class="docSection3Title"> Handle <TT>SIGALRM</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>20–24</TT></span> The signal handler just returns, assuming this return will interrupt the pending <TT>connect</TT>, causing <TT>connect</TT> to return an error of <TT>EINTR</TT>. Recall our <TT>signal</TT> function (<A class="docLink" HREF="0131411551_ch05lev1sec8.html#ch05fig06">Figure 5.6</A>) that does not set the <TT>SA_RESTART</TT> flag when the signal being caught is <TT>SIGALRM</TT>.</p>
+<P class="docText">One point to make with this example is that we can always reduce the timeout period for a <TT>connect</TT> using this technique, but we cannot extend the kernel's existing timeout. That is, on a Berkeley-derived kernel the timeout for a <TT>connect</TT> is normally 75 seconds. We can specify a smaller value for our function, say 10, but if we specify a larger value, say 80, the <TT>connect</TT> itself will still time out after 75 seconds.</P>
+<P class="docText">Another point with this example is that we use the interruptibility of the system call (<TT>connect</TT>) to return before the kernel's time limit expires. This is fine when we perform the system call and can handle the <TT>EINTR</TT> error return. But in <A class="docLink" HREF="0131411551_ch29lev1sec7.html#ch29lev1sec7">Section 29.7</A>, we will encounter a library function that performs the system call, and the library function reissues the system call when <TT>EINTR</TT> is returned. We can still use <TT>SIGALRM</TT> in this scenario, but we will see in <A class="docLink" HREF="0131411551_ch29lev1sec7.html#ch29fig10">Figure 29.10</A> that we also have to use <TT>sigsetjmp</TT> and <TT>siglongjmp</TT> to get around the library's ignoring of <TT>EINTR</TT>.</P>
+<P class="docText">Although this example is fairly simple, signals are quite difficult to use correctly with multithreaded programs (see <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>). So, the technique shown here is only recommended for single-threaded programs.</P>
+
+
+<A NAME="ch14lev2sec2"></A>
+<H4 class="docSection2Title"> <TT>recvfrom</TT> with a Timeout Using <TT>SIGALRM</TT></H4>
+<P class="docText"><A class="docLink" HREF="#ch14fig02">Figure 14.2</A> is a redo of our <TT>dg_cli</TT> function from <A class="docLink" HREF="0131411551_ch08lev1sec6.html#ch08fig08">Figure 8.8</A>, but with a call to <TT>alarm</TT> to interrupt the <TT>recvfrom</TT> if a reply is not received within five seconds.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch14fig02"></A>Figure 14.2 <TT>dg_cli</TT> function with <TT>alarm</TT> to timeout <TT>recvfrom</TT>.</H5>
+<P class="docText"><span class="docEmphasis">advio/dgclitimeo3.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 static void sig_alrm(int);
+
+ 3 void
+ 4 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 5 {
+ 6     int     n;
+ 7     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+
+ 8     Signal(SIGALRM, sig_alrm);
+
+ 9     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+10         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+11         alarm(5);
+12         if ( (n = recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL)) &lt; 0) {
+13             if (errno == EINTR)
+14                 fprintf(stderr, "socket timeout\n");
+15             else
+16                 err_sys("recvfrom error");
+17         } else {
+18             alarm(0);
+19             recvline[n] = 0;    /* null terminate */
+20             Fputs(recvline, stdout);
+21         }
+22     }
+23 }
+
+24 static void
+25 sig_alrm(int signo)
+26 {
+27     return;                     /* just interrupt the recvfrom() */
+28 }
+</PRE>
+
+<A NAME="ch14lev3sec6"></A>
+<H5 class="docSection3Title"> Handle timeout from <TT>recvfrom</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>8–22</TT></span> We establish a signal handler for <TT>SIGALRM</TT> and then call <TT>alarm</TT> for a five-second timeout before each call to <TT>recvfrom</TT>. If <TT>recvfrom</TT> is interrupted by our signal handler, we print a message and continue. If a line is read from the server, we turn off the pending <TT>alarm</TT> and print the reply.</p>
+
+<A NAME="ch14lev3sec7"></A>
+<H5 class="docSection3Title"> <TT>SIGALRM</TT> signal handler</H5>
+<p class="docText"><span class="docEmphasis"><TT>24–28</TT></span> Our signal handler just returns, to interrupt the blocked <TT>recvfrom</TT>.</p>
+<P class="docText">This example works correctly because we are reading only one reply each time we establish an <TT>alarm</TT>. In <A class="docLink" HREF="0131411551_ch20lev1sec4.html#ch20lev1sec4">Section 20.4</A>, we will use the same technique, but since we are reading multiple replies for a given <TT>alarm</TT>, a race condition exists that we must handle.</P>
+
+
+<A NAME="ch14lev2sec3"></A>
+<H4 class="docSection2Title"> <TT>recvfrom</TT> with a Timeout Using <TT>select</TT></H4>
+<P class="docText">We demonstrate the second technique for setting a timeout (using <TT>select</TT>) in <A class="docLink" HREF="#ch14fig03">Figure 14.3</A>. It shows our function named <TT>readable_timeo</TT> which waits up to a specified number of seconds for a descriptor to become readable.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch14fig03"></A>Figure 14.3 <TT>readable_timeo</TT> function: waits for a descriptor to become readable.</H5>
+<P class="docText"><span class="docEmphasis">lib/readable_timeo.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 readable_timeo(int fd, int sec)
+ 4 {
+ 5     fd_set rset;
+ 6     struct timeval tv;
+
+ 7     FD_ZERO(&amp;rset);
+ 8     FD_SET(fd, &amp;rset);
+
+ 9     tv.tv_sec = sec;
+10     tv.tv_usec = 0;
+
+11     return (select(fd + 1, &amp;rset, NULL, NULL, &amp;tv));
+12         /* &gt; 0 if descriptor is readable */
+13 }
+</PRE>
+
+<A NAME="ch14lev3sec8"></A>
+<H5 class="docSection3Title"> Prepare arguments for <TT>select</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>7–10</TT></span> The bit corresponding to the descriptor is turned on in the read descriptor set. A <TT>timeval</TT> structure is set to the number of seconds that the caller wants to wait.</p>
+
+<A NAME="ch14lev3sec9"></A>
+<H5 class="docSection3Title"> Block in <TT>select</TT></H5>
+<p class="docText"><span class="docEmphasis"><TT>11–12</TT></span> <TT>select</TT> waits for the descriptor to become readable, or for the timeout to expire. The return value of this function is the return value of <TT>select</TT>: –1 on an error, 0 if a timeout occurs, or a positive value specifying the number of ready descriptors.</p>
+<P class="docText">This function does not perform the read operation; it just waits for the descriptor to be ready for reading. Therefore, this function can be used with any type of socket, TCP or UDP.</P>
+<P class="docText">It is trivial to create a similar function named <TT>writable_timeo</TT> that waits for a descriptor to become writable.</P>
+<P class="docText">We use this function in <A class="docLink" HREF="#ch14fig04">Figure 14.4</A>, which is a redo of our <TT>dg_cli</TT> function from <A class="docLink" HREF="0131411551_ch08lev1sec6.html#ch08fig08">Figure 8.8</A>. This new version calls <TT>recvfrom</TT> only when our <TT>readable_timeo</TT> function returns a positive value.</P>
+<P class="docText">We do not call <TT>recvfrom</TT> until the function <TT>readable_timeo</TT> tells us that the descriptor is readable. This guarantees that <TT>recvfrom</TT> will not block.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch14fig04"></A>Figure 14.4 <TT>dg_cli</TT> function that calls <TT>readable_timeo</TT> to set a timeout.</H5>
+<P class="docText"><span class="docEmphasis">advio/dgclitimeo1.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 void
+ 3 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 4 {
+ 5     int     n;
+ 6     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+
+ 7     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+ 8         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+ 9         if (Readable_timeo(sockfd, 5) == 0) {
+10             fprintf(stderr, "socket timeout\n");
+11         } else {
+12             n = Recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL);
+13             recvline[n] = 0;    /* null terminate */
+14             Fputs(recvline, stdout);
+15         }
+16     }
+17 }
+</PRE>
+
+
+
+<A NAME="ch14lev2sec4"></A>
+<H4 class="docSection2Title"> <TT>recvfrom</TT> with a Timeout Using the <TT>SO_RCVTIMEO</TT> Socket Option</H4>
+<P class="docText">Our final example demonstrates the <TT>SO_RCVTIMEO</TT> socket option. We set this option once for a descriptor, specifying the timeout value, and this timeout then applies to all read operations on that descriptor. The nice thing about this method is that we set the option only once, compared to the previous two methods, which required doing something before every operation on which we wanted to place a time limit. But this socket option applies only to read operations, and the similar option <TT>SO_SNDTIMEO</TT> applies only to write operations; neither socket option can be used to set a timeout for a <TT>connect</TT>.</P>
+<P class="docText"><A class="docLink" HREF="#ch14fig05">Figure 14.5</A> shows another version of our <TT>dg_cli</TT> function that uses the <TT>SO_RCVTIMEO</TT> socket option.</P>
+<A NAME="ch14lev3sec10"></A>
+<H5 class="docSection3Title"> Set socket option</H5>
+<p class="docText"><span class="docEmphasis"><TT>8–10</TT></span> The fourth argument to <TT>setsockopt</TT> is a pointer to a <TT>timeval</TT> structure that is filled in with the desired timeout.</p>
+
+<A NAME="ch14lev3sec11"></A>
+<H5 class="docSection3Title"> Test for timeout</H5>
+<p class="docText"><span class="docEmphasis"><TT>15–17</TT></span> If the I/O operation times out, the function (<TT>recvfrom</TT>, in this case) returns <TT>EWOULDBLOCK</TT>.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch14fig05"></A>Figure 14.5 <TT>dg_cli</TT> function that uses the <TT>SO_RCVTIMEO</TT> socket option to set a timeout.</H5>
+<P class="docText"><span class="docEmphasis">advio/dgclitimeo2.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 void
+ 3 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 4 {
+ 5     int     n;
+ 6     char     sendline[MAXLINE], recvline[MAXLINE + 1];
+ 7     struct timeval tv;
+
+ 8     tv.tv_sec = 5;
+ 9     tv.tv_usec = 0;
+10     Setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &amp;tv, sizeof(tv));
+
+11     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+12         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+13         n = recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL);
+14         if (n &lt; 0) {
+15             if (errno == EWOULDBLOCK) {
+16                 fprintf(stderr, "socket timeout\n");
+17                 continue;
+18             } else
+19                 err_sys("recvfrom error");
+20         }
+
+21         recvline[n] = 0;        /* null terminate */
+22         Fputs(recvline, stdout);
+23     }
+24 }
+</PRE>
+
+
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch14lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch14lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

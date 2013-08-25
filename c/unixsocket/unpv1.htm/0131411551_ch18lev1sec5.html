@@ -1,0 +1,191 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="18.5 'get_ifi_info' Function (Revisited)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch18lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch18lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch18lev1sec5"></A>
+<H3 class="docSection1Title">18.5 <TT>get_ifi_info</TT> Function (Revisited)</H3>
+<P class="docText">We now return to the example from <A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17lev1sec6">Section 17.6</A>: returning all the interfaces that are up as a linked list of <TT>ifi_info</TT> structures (<A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17fig05">Figure 17.5</A>). The <TT>prifinfo</TT> program remains the same (<A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17fig06">Figure 17.6</A>), but we now show a version of the <TT>get_ifi_info</TT> function that uses <TT>sysctl</TT> instead of the <TT>SIOCGIFCONF ioctl</TT> that was used in <A class="docLink" HREF="0131411551_ch17lev1sec6.html#ch17fig07">Figure 17.7</A>.</P>
+<P class="docText">We first show the function <TT>net_rt_iflist</TT> in <A class="docLink" HREF="#ch18fig15">Figure 18.15</A>. This function calls <TT>sysctl</TT> with the <TT>NET_RT_IFLIST</TT> command to return the interface list for a specified address family.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch18fig15"></A>Figure 18.15 Call <TT>sysctl</TT> to return interface list.</H5>
+<P class="docText"><span class="docEmphasis">libroute/net_rt_iflist.c</span></P>
+
+<PRE>
+ 1 #include    "unproute.h"
+
+ 2 char *
+ 3 net_rt_iflist(int family, int flags, size_t *lenp)
+ 4 {
+ 5     int     mib[6];
+ 6     char   *buf;
+
+ 7     mib[0] = CTL_NET;
+ 8     mib[1] = AF_ROUTE;
+ 9     mib[2] = 0;
+10     mib[3] = family;             /* only addresses of this family */
+11     mib[4] = NET_RT_IFLIST;
+12     mib[5] = flags;              /* interface index or 0 */
+13     if (sysctl (mib, 6, NULL, lenp, NULL, 0) &lt; 0)
+14         return (NULL);
+
+15     if ( (buf = malloc(*lenp)) == NULL)
+16         return (NULL);
+17     if (sysctl (mib, 6, buf, lenp, NULL, 0) &lt; 0) {
+18         free(buf);
+19         return (NULL);
+20     }
+
+21     return (buf);
+22 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>7–14</TT></span> The array <TT>mib</TT> is initialized as shown in <A class="docLink" HREF="0131411551_ch18lev1sec4.html#ch18fig12">Figure 18.12</A> to return the interface list and all configured addresses of the specified family. <TT>sysctl</TT> is then called twice. In the first call, the third argument is null, which returns the buffer size required to hold all the interface information in the variable pointed to by <TT>lenp</TT>.</p>
+<p class="docText"><span class="docEmphasis"><TT>15–21</TT></span> Space is then allocated for the buffer and <TT>sysctl</TT> is called again, this time with a non-null third argument. This time, the variable pointed to by <TT>lenp</TT> will return with the amount of information stored in the buffer, and this variable is allocated by the caller. A pointer to the buffer is also returned to the caller.</p>
+<BLOCKQUOTE><P><P class="docList">Since the size of the routing table or the number of interfaces can change between the two calls to <TT>sysctl</TT>, the value returned by the first call contains a 10% fudge factor (pp. 639–640 of TCPv2).</P></P></BLOCKQUOTE>
+<P class="docText"><A class="docLink" HREF="#ch18fig16">Figure 18.16</A> shows the first half of the <TT>get_ifi_info</TT> function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch18fig16"></A>Figure 18.16 <TT>get_ifi_info</TT> function, first half.</H5>
+<P class="docText"><span class="docEmphasis">route/get_ifi_info.c</span></P>
+
+<PRE>
+ 3 struct ifi_info *
+ 4 get_ifi_info(int family, int doaliases)
+ 5 {
+ 6     int     flags;
+ 7     char   *buf, *next, *lim;
+ 8     size_t  len;
+ 9     struct if_msghdr *ifm;
+10     struct ifa_msghdr *ifam;
+11     struct sockaddr *sa, *rti_info [RTAX_MAX];
+12     struct sockaddr_dl *sdl;
+13     struct ifi_info *ifi, *ifisave, *ifihead, **ifipnext;
+
+14     buf = Net_rt_iflist(family, 0, &amp;len);
+
+15     ifihead = NULL;
+16     ifipnext = &amp;ifihead;
+
+17     lim = buf + len;
+18     for (next = buf; next &lt; lim; next += ifm-&gt;ifm_msglen) {
+19         ifm = (struct if_msghdr *) next;
+20         if (ifm-&gt;ifm_type == RTM_IFINFO) {
+21             if (((flags = ifm-&gt;ifm_flags) &amp; IFF_UP) == 0)
+22                 continue;  /* ignore if interface not up */
+ 
+23             sa = (struct sockaddr *) (ifm + 1);
+24             get_rtaddrs (ifm-&gt;ifm_addrs, sa, rti_info);
+25             if ( (sa = rti_info [RTAX_IFP]) != NULL) {
+26                 ifi = Calloc (1, sizeof (struct ifi_info));
+27                 *ifipnext = ifi;     /* prev points to this new one */
+28                 ifipnext = &amp;ifi-&gt;ifi_next;     /* ptr to next one goes here */
+
+29                 ifi-&gt;ifi_flags = flags;
+30                 if (sa-&gt;sa_family == AF_LINK) {
+31                     sdl = (struct sockaddr_dl *) sa;
+32                     ifi-&gt;ifi_index = sdl-&gt;sdl_index;
+33                     if (sdl-&gt;sdl_nlen &gt; 0)
+34                         snprintf (ifi-&gt;ifi_name, IFI_NAME, "%*s",
+35                                   sdl-&gt;sdl_nlen, &amp;sdl-&gt;sdl_data[0]);
+36                     else
+37                         snprintf(ifi-&gt;ifi_name, IFI_NAME, "index %d",
+38                                  sdl-&gt;sdl_index);
+ 
+3 9                    if ( (ifi-&gt;ifi_hlen = sdl-&gt;sdl_alen) &gt; 0)
+40                         memcpy (ifi-&gt;ifi_haddr, LLADDR (sdl),
+41                                 min (IFI_HADDR, sdl-&gt;sdl_alen));
+42                 }
+43         }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>6–14</TT></span> We declare the local variables and then call our <TT>net_rt_iflist</TT> function.</p>
+<p class="docText"><span class="docEmphasis"><TT>17–19</TT></span> The <TT>for</TT> loop steps through each routing message in the buffer filled in by <TT>sysctl</TT>. We assume that the message is an <TT>if_msghdr</TT> structure and look at the <TT>ifm_type</TT> field. (Recall that the first three members of all three structures are identical, so it doesn't matter which of the three structures we use to look at the <span class="docEmphasis">type</span> member.)</p>
+<A NAME="ch18lev3sec9"></A>
+<H4 class="docSection2Title"> Check if interface is up</H4>
+<p class="docText"><span class="docEmphasis"><TT>20–22</TT></span> An <TT>RTM_IFINFO</TT> structure is returned for each interface. If the interface is not up, it is ignored.</p>
+
+<A NAME="ch18lev3sec10"></A>
+<H4 class="docSection2Title"> Determine which socket address structures are present</H4>
+<p class="docText"><span class="docEmphasis"><TT>23–24</TT></span> <TT>sa</TT> points to the first socket address structure following the <TT>if_msghdr</TT> structure. Our <TT>get_rtaddrs</TT> function initializes the <TT>rti_info</TT> array, depending on which socket address structures are present.</p>
+
+<A NAME="ch18lev3sec11"></A>
+<H4 class="docSection2Title"> Handle interface name</H4>
+<p class="docText"><span class="docEmphasis"><TT>25–43</TT></span> If the socket address structure with the interface name is present, an <TT>ifi_info</TT> structure is allocated and the interface flags are stored. The expected family of this socket address structure is <TT>AF_LINK</TT>, indicating a datalink socket address structure. We store the interface index into the <TT>ifi_index</TT> member. If the <TT>sdl_nlen</TT> member is nonzero, then the interface name is copied into the <TT>ifi_info</TT> structure. Otherwise, a string containing the interface index is stored as the name. If the <TT>sdl_alen</TT> member is nonzero, then the hardware address (e.g., the Ethernet address) is copied into the <TT>ifi_info</TT> structure and its length is also returned as <TT>ifi_hlen</TT>.</p>
+<P class="docText"><A class="docLink" HREF="#ch18fig17">Figure 18.17</A> shows the second half of our <TT>get_ifi_info</TT> function, which returns the IP addresses for the interface.</P>
+
+<A NAME="ch18lev3sec12"></A>
+<H4 class="docSection2Title"> Return IP addresses</H4>
+<p class="docText"><span class="docEmphasis"><TT>44–65</TT></span> An <TT>RTM_NEWADDR</TT> message is returned by <TT>sysctl</TT> for each address associated with the interface: the primary address and all aliases. If we have already filled in the IP address for this interface, then we are dealing with an alias. In that case, if the caller wants the alias address, we must allocate memory for another <TT>ifi_info</TT> structure, copy the fields that have been filled in, and then fill in the addresses that have been returned.</p>
+
+<A NAME="ch18lev3sec13"></A>
+<H4 class="docSection2Title"> Return broadcast and destination addresses</H4>
+<p class="docText"><span class="docEmphasis"><TT>66–75</TT></span> If the interface supports broadcasting, the broadcast address is returned, and if the interface is a point-to-point interface, the destination address is returned.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch18fig17"></A>Figure 18.17 <TT>get_ifi_info</TT> function, second half.</H5>
+<P class="docText"><span class="docEmphasis">route/get_ifi_info.c</span></P>
+
+<PRE>
+44     } else if (ifm-&gt;ifm_type == RTM_NEWADDR) {
+45         if (ifi-&gt;ifi_addr) {     /* already have an IP addr for i/f */
+46             if (doaliases == 0)
+47                 continue;
+
+48                 /* we have a new IP addr for existing interface */
+49             ifisave = ifi;
+50             ifi = Calloc(1, sizeof (struct ifi_info));
+51             *ifipnext = ifi;     /* prev points to this new one */
+52             ifipnext = &amp;ifi-&gt;ifi_next;     /* ptr to next one goes here */
+53             ifi-&gt;ifi_flags = ifisave-&gt;ifi_flags;
+54             ifi-&gt;ifi_index = ifisave-&gt;ifi_index;
+55             ifi-&gt;ifi_hlen = ifisave-&gt;ifi_hlen;
+56             memcpy(ifi-&gt;ifi_name, ifisave-&gt;ifi_name, IFI_NAME);
+57             memcpy(ifi-&gt;ifi_haddr, ifisave-&gt;ifi_haddr, IFI_HADDR);
+58        }
+
+59        ifam = (struct ifa_msghdr *) next;
+60        sa = (struct sockaddr *) (ifam + 1);
+61        get_rtaddrs(ifam-&gt;ifam_addrs, sa, rti_info);
+
+62        if ( (sa = rti_info[RTAX_IFA]) != NULL) {
+63            ifi-&gt;ifi_addr = Calloc(1, sa-&gt;sa_len);
+64            memcpy(ifi-&gt;ifi_addr, sa, sa-&gt;sa_len);
+65        }
+
+66        if ((flags &amp; IFF_BROADCAST) &amp;&amp; (sa = rti_info[RTAX_BRD]) != NULL) {
+67            ifi-&gt;ifi_brdaddr = Calloc (1, sa-&gt;sa_len);
+68            memcpy(ifi-&gt;ifi_brdaddr, sa, sa-&gt;sa_len);
+69        }
+
+70       if ((flags &amp; IFF_POINTOPOINT) &amp;&amp;
+71           (sa = rti_info[RTAX_BRD]) != NULL) {
+72           ifi-&gt;ifi_dstaddr = Calloc (1, sa-&gt;sa_len);
+73           memcpy(ifi-&gt;ifi_dstaddr, sa, sa-&gt;sa_len);
+74       }
+
+75   } else
+76       err_quit("unexpected message type %d", ifm-&gt;ifm_type);
+77  }
+78  /* "ifihead" points to the first structure in the linked list */
+79  return (ifihead);     /* ptr to first structure in linked list */
+80 }
+</PRE>
+
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch18lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch18lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

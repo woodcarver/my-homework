@@ -1,0 +1,27 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="14.7 How Much Data Is Queued?"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch14lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch14lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch14lev1sec7"></A>
+<H3 class="docSection1Title">14.7 How Much Data Is Queued?</H3>
+<P class="docText">There are times when we want to see how much data is queued to be read on a socket, without reading the data. Three techniques are available:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">If the goal is not to block in the kernel because we have something else to do when nothing is ready to be read, nonblocking I/O can be used. We will describe this in <A class="docLink" HREF="0131411551_ch16.html#ch16">Chapter 16</A>.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">If we want to examine the data but still leave it on the receive queue for some other part of our process to read, we can use the <TT>MSG_PEEK</TT> flag (<A class="docLink" HREF="0131411551_ch14lev1sec3.html#ch14fig06">Figure 14.6</A>). If we want to do this, but we are not sure that something is ready to be read, we can use this flag with a nonblocking socket or combine this flag with the <TT>MSG_DONTWAIT</TT> flag.</P><P class="docList">Be aware that the amount of data on the receive queue can change between two successive calls to <TT>recv</TT> for a stream socket. For example, assume we call <TT>recv</TT> for a TCP socket specifying a buffer length of 1,024 along with the <TT>MSG_PEEK</TT> flag, and the return value is 100. If we then call <TT>recv</TT> again, it is possible for more than 100 bytes to be returned (assuming we specify a buffer length greater than 100), because more data can be received by TCP between our two calls.</P><P class="docList">In the case of a UDP socket with a datagram on the receive queue, if we call <TT>recvfrom</TT> specifying <TT>MSG_PEEK</TT>, followed by another call without specifying <TT>MSG_PEEK</TT>, the return values from both calls (the datagram size, its contents, and the sender's address) will be the same, even if more datagrams are added to the socket receive buffer between the two calls. (We are assuming, of course, that some other process is not sharing the same descriptor and reading from this socket at the same time.)</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Some implementations support the <TT>FIONREAD</TT> command of <TT>ioctl</TT>. The third argument to <TT>ioctl</TT> is a pointer to an integer, and the value returned in that integer is the current number of bytes on the socket's receive queue (p. 553 of TCPv2). This value is the total number of bytes queued, which for a UDP socket includes all queued datagrams. Also be aware that the count returned for a UDP socket by Berkeley-derived implementations includes the space required for the socket address structure containing the sender's IP address and port for each datagram (16 bytes for IPv4; 24 bytes for IPv6).</P></span></LI></OL></span>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch14lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch14lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

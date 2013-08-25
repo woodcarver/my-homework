@@ -1,0 +1,65 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="19.2 Reading and Writing"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch19lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch19lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch19lev1sec2"></A>
+<H3 class="docSection1Title" id="225793-958">19.2 Reading and Writing</H3>
+<P class="docText">All messages on a key management socket have the same basic header, shown in <A class="docLink" HREF="#ch19fig01">Figure 19.1</A>. Each message may be followed by various extensions, depending on what additional information is available or required. All the appropriate structures are defined by including <TT>&lt;net/pfkeyv2.h&gt;</TT>. Each message and extension is 64-bit-aligned and is a multiple of 64 bits in length. All length fields are in units of 64 bits, that is, a length of 1 means 8 bytes. Any extension that does not require enough data to be a multiple of 64 bits in length is padded to the next multiple of 64 bits. The value of this padding is not defined.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch19fig01"></A>Figure 19.1 Key management message header.</H5>
+
+<PRE>
+struct sadb_msg {
+  u_int8_t sadb_msg_version;     /* PF_KEY_V2 */
+  u_int8_t sadb_msg_type;        /* see <A class="docLink" HREF="#ch19fig02">Figure 19.2</A> */
+  u_int8_t sadb_msg_errno;       /* error indication */
+  u_int8_t sadb_msg_satype;      /* see <A class="docLink" HREF="#ch19fig03">Figure 19.3</A> */
+  u_int16_t sadb_msg_len;        /* length of header + extensions / 8 */
+  u_int16_t sadb_msg_reserved;   /* zero on transmit, ignored on receive */
+  u_int32_t sadb_msg_seq;        /* sequence number */
+  u_int32_t sadb_msg_pid;        /* process ID of source or dest */
+};
+</PRE>
+
+<P class="docText">The <TT>sadb_msg_type</TT> value determines which of the 10 key management commands is being invoked. These message types are listed in <A class="docLink" HREF="#ch19fig02">Figure 19.2</A>. Each <TT>sadb_msg</TT> header will be followed by zero or more extensions. Most message types have required and optional extensions; we will describe these as we describe each message type. The 16 types of extensions, along with the name of the structure that defines each extension, are listed in <A class="docLink" HREF="#ch19fig04">Figure 19.4</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch19fig02"></A>Figure 19.2. Types of messages exchanged across a <TT>PF_KEY</TT> socket.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="217" src="FILES/19fig02.gif" ALT="graphics/19fig02.gif"></p>
+
+</CENTER>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch19fig03"></A>Figure 19.3. Types of SAs.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="457" HEIGHT="155" src="FILES/19fig03.gif" ALT="graphics/19fig03.gif"></p>
+
+</CENTER>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch19fig04"></A>Figure 19.4. <TT>PF_KEY</TT> Extension Types.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="500" HEIGHT="274" src="FILES/19fig04.gif" ALT="graphics/19fig04.gif"></p>
+
+</CENTER>
+<P class="docText">We now show several examples and the messages and extensions involved in several common operations on key management sockets.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch19lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch19lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

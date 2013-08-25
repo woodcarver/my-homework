@@ -1,0 +1,29 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="25.1 Introduction"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch25.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch25lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch25lev1sec1"></A>
+<H3 class="docSection1Title">25.1 Introduction</H3>
+<P class="docText">When using signal-driven I/O, the kernel notifies us with a signal when something happens on a descriptor. Historically, this has been called <span class="docEmphasis">asynchronous I/O</span>, but the signal-driven I/O that we will describe is not true asynchronous I/O. The latter is normally defined as the process performing the I/O operation (say a read or write), with the kernel returning immediately after the kernel initiates the I/O operation. The process continues executing while the I/O takes place. Some form of notification is then provided to the process when the operation is complete or encounters an error. We compared the various types of I/O that are normally available in <A class="docLink" HREF="0131411551_ch06lev1sec2.html#ch06lev1sec2">Section 6.2</A> and showed the difference between signal-driven I/O and asynchronous I/O.</P>
+<P class="docText">The nonblocking I/O we described in <A class="docLink" HREF="0131411551_ch16.html#ch16">Chapter 16</A> is not asynchronous I/O either. With nonblocking I/O, the kernel does not return after initiating the I/O operation; the kernel returns immediately only if the operation cannot be completed without putting the process to sleep.</P>
+<BLOCKQUOTE><P><P class="docList">POSIX provides true asynchronous I/O with its <TT>aio_</TT><span class="docEmphasis"><TT>XXX</TT></span> functions. These functions let the process specify whether or not a signal is generated when the I/O completes, and which signal to generate.</P></P></BLOCKQUOTE>
+<P class="docText">Berkeley-derived implementations support signal-driven I/O for sockets and terminal devices using the <TT>SIGIO</TT> signal. SVR4 supports signal-driven I/O for STREAMS devices using the <TT>SIGPOLL</TT> signal, which is then equated to <TT>SIGIO</TT>.</P>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch25.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch25lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

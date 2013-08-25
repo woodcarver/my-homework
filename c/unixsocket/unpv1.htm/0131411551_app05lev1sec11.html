@@ -1,0 +1,230 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Chapter 11"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app05lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app05lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app05lev1sec11"></A>
+<H3 class="docSection1Title"> Chapter 11</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a01"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q01">11.1</A></B></TD><TD><P class="docText"><A class="docLink" HREF="#app05fig10">Figure E.10</A> shows our program that calls <TT>gethostbyaddr</TT>. This program works fine for a host with a single IP address. If we run the program in <A class="docLink" HREF="0131411551_ch11lev1sec3.html#ch11fig03">Figure 11.3</A> for a host with four IP addresses, we get the following:</P><pre>
+</pre><pre>
+freebsd % <span class="docEmphStrong">hostent cnn.com</span>
+official hostname: cnn.com
+        address: 64.236.16.20
+        address: 64.236.16.52
+        address: 64.236.16.84
+        address: 64.236.16.116
+        address: 64.236.24.4
+        address: 64.236.24.12
+        address: 64.236.24.20
+        address: 64.236.24.28
+</pre><pre>
+</pre><P class="docText">But if we run the program in <A class="docLink" HREF="#app05fig10">Figure E.10</A> for the same host, only the first IP address is output as follows:</P><pre>
+</pre><pre>
+freebsd % <span class="docEmphStrong">hostent2 cnn.com</span>
+official hostname: cnn.com
+        address: 64.236.24.4
+        name = www1.cnn.com
+</pre><pre>
+</pre>
+<H5 class="docExampleTitle"><A NAME="app05fig10"></A>Figure E.10 Modification to <A class="docLink" HREF="0131411551_ch11lev1sec3.html#ch11fig03">Figure 11.3</A> to call <TT>gethostbyaddr</TT>.</H5>
+<P class="docText"><span class="docEmphasis">names/hostent2.c</span></P>
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     char   *ptr, **pptr;
+ 6     char    str[INET6_ADDRSTRLEN];
+ 7     struct hostent *hptr;
+
+ 8     while (--argc &gt; 0) {
+ 9         ptr = *++argv;
+10         if ( (hptr = gethostbyname(ptr)) == NULL) {
+11             err_msg("gethostbyname error for host: %s: %s",
+12                     ptr, hstrerror(h_errno));
+13             continue;
+14         }
+15         printf("official hostname: %s\n", hptr-&gt;h_name);
+
+16         for (pptr = hptr-&gt;h_aliases; *pptr != NULL; pptr++)
+17             printf("    alias: %s\n", *pptr);
+
+18         switch (hptr-&gt;h_addrtype) {
+19         case AF_INET:
+20 #ifdef  AF_INET6
+21         case AF_INET6:
+22 #endif
+23             pptr = hptr-&gt;h_addr_list;
+24             for ( ; *pptr != NULL; pptr++) {
+25                 printf("\taddress: %s\n",
+26                        Inet_ntop(hptr-&gt;h_addrtype, *pptr, str, sizeof(str)));
+
+27                 if ( (hptr = gethostbyaddr(*pptr, hptr-&gt;h_length,
+28                                           hptr-&gt;h_addrtype)) == NULL)
+29                     printf("\t(gethostbyaddr failed)\n");
+30                     else if (hptr-&gt;h_name != NULL)
+31                         printf("\tname = %s\n", hptr-&gt;h_name);
+32                     else
+33                         printf("\t(no hostname returned by gethostbyaddr)\n");
+34             }
+35             break;
+
+36         default:
+37             err_ret("unknown address type");
+38             break;
+39         }
+40     }
+41     exit(0);
+42 }
+</PRE>
+<P class="docText">The problem is that the two functions, <TT>gethostbyname</TT> and <TT>gethostbyaddr</TT>, share the same <TT>hostent</TT> structure, as we show at the beginning of <A class="docLink" HREF="0131411551_ch11lev1sec18.html#ch11lev1sec18">Section 11.18</A>. When our new program calls <TT>gethostbyaddr</TT>, it reuses this structure, along with the storage that the structure points to (i.e., the <TT>h_addr_list</TT> array of pointers), wiping out the remaining three IP addresses returned by <TT>gethostbyname</TT>.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a02"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q02">11.2</A></B></TD><TD><P class="docText">If your system does not supply the re-entrant version of <TT>gethostbyaddr</TT> (which we describe in <A class="docLink" HREF="0131411551_ch11lev1sec19.html#ch11lev1sec19">Section 11.19</A>), then you must make a copy of the array of pointers returned by <TT>gethostbyname</TT>, along with the data pointed to by this array, before calling <TT>gethostbyaddr</TT>.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a03"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q03">11.3</A></B></TD><TD><P class="docText">The <TT>chargen</TT> server sends data to the client until the client closes the connection (i.e., until you abort the client).</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a04"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q04">11.4</A></B></TD><TD><P class="docText">This is a feature of some resolvers, but you cannot rely on it in a portable program because POSIX leaves the behavior unspecified. <A class="docLink" HREF="#app05fig11">Figure E.11</A> shows the modified version. The order of the tests on the hostname string is important. We call <TT>inet_pton</TT> first, as it is a fast, in-memory test for whether or not the string is a valid dotted-decimal IP address. Only if this fails do we call <TT>gethostbyname</TT>, which typically involves some network resources and some time.</P><P class="docText">If the string is a valid dotted-decimal IP address, we make our own array of pointers (<TT>addrs</TT>) to the single IP address, allowing the loop using <TT>pptr</TT> to remain the same.</P><P class="docText">Since the address has already been converted to binary in the socket address structure, we change the call to <TT>memcpy</TT> in <A class="docLink" HREF="0131411551_ch11lev1sec5.html#ch11fig04">Figure 11.4</A> to call <TT>memmove</TT> instead, because when a dotted-decimal IP address is entered, the source and destination fields are the same in this call.</P>
+<H5 class="docExampleTitle"><A NAME="app05fig11"></A>Figure E.11 Allow dotted-decimal IP address or hostname, port number, or service name.</H5>
+<P class="docText"><span class="docEmphasis">names/daytimetcpcli2.c</span></P>
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     sockfd, n;
+ 6     char    recvline[MAXLINE + 1];
+ 7     struct sockaddr_in servaddr;
+ 8     struct in_addr **pptr, *addrs[2];
+ 9     struct hostent *hp;
+10     struct servent *sp;
+
+11     if (argc != 3)
+12         err_quit("usage: daytimetcpcli2 &lt;hostname&gt; &lt;service&gt;");
+
+13     bzero(&amp;servaddr, sizeof(servaddr));
+14     servaddr.sin_family = AF_INET;
+
+15     if (inet_pton(AF_INET, argv[1], &amp;servaddr.sin_addr) == 1) {
+16         addrs[0] = &amp;servaddr.sin_addr;
+17         addrs[1] = NULL;
+18         pptr = &amp;addrs[0];
+19     } else if ((hp = gethostbyname(argv[1])) != NULL) {
+20         pptr = (struct in_addr **) hp-&gt;h_addr_list;
+21     } else
+22          err_quit("hostname error for %s: %s", argv[1], hstrerror(h_errno));
+
+23     if ( (n = atoi(argv[2])) &gt; 0)
+24         servaddr.sin_port = htons(n);
+25     else if ((sp = getservbyname(argv[2], "tcp")) != NULL)
+26         servaddr.sin_port = sp-&gt;s_port;
+27     else
+28         err_quit("getservbyname error for %s", argv[2]);
+
+29     for ( ; *pptr != NULL; pptr++) {
+30         sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+31         memmove(&amp;servaddr.sin_addr, *pptr, sizeof(struct in_addr));
+32         printf("trying %s\n", Sock_ntop((SA *) &amp;servaddr, sizeof(servaddr)));
+33         if (connect(sockfd, (SA *) &amp;servaddr, sizeof(servaddr)) == 0)
+34             break;              /* success */
+35          err_ret("connect error");
+36          close(sockfd);
+37     }
+38     if (*pptr == NULL)
+39         err_quit("unable to connect");
+
+40     while ( (n = Read(sockfd, recvline, MAXLINE)) &gt; 0) {
+41         recvline[n] = 0;        /* null terminate */
+42         Fputs(recvline, stdout);
+43     }
+44     exit(0);
+45     }
+</PRE>
+</TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a05"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q05">11.5</A></B></TD><TD><P class="docText"><A class="docLink" HREF="#app05fig12">Figure E.12</A> shows the program.</P>
+<H5 class="docExampleTitle"><A NAME="app05fig12"></A>Figure E.12 Modification of <A class="docLink" HREF="0131411551_ch11lev1sec5.html#ch11fig04">Figure 11.4</A> to work with IPv4 and IPv6.</H5>
+<P class="docText"><span class="docEmphasis">names/daytimetcpcli3.c</span></P>
+<PRE>
+ 1 #include   "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     sockfd, n;
+ 6     char    recvline[MAXLINE + 1];
+ 7     struct sockaddr_in servaddr;
+ 8     struct sockaddr_in6 servaddr6;
+ 9     struct sockaddr *sa;
+10     socklen_t salen;
+11     struct in_addr **pptr;
+12     struct hostent *hp;
+13     struct servent *sp;
+
+14     if (argc != 3)
+15         err_quit("usage: daytimetcpcli3  &lt;hostname&gt; &lt;service&gt;");
+
+16     if ( (hp = gethostbyname(argv[1])) == NULL)
+17         err_quit("hostname error for %s: %s", argv[1], hstrerror(h_errno));
+
+18     if ( (sp = getservbyname(argv[2], "tcp")) == NULL)
+19         err_quit("getservbyname error for %s", argv[2]);
+20     pptr = (struct in_addr **) hp-&gt;h_addr_list;
+21     for ( ; *pptr != NULL; pptr++) {
+22         sockfd = Socket(hp-&gt;h_addrtype, SOCK_STREAM, 0);
+
+23         if (hp-&gt;h_addrtype == AF_INET) {
+24             sa = (SA *) &amp;servaddr;
+25             salen = sizeof(servaddr);
+26         } else if (hp-&gt;h_addrtype == AF_INET6) {
+27             sa = (SA *) &amp;servaddr6;
+28             salen = sizeof(servaddr6);
+29         } else
+30             err_quit("unknown addrtype %d", hp-&gt;h_addrtype);
+
+31         bzero(sa, salen);
+32         sa-&gt;sa_family = hp-&gt;h_addrtype;
+33         sock_set_port(sa, salen, sp-&gt;s_port);
+34         sock_set_addr(sa, salen, *pptr);
+
+35         printf("trying %s\n", Sock_ntop(sa, salen));
+
+36         if (connect(sockfd, sa, salen) == 0)
+37             break;              /* success */
+38         err_ret("connect error");
+39         close(sockfd);
+40     }
+41     if (*pptr == NULL)
+42         err_quit("unable to connect");
+
+43     while ( (n = Read(sockfd, recvline, MAXLINE)) &gt; 0) {
+44         recvline[n] = 0;        /* null terminate */
+45         Fputs(recvline, stdout);
+46     }
+47     exit(0);
+48     }
+</PRE>
+<P class="docText">We use the <TT>h_addrtype</TT> value returned by <TT>gethostbyname</TT> to determine the type of address. We also use our <TT>sock_set_port</TT> and <TT>sock_set_addr</TT> functions (<A class="docLink" HREF="0131411551_ch03lev1sec8.html#ch03lev1sec8">Section 3.8</A>) to set these two fields in the appropriate socket address structure.</P><P class="docText">Although this program works, it has two limitations. First, we must handle all the differences, looking at <TT>h_addrtype</TT> and then setting <TT>sa</TT> and <TT>salen</TT> appropriately. A better solution is to have a library function that not only looks up the hostname and service name, but also fills in the entire socket address structure (e.g., <TT>getaddrinfo</TT> in <A class="docLink" HREF="0131411551_ch11lev1sec6.html#ch11lev1sec6">Section 11.6</A>). Second, this program compiles only on hosts that support IPv6. To make this compile on an IPv4-only host would add numerous <TT>#ifdefs</TT> to the code, thus complicating it.</P><P class="docText">We return to the concept of protocol independence in <A class="docLink" HREF="0131411551_ch11.html#ch11">Chapter 11</A> and see better ways to accomplish it.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a07"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q07">11.7</A></B></TD><TD><P class="docText">Allocate a big buffer (larger than any socket address structure) and call <TT>getsockname</TT>. The third argument is a value-result argument that returns the actual size of the protocol's addresses. Unfortunately, this works only for protocols with fixed-length socket address structures (e.g., IPv4 and IPv6), but is not guaranteed to work with protocols that can return variable-length socket address structures (e.g., Unix domain sockets, <A class="docLink" HREF="0131411551_ch15.html#ch15">Chapter 15</A>).</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a08"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q08">11.8</A></B></TD><TD><P class="docText">We first allocate arrays to hold the hostname and service name as follows:</P><pre>
+</pre><pre>
+char host[NI_MAXHOST], serv[NI_MAXSERV];
+</pre><pre>
+</pre><P class="docText">After <TT>accept</TT> returns, we call <TT>getnameinfo</TT> instead of <TT>sock_ntop</TT> as follows:</P><pre>
+</pre><pre>
+if (getnameinfo(cliaddr, len, host, NI_MAXHOST, serv, NI_MAXSERV,
+                NI_NUMERICHOST | NI_NUMERICSERV) == 0)
+printf("connection from %s.%s\n", host, serv);
+</pre><pre>
+</pre><P class="docText">Since this is a server, we specify the <TT>NI_NUMERICHOST</TT> and <TT>NI_NUMERICSERV</TT> flags to avoid a DNS query and a lookup of <TT>/etc/services</TT>.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a09"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q09">11.9</A></B></TD><TD><P class="docText">The first problem is that the second server cannot <TT>bind</TT> the same port as the first server because the <TT>SO_REUSEADDR</TT> socket option is not set. The easiest way to handle this is to make a copy of the <TT>udp_server</TT> function, rename it <TT>udp_server_reuseaddr</TT>, have it set the socket option, and call this new function from the server.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch11a10"></A><B><A class="docLink" HREF="0131411551_ch11lev1sec23.html#ch11q10">11.10</A></B></TD><TD><P class="docText">When the client outputs "Trying 206.62.226.35...", <TT>gethostbyname</TT> has returned the IP address. Any client pause before this is the time taken by the resolver to look up the hostname. The output "Connected to bsdi.kohala.com." means <TT>connect</TT> has returned. Any pause between these two lines of output is the time taken by <TT>connect</TT> to establish the connection.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR></TABLE></P><br>
+<P class="docText"></P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app05lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app05lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

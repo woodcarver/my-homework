@@ -1,0 +1,35 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="4.1 Introduction"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch04.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch04lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch04lev1sec1"></A>
+<H3 class="docSection1Title">4.1 Introduction</H3>
+<P class="docText">This chapter describes the elementary socket functions required to write a complete TCP client and server. We will first describe all the elementary socket functions that we will be using and then develop the client and server in the next chapter. We will work with this client and server throughout the text, enhancing it many times (<A class="docLink" HREF="0131411551_ch01lev1sec6.html#ch01fig12">Figures 1.12</A> and <A class="docLink" HREF="0131411551_ch01lev1sec6.html#ch01fig13">1.13</A>).</P>
+<P class="docText">We will also describe concurrent servers, a common Unix technique for providing concurrency when numerous clients are connected to the same server at the same time. Each client connection causes the server to <TT>fork</TT> a new process just for that client. In this chapter, we consider only the one-<span class="docEmphasis">process</span>-per-client model using <TT>fork</TT>, but we will consider a different one-<span class="docEmphasis">thread</span>-per-client model when we describe threads in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>.</P>
+<P class="docText"><A class="docLink" HREF="#ch04fig01">Figure 4.1</A> shows a timeline of the typical scenario that takes place between a TCP client and server. First, the server is started, then sometime later, a client is started that connects to the server. We assume that the client sends a request to the server, the server processes the request, and the server sends a reply back to the client. This continues until the client closes its end of the connection, which sends an end-of-file notification to the server. The server then closes its end of the connection and either terminates or waits for a new client connection.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch04fig01"></A>Figure 4.1. Socket functions for elementary TCP client/server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="605" src="FILES/04fig01.gif" ALT="graphics/04fig01.gif"></p>
+
+</CENTER>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch04.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch04lev1sec2.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

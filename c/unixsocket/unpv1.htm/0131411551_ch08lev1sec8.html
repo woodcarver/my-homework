@@ -1,0 +1,104 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="8.8 Verifying Received Response"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch08lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch08lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch08lev1sec8"></A>
+<H3 class="docSection1Title">8.8 Verifying Received Response</H3>
+<P class="docText">At the end of <A class="docLink" HREF="0131411551_ch08lev1sec6.html#ch08lev1sec6">Section 8.6</A>, we mentioned that any process that knows the client's ephemeral port number could send datagrams to our client, and these would be intermixed with the normal server replies. What we can do is change the call to <TT>recvfrom</TT> in <A class="docLink" HREF="0131411551_ch08lev1sec6.html#ch08fig08">Figure 8.8</A> to return the IP address and port of who sent the reply and ignore any received datagrams that are not from the server to whom we sent the datagram. There are a few pitfalls with this, however, as we will see.</P>
+<P class="docText">First, we change the client <TT>main</TT> function (<A class="docLink" HREF="0131411551_ch08lev1sec5.html#ch08fig07">Figure 8.7</A>) to use the standard echo server (<A class="docLink" HREF="0131411551_ch02lev1sec12.html#ch02fig18">Figure 2.18</A>). We just replace the assignment</P>
+<pre>
+
+</pre><pre>
+servaddr.sin_port = htons(SERV_PORT);
+</pre><pre>
+</pre>
+<P class="docText">with</P>
+<pre>
+
+</pre><pre>
+servaddr.sin_port = htons(7);
+</pre><pre>
+</pre>
+<P class="docText">We do this so we can use any host running the standard echo server with our client.</P>
+<P class="docText">We then recode the <TT>dg_cli</TT> function to allocate another socket address structure to hold the structure returned by <TT>recvfrom</TT>. We show this in <A class="docLink" HREF="#ch08fig09">Figure 8.9</A>.</P>
+<A NAME="ch08lev3sec4"></A>
+<H4 class="docSection2Title"> Allocate another socket address structure</H4>
+<p class="docText"><span class="docEmphasis"><TT>9</TT></span> We allocate another socket address structure by calling <TT>malloc</TT>. Notice that the <TT>dg_cli</TT> function is still protocol-independent; because we do not care what type of socket address structure we are dealing with, we use only its size in the call to <TT>malloc</TT>.</p>
+
+<A NAME="ch08lev3sec5"></A>
+<H4 class="docSection2Title"> Compare returned address</H4>
+<p class="docText"><span class="docEmphasis"><TT>12–18</TT></span> In the call to <TT>recvfrom</TT>, we tell the kernel to return the address of the sender of the datagram. We first compare the length returned by <TT>recvfrom</TT> in the value-result argument and then compare the socket address structures themselves using <TT>memcmp</TT>.</p>
+<BLOCKQUOTE><P><P class="docList"><A class="docLink" HREF="0131411551_ch03lev1sec2.html#ch03lev1sec2">Section 3.2</A> says that even if the socket address structure contains a length field, we need never set it or examine it. However, <TT>memcmp</TT> compares every byte of data in the two socket address structures, and the length field is set in the socket address structure that the kernel returns; so in this case we must set it when constructing the <TT>sockaddr</TT>. If we don't, the <TT>memcmp</TT> will compare a <span class="docEmphasis">0</span> (since we didn't set it) with a <span class="docEmphasis">16</span> (assuming <TT>sockaddr_in</TT>) and will not match.</P></P></BLOCKQUOTE>
+
+<H5 class="docExampleTitle"><A NAME="ch08fig09"></A>Figure 8.9 Version of <TT>dg_cli</TT> that verifies returned socket address.</H5>
+<P class="docText"><span class="docEmphasis">udpcliserv/dgcliaddr.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 void
+ 3 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 4 {
+ 5     int     n;
+ 6     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+ 7     socklen_t len;
+ 8     struct sockaddr *preply_addr;
+
+ 9     preply_addr = Malloc(servlen);
+
+10     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+11         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+12         len = servlen;
+13         n = Recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+14         if (len != servlen || memcmp(pservaddr, preply_addr, len) != 0) {
+15             printf("reply from %s (ignored)\n", Sock_ntop(preply_addr, len));
+16             continue;
+17         }
+
+18         recvline[n] = 0;      /* null terminate */
+19         Fputs(recvline, stdout);
+20     }
+21 }
+</PRE>
+
+<P class="docText">This new version of our client works fine if the server is on a host with just a single IP address. But this program can fail if the server is multihomed. We run this program to our host <TT>freebsd4</TT>, which has two interfaces and two IP addresses.</P>
+<pre>
+
+</pre><pre>
+macosx % <span class="docEmphStrong">host freebsd4</span>
+freebsd4.unpbook.com has address 172.24.37.94
+freebsd4.unpbook.com has address 135.197.17.100
+macosx % <span class="docEmphStrong">udpcli02 135.197.17.100</span>
+<span class="docEmphStrong">hello</span>
+reply from 172.24.37.94:7 (ignored)
+<span class="docEmphStrong">goodbye</span>
+reply from 172.24.37.94:7 (ignored)
+</pre><pre>
+</pre>
+<P class="docText">We specified the IP address that does not share the same subnet as the client.</P>
+<BLOCKQUOTE><P><P class="docList">This is normally allowed. Most IP implementations accept an arriving IP datagram that is destined for <span class="docEmphasis">any</span> of the host's IP addresses, regardless of the interface on which the datagram arrives (pp. 217–219 of TCPv2). RFC 1122 [Braden 1989] calls this the <span class="docEmphasis">weak end system model</span>. If a system implemented what this RFC calls the <span class="docEmphasis">strong end system model</span>, it would accept an arriving datagram only if that datagram arrived on the interface to which it was addressed.</P></P></BLOCKQUOTE>
+<P class="docText">The IP address returned by <TT>recvfrom</TT> (the source IP address of the UDP datagram) is not the IP address to which we sent the datagram. When the server sends its reply, the destination IP address is 172.24.37.78. The routing function within the kernel on <TT>freebsd4</TT> chooses 172.24.37.94 as the outgoing interface. Since the server has not bound an IP address to its socket (the server has bound the wildcard address to its socket, which is something we can verify by running <TT>netstat</TT> on <TT>freebsd</TT>), the kernel chooses the source address for the IP datagram. It is chosen to be the primary IP address of the outgoing interface (pp. 232–233 of TCPv2). Also, since it is the primary IP address of the interface, if we send our datagram to a nonprimary IP address of the interface (i.e., an alias), this will also cause our test in <A class="docLink" HREF="#ch08fig09">Figure 8.9</A> to fail.</P>
+<P class="docText">One solution is for the client to verify the responding host's domain name instead of its IP address by looking up the server's name in the DNS (<A class="docLink" HREF="0131411551_ch11.html#ch11">Chapter 11</A>), given the IP address returned by <TT>recvfrom</TT>. Another solution is for the UDP server to create one socket for every IP address that is configured on the host, <TT>bind</TT> that IP address to the socket, use <TT>select</TT> across all these sockets (waiting for any one to become readable), and then reply from the socket that is readable. Since the socket used for the reply was bound to the IP address that was the destination address of the client's request (or the datagram would not have been delivered to the socket), this guaranteed that the source address of the reply was the same as the destination address of the request. We will show an example of this in <A class="docLink" HREF="0131411551_ch22lev1sec6.html#ch22lev1sec6">Section 22.6</A>.</P>
+<BLOCKQUOTE><P><P class="docList">On a multihomed Solaris system, the source IP address for the server's reply is the destination IP address of the client's request. The scenario described in this section is for Berkeley-derived implementations that choose the source IP address based on the outgoing interface.</P></P></BLOCKQUOTE>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch08lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch08lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

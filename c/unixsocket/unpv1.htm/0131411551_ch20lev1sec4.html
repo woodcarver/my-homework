@@ -1,0 +1,140 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="20.4 'dg_cli' Function Using Broadcasting"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch20lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch20lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch20lev1sec4"></A>
+<H3 class="docSection1Title" id="225793-912">20.4 <TT>dg_cli</TT> Function Using Broadcasting</H3>
+<P class="docText">We modify our <TT>dg_cli</TT> function one more time, this time allowing it to broadcast to the standard UDP daytime server (<A class="docLink" HREF="0131411551_ch02lev1sec12.html#ch02fig18">Figure 2.18</A>) and printing all replies. The only change we make to the <TT>main</TT> function (<A class="docLink" HREF="0131411551_ch08lev1sec5.html#ch08fig07">Figure 8.7</A>) is to change the destination port number to 13.</P>
+<pre>
+
+</pre><pre>
+servaddr.sin_port = htons(13);
+</pre><pre>
+</pre>
+<P class="docText">We first compile this modified <TT>main</TT> function with the unmodified <TT>dg_cli</TT> function from <A class="docLink" HREF="0131411551_ch08lev1sec6.html#ch08fig08">Figure 8.8</A> and run it on the host <TT>freebsd</TT>.</P>
+<pre>
+
+</pre><pre>
+     freebsd % <span class="docEmphStrong">udpcli01</span> 192.168.42.255
+     <span class="docEmphStrong">hi</span>
+     sendto error: Permission denied
+</pre><pre>
+</pre>
+<P class="docText">The command-line argument is the subnet-directed broadcast address for the secondary Ethernet. We type a line of input, the program calls <TT>sendto</TT>, and the error <TT>EACCES</TT> is returned. The reason we receive the error is that we are not allowed to send a datagram to a broadcast destination address unless we explicitly tell the kernel that we will be broadcasting. We do this by setting the <TT>SO_BROADCAST</TT> socket option (<A class="docLink" HREF="0131411551_ch07lev1sec5.html#ch07lev1sec5">Section 7.5</A>).</P>
+<BLOCKQUOTE><P><P class="docList">Berkeley-derived implementations implement this sanity check. Solaris 2.5, on the other hand, accepts the datagram destined for the broadcast address even if we do not specify the socket option. The POSIX specification requires the <TT>SO_BROADCAST</TT> socket option to be set to send a broadcast packet.</P></P><P><P class="docList">Broadcasting was a privileged operation with 4.2BSD and the <TT>SO_BROADCAST</TT> socket option did not exist. This option was added to 4.3BSD and any process was allowed to set the option.</P></P></BLOCKQUOTE>
+<P class="docText">We now modify our <TT>dg_cli</TT> function as shown in <A class="docLink" HREF="#ch20fig05">Figure 20.5</A>. This version sets the <TT>SO_BROADCAST</TT> socket option and prints all the replies received within five seconds.</P>
+<A NAME="ch20lev3sec1"></A>
+<H4 class="docSection2Title"> Allocate room for server's address, set socket option</H4>
+<p class="docText"><span class="docEmphasis"><TT>11–13</TT></span> <TT>malloc</TT> allocates room for the server's address to be returned by <TT>recvfrom</TT>. The <TT>SO_BROADCAST</TT> socket option is set and a signal handler is installed for <TT>SIGALRM</TT>.</p>
+
+<A NAME="ch20lev3sec2"></A>
+<H4 class="docSection2Title"> Read line, send to socket, read all replies</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–24</TT></span> The next two steps, <TT>fgets</TT> and <TT>sendto</TT>, are similar to previous versions of this function. But since we are sending a broadcast datagram, we can receive multiple replies. We call <TT>recvfrom</TT> in a loop and print all the replies received within five seconds. After five seconds, <TT>SIGALRM</TT> is generated, our signal handler is called, and <TT>recvfrom</TT> returns the error <TT>EINTR</TT>.</p>
+
+<A NAME="ch20lev3sec3"></A>
+<H4 class="docSection2Title"> Print each received reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>25–29</TT></span> For each reply received, we call <TT>sock_ntop_host</TT>, which in the case of IPv4 returns a string containing the dotted-decimal IP address of the server. This is printed along with the server's reply.</p>
+<P class="docText">If we run the program specifying the subnet-directed broadcast address of 192.168.42.255, we see the following:</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">udpcli01</span> 192.168.42.255
+<span class="docEmphStrong">hi</span>
+from 192.168.42.2: Sat Aug 2 16:42:45 2003
+from 192.168.42.1: Sat Aug 2 14:42:45 2003
+from 192.168.42.3: Sat Aug 2 14:42:45 2003
+<span class="docEmphStrong">hello</span>
+from 192.168.42.3: Sat Aug 2 14:42:57 2003
+from 192.168.42.2: Sat Aug 2 16:42:57 2003
+from 192.168.42.1: Sat Aug 2 14:42:57 2003
+</pre><pre>
+</pre>
+<P class="docText">Each time we must type a line of input to generate the output UDP datagram. Each time we receive three replies, and this includes the sending host. As we said earlier, the destination of a broadcast datagram is <span class="docEmphasis">all</span> the hosts on the attached network, including the sender. Each reply is unicast because the source address of the request, which is used by each server as the destination address of the reply, is a unicast address.</P>
+<P class="docText">All the systems report the same time because all run NTP.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch20fig05"></A>Figure 20.5 <TT>dg_cli</TT> function that broadcasts.</H5>
+<P class="docText"><span class="docEmphasis">bcast/dgclibcast1.c</span></P>
+
+<PRE>
+ 1 #include      "unp.h"
+
+ 2 static void recvfrom_alarm(int);
+
+ 3 void
+ 4 dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+ 5 {
+ 6     int     n;
+ 7     const int on = 1;
+ 8     char    sendline[MAXLINE], recvline[MAXLINE + 1];
+ 9     socklen_t len;
+10     struct sockaddr *preply_addr;
+
+11     preply_addr = Malloc(servlen);
+
+12     Setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &amp;on, sizeof(on));
+
+13     Signal(SIGALRM, recvfrom_alarm);
+
+14     while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+15         Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+16         alarm(5);
+17         for ( ; ; ) {
+18             len = servlen;
+19             n = recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+20             if (n &lt; 0) {
+21                 if (errno == EINTR)
+22                     break;      /* waited long enough for replies */
+23                 else
+24                    err_sys("recvfrom error");
+25             } else {
+26                 recvline[n] = 0; /* null terminate */
+27                 printf("from %s: %s",
+28                        Sock_ntop_host(preply_addr, len), recvline);
+29             }
+30         }
+31     }
+32     free(preply_addr);
+33 }
+
+34 static void
+35 recvfrom_alarm(int signo)
+36 {
+37     return;                     /* just interrupt the recvfrom() */
+38 }
+</PRE>
+
+
+<A NAME="ch20lev2sec1"></A>
+<H4 class="docSection2Title"> IP Fragmentation and Broadcasts</H4>
+<P class="docText">Berkeley-derived kernels do not allow a broadcast datagram to be fragmented. If the size of an IP datagram that is being sent to a broadcast address exceeds the outgoing interface MTU, <TT>EMSGSIZE</TT> is returned (pp. 233–234 of TCPv2). This is a policy decision that has existed since 4.2BSD. There is nothing that prevents a kernel from fragmenting a broadcast datagram, but the feeling is that broadcasting puts enough load on the network as it is, so there is no need to multiply this load by the number of fragments.</P>
+<P class="docText">We can see this scenario with our program in <A class="docLink" HREF="#ch20fig05">Figure 20.5</A>. We redirect standard input from a file containing a 2,000-byte line, which will require fragmentation on an Ethernet.</P>
+<pre>
+
+</pre><pre>
+     freebsd % <span class="docEmphStrong">udpcli01 192.168.42.255 &lt; 2000line</span>
+     sendto error: Message too long
+</pre><pre>
+</pre>
+<BLOCKQUOTE><P><P class="docList">AIX, FreeBSD, and MacOS implement this limitation. Linux, Solaris, and HP-UX fragment datagrams sent to a broadcast address. For portability, however, an application that needs to broadcast should determine the MTU of the outgoing interface using the <TT>SIOCGIFMTU ioctl</TT>, and then subtract the IP and transport header lengths to determine the maximum payload size. Alternately, it can pick a common MTU, like Ethernet's 1500, and use it as a constant.</P></P></BLOCKQUOTE>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch20lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch20lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

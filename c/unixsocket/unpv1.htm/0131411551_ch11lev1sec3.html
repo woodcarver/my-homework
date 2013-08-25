@@ -1,0 +1,160 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.3 'gethostbyname' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec3"></A>
+<H3 class="docSection1Title">11.3 <TT>gethostbyname</TT> Function</H3>
+<P class="docText">Host computers are normally known by human-readable names. All the examples that we have shown so far in this book have intentionally used IP addresses instead of names, so we know exactly what goes into the socket address structures for functions such as <TT>connect</TT> and <TT>sendto</TT>, and what is returned by functions such as <TT>accept</TT> and <TT>recvfrom</TT>. But, most applications should deal with names, not addresses. This is especially true as we move to IPv6, since IPv6 addresses (hex strings) are much longer than IPv4 dotted-decimal numbers. (The example AAAA record and <TT>ip6.arpa</TT> PTR record in the previous section should make this obvious.)</P>
+<P class="docText">The most basic function that looks up a hostname is <TT>gethostbyname</TT>. If successful, it returns a pointer to a <TT>hostent</TT> structure that contains all the IPv4 addresses for the host. However, it is limited in that it can only return IPv4 addresses. See <A class="docLink" HREF="0131411551_ch11lev1sec6.html#ch11lev1sec6">Section 11.6</A> for a function that handles both IPv4 and IPv6 addresses. The POSIX specification cautions that <TT>gethostbyname</TT> may be withdrawn in a future version of the spec.</P>
+<BLOCKQUOTE><P><P class="docList">It is unlikely that <TT>gethostbyname</TT> implementations will actually disappear until the whole Internet is using IPv6, which will be far in the future. However, withdrawing the function from the POSIX specification is a way to assert that it should not be used in new code. We encourage the use of <TT>getaddrinfo</TT> (<A class="docLink" HREF="0131411551_ch11lev1sec6.html#ch11lev1sec6">Section 11.6</A>) in new programs.</P></P></BLOCKQUOTE>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netdb.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct hostent *gethostbyname (const char *</TT><span class="docEmphasis">hostname</span>);</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-null pointer if OK,<TT>NULL</TT> on error with <TT>h_errno</TT> set</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The non-null pointer returned by this function points to the following <TT>hostent</TT> structure:</P>
+<pre>
+
+</pre><pre>
+struct hostent {
+   char  *h_name;       /* official (canonical) name of host */
+   char **h_aliases;    /* pointer to array of pointers to alias names */
+   int    h_addrtype;   /* host address type: AF_INET */
+   int    h_length;     /* length of address: 4 */
+   char **h_addr_list;  /* ptr to array of ptrs with IPv4 addrs */
+};
+</pre><pre>
+</pre>
+<P class="docText">In terms of the DNS, <TT>gethostbyname</TT> performs a query for an A record. This function can return only IPv4 addresses.</P>
+<P class="docText"><A class="docLink" HREF="#ch11fig02">Figure 11.2</A> shows the arrangement of the <TT>hostent</TT> structure and the information that it points to assuming the hostname that is looked up has two alias names and three IPv4 addresses. Of these fields, the official hostname and all the aliases are null-terminated C strings.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch11fig02"></A>Figure 11.2. <TT>hostent</TT> structure and the information it contains.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="288" src="FILES/11fig02.gif" ALT="graphics/11fig02.gif"></p>
+
+</CENTER>
+<P class="docText">The returned <TT>h_name</TT> is called the <span class="docEmphasis">canonical</span> name of the host. For example, given the CNAME records shown in the previous section, the canonical name of the host <TT>ftp.unpbook.com</TT> would be <TT>linux.unpbook.com.</TT> Also, if we call <TT>gethostbyname</TT> from the host <TT>aix</TT> with an unqualified hostname, say <TT>solaris</TT>, the FQDN <TT>(solaris.unpbook.com)</TT> is returned as the canonical name.</P>
+<BLOCKQUOTE><P><P class="docList">Some versions of <TT>gethostbyname</TT> allow the <span class="docEmphasis">hostname</span> argument to be a dotted-decimal string. That is, a call of the form</P><pre>
+
+</pre><pre>
+hptr = gethostbyname ("192.168.42.2");
+</pre><pre>
+</pre><P class="docList">will work. This code was added because the Rlogin client accepts only a hostname, calling <TT>gethostbyname</TT>, and will not accept a dotted-decimal string [Vixie 1996]. The POSIX specification permits, but does not require, this behavior, so a portable application cannot depend on it.</P></P></BLOCKQUOTE>
+<P class="docText"><TT>gethostbyname</TT> differs from the other socket functions that we have described in that it does not set <TT>errno</TT> when an error occurs. Instead, it sets the global integer <TT>h_errno</TT> to one of the following constants defined by including <TT>&lt;netdb.h&gt;:</TT></P>
+<UL><LI><P class="docList"><TT>HOST_NOT_FOUND</TT></P></LI><LI><P class="docList"><TT>TRY_AGAIN</TT></P></LI><LI><P class="docList"><TT>NO_RECOVERY</TT></P></LI><LI><P class="docList"><TT>NO_DATA</TT> (identical to <TT>NO_ADDRESS</TT>)</P></LI></UL>
+<P class="docText">The <TT>NO_DATA</TT> error means the specified name is valid, but it does not have an A record. An example of this is a hostname with only an MX record.</P>
+<P class="docText">Most modern resolvers provide the function <TT>hstrerror</TT>, which takes an <TT>h_errno</TT> value as its only argument and returns a <TT>const char</TT> * pointer to a description of the error. We show some examples of the strings returned by this function in the next example.</P>
+<A NAME="ch11lev2sec4"></A>
+<H4 class="docSection2Title"> Example</H4>
+<P class="docText"><A class="docLink" HREF="#ch11fig03">Figure 11.3</A> shows a simple program that calls <TT>gethostbyname</TT> for any number of command-line arguments and prints all the returned information.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch11fig03"></A>Figure 11.3 Call gethostbyname and print returned information.</H5>
+<P class="docText"><span class="docEmphasis">names/hostent.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     char   *ptr, **pptr;
+ 6     char     str [INET_ADDRSTRLEN];
+ 7     struct hostent *hptr;
+
+ 8     while (--argc &gt; 0) {
+ 9          ptr = *++argv;
+10          if ( (hptr = gethostbyname (ptr) ) == NULL) {
+11              err_msg ("gethostbyname error for host: %s: %s",
+12                      ptr, hstrerror (h_errno) );
+13              continue;
+14          }
+15          printf ("official hostname: %s\n", hptr-&gt;h_name);
+
+16          for (pptr = hptr-&gt;h_aliases; *pptr ! = NULL; pptr++)
+17              printf ("\talias: %s\n", *pptr);
+
+18          switch (hptr-&gt;h_addrtype) {
+19          case AF_INET:
+20              pptr = hptr-&gt;h_addr_list;
+21              for ( ; *pptr != NULL; pptr++)
+22                  printf ("\taddress: %s\n",
+23                          Inet_ntop (hptr-&gt;h_addrtype, *pptr, str, sizeof (str)));
+24              break;
+
+25          default:
+26              err_ret ("unknown address type");
+27              break;
+28          }
+29      }
+30      exit(0);
+31 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>8–14</TT></span> <TT>gethostbyname</TT> is called for each command-line argument.</p>
+<p class="docText"><span class="docEmphasis"><TT>15–17</TT></span> The official hostname is output followed by a list of alias names.</p>
+<p class="docText"><span class="docEmphasis"><TT>18–24</TT></span> <TT>pptr</TT> points to the array of pointers to the individual addresses. For each address, we call <TT>inet_ntop</TT> and print the returned string.</p>
+<P class="docText">We first execute the program with the name of our host <TT>aix</TT>, which has just one IPv4 address.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">hostent aix</span>
+official hostname: aix.unpbook.com
+        address: 192.168.42.2
+</pre><pre>
+</pre>
+<P class="docText">Notice that the official hostname is the FQDN. Also notice that even though this host has an IPv6 address, only the IPv4 address is returned.</P>
+<P class="docText">Next is a Web server with multiple IPv4 addresses.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">hostent cnn.com</span>
+official hostname: cnn.com
+        address: 64.236.16.20
+        address: 64.236.16.52
+        address: 64.236.16.84
+        address: 64.236.16.116
+        address: 64.236.24.4
+        address: 64.236.24.12
+        address: 64.236.24.20
+        address: 64.236.24.28
+</pre><pre>
+</pre>
+<P class="docText">Next is a name that we showed in <A class="docLink" HREF="0131411551_ch11lev1sec2.html#ch11lev1sec2">Section 11.2</A> as having a CNAME record.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">hostent www</span>
+official hostname: linux. unpbook. com
+        alias: www.unpbook.com
+        address: 206.168.112.219
+</pre><pre>
+</pre>
+<P class="docText">As expected, the official hostname differs from our command-line argument.</P>
+<P class="docText">To see the error strings returned by the <TT>hstrerror</TT> function, we first specify a non-existent hostname, and then a name that has only an MX record.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">hostent nosuchname.invalid</span>
+gethostbyname error for host: nosuchname.invalid: Unknown host
+
+freebsd % <span class="docEmphStrong">hostent uunet.uu.net</span>
+gethostbyname error for host: uunet.uu.net: No address associated with name
+</pre><pre>
+</pre>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

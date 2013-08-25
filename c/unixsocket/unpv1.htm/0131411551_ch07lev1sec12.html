@@ -1,0 +1,29 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="7.12 Summary"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch07lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch07lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch07lev1sec12"></A>
+<H3 class="docSection1Title">7.12 Summary</H3>
+<P class="docText">Socket options run the gamut from the very general (<TT>SO_ERROR</TT>) to the very specific (IP header options). The most commonly used options that we might encounter are <TT>SO_KEEPALIVE</TT>, <TT>SO_RCVBUF</TT>, <TT>SO_SNDBUF</TT>, and <TT>SO_REUSEADDR</TT>. The latter should always be set for a TCP server before it calls <TT>bind</TT> (<A class="docLink" HREF="0131411551_ch11lev1sec13.html#ch11fig12">Figure 11.12</A>). The <TT>SO_BROADCAST</TT> option and the 10 multicast socket options are only for applications that broadcast or multicast, respectively.</P>
+<P class="docText">The <TT>SO_KEEPALIVE</TT> socket option is set by many TCP servers and automatically terminates a half-open connection. The nice feature of this option is that it is handled by the TCP layer, without requiring an application-level inactivity timer; its downside is that it cannot tell the difference between a crashed client host and a temporary loss of connectivity to the client. SCTP provides 17 socket options that are used by the application to control the transport. <TT>SCTP_NODELAY</TT> and <TT>SCTP_MAXSEG</TT> are similar to <TT>TCP_NODELAY</TT> and <TT>TCP_MAXSEG</TT> and perform equivalent functions. The other 15 options give the application finer control of the SCTP stack; we will discuss the use of many of these socket options in <A class="docLink" HREF="0131411551_ch23.html#ch23">Chapter 23</A>.</P>
+<P class="docText">The <TT>SO_LINGER</TT> socket option gives us more control over when <TT>close</TT> returns and also lets us force an RST to be sent instead of TCP's four-packet connection termination sequence. We must be careful sending RSTs, because this avoids TCP's TIME_WAIT state. Much of the time, this socket option does not provide the information that we need, in which case, an application-level ACK is required.</P>
+<P class="docText">Every TCP and SCTP socket has a send buffer and a receive buffer, and every UDP socket has a receive buffer. The <TT>SO_SNDBUF</TT> and <TT>SO_RCVBUF</TT> socket options let us change the sizes of these buffers. The most common use of these options is for bulk data transfer across long fat pipes: TCP connections with either a high bandwidth or a long delay, often using the RFC 1323 extensions. UDP sockets, on the other hand, might want to increase the size of the receive buffer to allow the kernel to queue more datagrams if the application is busy.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch07lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch07lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

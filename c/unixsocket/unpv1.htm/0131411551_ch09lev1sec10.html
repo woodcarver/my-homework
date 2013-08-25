@@ -1,0 +1,28 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="9.10 'sctp_recvmsg' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch09lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch09lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch09lev1sec10"></A>
+<H3 class="docSection1Title">9.10 <TT>sctp_recvmsg</TT> Function</H3>
+<P class="docText">Just like <TT>sctp_sendmsg</TT>, the <TT>sctp_recvmsg</TT> function provides a more user-friendly interface to the advanced SCTP features. Using this function allows a user to retrieve not only its peer's address, but also the <TT>msg_flags</TT> field that would normally accompany the <TT>recvmsg</TT> function call (e.g., <TT>MSG_NOTIFICATION</TT>, <TT>MSG_EOR</TT>, etc.). The function also allows the user to retrieve the <TT>sctp_sndrcvinfo</TT> structure that accompanies the message that was read into the message buffer. Note that if an application wishes to receive <TT>sctp_sndrcvinfo</TT> information, the <TT>sctp_data_io_event</TT> must be subscribed to with the <TT>SCTP_EVENTS</TT> socket option (ON by default). The <TT>sctp_recvmsg</TT> function takes the following form:</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t sctp_recvmsg(int</TT> <span class="docEmphasis">sockfd</span>, <TT>void *</TT><span class="docEmphasis">msg</span>, <TT>size_t</TT> <span class="docEmphasis">msgsz</span>, <TT>struct sockaddr *</TT><span class="docEmphasis">from</span>, <TT>socklen_t *</TT><span class="docEmphasis">fromlen</span>, <TT>struct sctp_sndrcvinfo *</TT><span class="docEmphasis">sinfo</span>, <TT>int *</TT><span class="docEmphasis">msg_flags</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: the number of bytes read, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">On return from this call, <span class="docEmphasis">msg</span> is filled with up to <span class="docEmphasis">msgsz</span> bytes of data. The message sender's address is contained in <span class="docEmphasis">from</span>, with the address size filled in the <span class="docEmphasis">fromlen</span> argument. Any message flags will be contained in the <span class="docEmphasis">msg_flags</span> argument. If the notification <TT>sctp_data_io_event</TT> has been enabled (the default), the <TT>sctp_sndrcvinfo</TT> structure will be filled in with detailed information about the message as well. Note that if an implementation maps the <TT>sctp_recvmsg</TT> to a <TT>recvmsg</TT> function call, the <span class="docEmphasis">flags</span> field of the call will be set to 0.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch09lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch09lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

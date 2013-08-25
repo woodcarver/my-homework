@@ -1,0 +1,40 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="C.7 'lsof' Program"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app03lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app04.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app03lev1sec7"></A>
+<H3 class="docSection1Title">C.7 <TT>lsof</TT> Program</H3>
+<P class="docText">The name <TT>lsof</TT> stands for "list open files." Like <TT>tcpdump</TT>, it is a publicly available tool that is handy for debugging and has been ported to many versions of Unix.</P>
+<P class="docText">One common use for <TT>lsof</TT> with networking is to find which process has a socket open on a specified IP address or port. <TT>netstat</TT> tells us which IP addresses and ports are in use, and the state of the TCP connections, but it does not identify the process. For example, to find out which process provides the daytime server, we execute the following:</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">lsof -i TCP:daytime</span>
+COMMAND   PID USER    FD       TYPE             DEVICE SIZE/OFF NODE NAME
+inetd     561 root     5u      IPv4 0xfffff8003027a260      0t0  TCP *:daytime (LISTEN)
+inetd     561 root     7u      IPv6 0xfffff800302b6720      0t0  TCP *:daytime
+</pre><pre>
+</pre>
+<P class="docText">This tells us the command (this service is provided by the <TT>inetd</TT> server), its PID, the owner, descriptor (5 for IPv4 and 7 for IPv6, and the <TT>u</TT> means it is open for read/write), type of socket, address of the protocol control block, size or offset of the file (not meaningful for a socket), protocol type, and name.</P>
+<P class="docText">One common use for this program is when we start a server that binds its well-known port and get the error that the address is already in use. We then use <TT>lsof</TT> to find the process that is using the port.</P>
+<P class="docText">Since <TT>lsof</TT> reports on open files, it cannot report on network endpoints that are not associated with an open file: TCP endpoints in the TIME_WAIT state.</P>
+<BLOCKQUOTE><P><P class="docList"><TT>ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/</TT> is the location for this program. It was written by Vic Abell.</P></P><P><P class="docList">Some vendors supply their own utility that does similar things. For example, FreeBSD supplies the <TT>fstat</TT> program. The advantage in <TT>lsof</TT> is that it works under so many versions of Unix, and using a single tool in a heterogeneous environment, instead of a different tool for each environment, is a big advantage.</P></P></BLOCKQUOTE>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app03lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app04.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

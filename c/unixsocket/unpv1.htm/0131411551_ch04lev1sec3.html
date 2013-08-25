@@ -1,0 +1,85 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="4.3 'connect' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch04lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch04lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch04lev1sec3"></A>
+<H3 class="docSection1Title">4.3 <TT>connect</TT> Function</H3>
+<P class="docText">The <TT>connect</TT> function is used by a TCP client to establish a connection with a TCP server.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int connect(int</TT> <span class="docEmphasis">sockfd</span>, <TT>const struct sockaddr *</TT><span class="docEmphasis">servaddr</span>, <TT>socklen_t</TT> <span class="docEmphasis">addrlen</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 if OK, -1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><span class="docEmphasis">sockfd</span> is a socket descriptor returned by the <TT>socket</TT> function. The second and third arguments are a pointer to a socket address structure and its size, as described in <A class="docLink" HREF="0131411551_ch03lev1sec3.html#ch03lev1sec3">Section 3.3</A>. The socket address structure must contain the IP address and port number of the server. We saw an example of this function in <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A>.</P>
+<P class="docText">The client does not have to call <TT>bind</TT> (which we will describe in the next section) before calling <TT>connect:</TT> the kernel will choose both an ephemeral port and the source IP address if necessary.</P>
+<P class="docText">In the case of a TCP socket, the <TT>connect</TT> function initiates TCP's three-way handshake (<A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02lev1sec6">Section 2.6</A>). The function returns only when the connection is established or an error occurs. There are several different error returns possible.</P>
+<A NAME="ch04pro01"></A>
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docList">If the client TCP receives no response to its SYN segment, <TT>ETIMEDOUT</TT> is returned. 4.4BSD, for example, sends one SYN when <TT>connect</TT> is called, another 6 seconds later, and another 24 seconds later (p. 828 of TCPv2). If no response is received after a total of 75 seconds, the error is returned.</P>
+<P class="docText">Some systems provide administrative control over this timeout; see Appendix E of TCPv1.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docList">If the server's response to the client's SYN is a reset (RST), this indicates that no process is waiting for connections on the server host at the port specified (i.e., the server process is probably not running). This is a <span class="docEmphasis">hard error</span> and the error <TT>ECONNREFUSED</TT> is returned to the client as soon as the RST is received.</P>
+<P class="docText">An RST is a type of TCP segment that is sent by TCP when something is wrong. Three conditions that generate an RST are: when a SYN arrives for a port that has no listening server (what we just described), when TCP wants to abort an existing connection, and when TCP receives a segment for a connection that does not exist. (TCPv1 [pp. 246–250] contains additional information.)</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">If the client's SYN elicits an ICMP "destination unreachable" from some intermediate router, this is considered a <span class="docEmphasis">soft error</span>. The client kernel saves the message but keeps sending SYNs with the same time between each SYN as in the first scenario. If no response is received after some fixed amount of time (75 seconds for 4.4BSD), the saved ICMP error is returned to the process as either <TT>EHOSTUNREACH</TT> or <TT>ENETUNREACH</TT>. It is also possible that the remote system is not reachable by any route in the local system's forwarding table, or that the <TT>connect</TT> call returns without waiting at all.</P>
+<BLOCKQUOTE><P><P class="docList">Many earlier systems, such as 4.2BSD, incorrectly aborted the connection establishment attempt when the ICMP "destination unreachable" was received. This is wrong because this ICMP error can indicate a transient condition. For example, it could be that the condition is caused by a routing problem that will be corrected.</P></P><P><P class="docList">Notice that <TT>ENETUNREACH</TT> is not listed in <A class="docLink" HREF="0131411551_app01lev1sec6.html#app01fig15">Figure A.15</A>, even when the error indicates that the destination network is unreachable. Network unreachables are considered obsolete, and applications should just treat <TT>ENETUNREACH</TT> and <TT>EHOSTUNREACH</TT> as the same error.</P></P></BLOCKQUOTE>
+</span></LI></OL></span>
+<P class="docText">We can see these different error conditions with our simple client from <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A>. We first specify the local host (127.0.0.1), which is running the daytime server, and see the output.</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpcli 127.0.0.1</span>
+        Sun Jul 27 22:01:51 2003
+</pre><pre>
+</pre>
+<P class="docText">To see a different format for the returned reply, we specify a different machine's IP address (in this example, the IP address of the HP-UX machine).</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpcli 192.6.38.100</span>
+        Sun Jul 27 22:04:59 PDT 2003
+</pre><pre>
+</pre>
+<P class="docText">Next, we specify an IP address that is on the local subnet (192.168.1/24) but the host ID (100) is nonexistent. That is, there is no host on the subnet with a host ID of 100, so when the client host sends out ARP requests (asking for that host to respond with its hardware address), it will never receive an ARP reply.</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpcli 192.168.1.100</span>
+        connect error: Connection timed out
+</pre><pre>
+</pre>
+<P class="docText">We only get the error after the <TT>connect</TT> times out (around four minutes with Solaris 9). Notice that our <TT>err_sys</TT> function prints the human-readable string associated with the <TT>ETIMEDOUT</TT> error.</P>
+<P class="docText">Our next example is to specify a host (a local router) that is not running a daytime server.</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpcli 192.168.1.5</span>
+        connect error: Connection refused
+</pre><pre>
+</pre>
+<P class="docText">The server responds immediately with an RST.</P>
+<P class="docText">Our final example specifies an IP address that is not reachable on the Internet. If we watch the packets with <TT>tcpdump</TT>, we see that a router six hops away returns an ICMP host unreachable error.</P>
+<pre>
+
+</pre><pre>
+        solaris % <span class="docEmphStrong">daytimetcpcli 192.3.4.5</span>
+        connect error: No route to host
+</pre><pre>
+</pre>
+<P class="docText">As with the <TT>ETIMEDOUT</TT> error, in this example, <TT>connect</TT> returns the <TT>EHOSTUNREACH</TT> error only after waiting its specified amount of time.</P>
+<P class="docText">In terms of the TCP state transition diagram (<A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02fig04">Figure 2.4</A>), <TT>connect</TT> moves from the CLOSED state (the state in which a socket begins when it is created by the <TT>socket</TT> function) to the SYN_SENT state, and then, on success, to the ESTABLISHED state. If <TT>connect</TT> fails, the socket is no longer usable and must be closed. We cannot call <TT>connect</TT> again on the socket. In <A class="docLink" HREF="0131411551_ch11lev1sec12.html#ch11fig10">Figure 11.10</A>, we will see that when we call <TT>connect</TT> in a loop, trying each IP address for a given host until one works, each time <TT>connect</TT> fails, we must <TT>close</TT> the socket descriptor and call <TT>socket</TT> again.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch04lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch04lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

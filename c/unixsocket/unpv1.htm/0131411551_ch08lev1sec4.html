@@ -1,0 +1,75 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="8.4 UDP Echo Server: 'dg_echo' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch08lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch08lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch08lev1sec4"></A>
+<H3 class="docSection1Title">8.4 UDP Echo Server: <TT>dg_echo</TT> Function</H3>
+<P class="docText"><A class="docLink" HREF="#ch08fig04">Figure 8.4</A> shows the <TT>dg_echo</TT> function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch08fig04"></A>Figure 8.4 <TT>dg_echo</TT> function: echo lines on a datagram socket.</H5>
+<P class="docText"><span class="docEmphasis">lib/dg_echo.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 void
+ 3 dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
+ 4 {
+ 5     int     n;
+ 6     socklen_t len;
+ 7     char    mesg[MAXLINE];
+
+ 8     for ( ; ; ) {
+ 9         len = clilen;
+10         n = Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &amp;len);
+
+11         Sendto(sockfd, mesg, n, 0, pcliaddr, len);
+12     }
+13 }
+</PRE>
+
+<A NAME="ch08lev3sec2"></A>
+<H4 class="docSection2Title"> Read datagram, echo back to sender</H4>
+<p class="docText"><span class="docEmphasis"><TT>8–12</TT></span> This function is a simple loop that reads the next datagram arriving at the server's port using <TT>recvfrom</TT> and sends it back using <TT>sendto</TT>.</p>
+<P class="docText">Despite the simplicity of this function, there are numerous details to consider. First, this function never terminates. Since UDP is a connectionless protocol, there is nothing like an EOF as we have with TCP.</P>
+<P class="docText">Next, this function provides an <span class="docEmphasis">iterative server</span>, not a concurrent server as we had with TCP. There is no call to <TT>fork</TT>, so a single server process handles any and all clients. In general, most TCP servers are concurrent and most UDP servers are iterative.</P>
+<P class="docText">There is implied queuing taking place in the UDP layer for this socket. Indeed, each UDP socket has a receive buffer and each datagram that arrives for this socket is placed in that socket receive buffer. When the process calls <TT>recvfrom</TT>, the next datagram from the buffer is returned to the process in a first-in, first-out (FIFO) order. This way, if multiple datagrams arrive for the socket before the process can read what's already queued for the socket, the arriving datagrams are just added to the socket receive buffer. But, this buffer has a limited size. We discussed this size and how to increase it with the <TT>SO_RCVBUF</TT> socket option in <A class="docLink" HREF="0131411551_ch07lev1sec5.html#ch07lev1sec5">Section 7.5</A>.</P>
+<P class="docText"><A class="docLink" HREF="#ch08fig05">Figure 8.5</A> summarizes our TCP client/server from <A class="docLink" HREF="0131411551_ch05.html#ch05">Chapter 5</A> when two clients establish connections with the server.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch08fig05"></A>Figure 8.5. Summary of TCP client/server with two clients.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="118" src="FILES/08fig05.gif" ALT="graphics/08fig05.gif"></p>
+
+</CENTER>
+<P class="docText">There are two connected sockets and each of the two connected sockets on the server host has its own socket receive buffer.</P>
+<P class="docText"><A class="docLink" HREF="#ch08fig06">Figure 8.6</A> shows the scenario when two clients send datagrams to our UDP server.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch08fig06"></A>Figure 8.6. Summary of UDP client/server with two clients.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="479" HEIGHT="173" src="FILES/08fig06.gif" ALT="graphics/08fig06.gif"></p>
+
+</CENTER>
+<P class="docText">There is only one server process and it has a single socket on which it receives all arriving datagrams and sends all responses. That socket has a receive buffer into which all arriving datagrams are placed.</P>
+<P class="docText">The <TT>main</TT> function in <A class="docLink" HREF="0131411551_ch08lev1sec3.html#ch08fig03">Figure 8.3</A> is <span class="docEmphasis">protocol-dependent</span> (it creates a socket of protocol <TT>AF_INET</TT> and allocates and initializes an IPv4 socket address structure), but the <TT>dg_echo</TT> function is <span class="docEmphasis">protocol-independent</span>. The reason <TT>dg_echo</TT> is protocol-independent is because the caller (the <TT>main</TT> function in our case) must allocate a socket address structure of the correct size, and a pointer to this structure, along with its size, are passed as arguments to <TT>dg_echo</TT>. The function <TT>dg_echo</TT> never looks inside this protocol-dependent structure: It simply passes a pointer to the structure to <TT>recvfrom</TT> and <TT>sendto</TT>. <TT>recvfrom</TT> fills this structure with the IP address and port number of the client, and since the same pointer (<TT>pcliaddr</TT>) is then passed to <TT>sendto</TT> as the destination address, this is how the datagram is echoed back to the client that sent the datagram.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch08lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch08lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

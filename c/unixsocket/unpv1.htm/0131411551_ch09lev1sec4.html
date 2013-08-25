@@ -1,0 +1,34 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="9.4 'sctp_connectx' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch09lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch09lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch09lev1sec4"></A>
+<H3 class="docSection1Title">9.4 <TT>sctp_connectx</TT> Function</H3>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netinet/sctp.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int sctp_connectx(int</TT> <span class="docEmphasis">sockfd</span>, <TT>const struct sockaddr *</TT><span class="docEmphasis">addrs</span>, <TT>int</TT> <span class="docEmphasis">addrcnt</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: 0 for success, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The <TT>sctp_connectx</TT> function is used to connect to a multihomed peer. We specify <span class="docEmphasis">addrcnt</span> addresses, all belonging to the same peer, in the <span class="docEmphasis">addrs</span> parameter. The <span class="docEmphasis">addrs</span> parameter is a packed list of addresses, as in <A class="docLink" HREF="#ch09fig04">Figure 9.4</A>. The SCTP stack uses one or more of the given addresses for establishing the association. All the addresses listed in <span class="docEmphasis">addrs</span> are considered to be valid, confirmed addresses.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch09fig04"></A>Figure 9.4. Packed address list format for SCTP calls.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="496" HEIGHT="241" src="FILES/09fig04.gif" ALT="graphics/09fig04.gif"></p>
+
+</CENTER>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch09lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch09lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,222 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="7.3 Checking if an Option Is Supported and Obtaining the Default"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch07lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch07lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch07lev1sec3"></A>
+<H3 class="docSection1Title">7.3 Checking if an Option Is Supported and Obtaining the Default</H3>
+<P class="docText">We now write a program to check whether most of the options defined in <A class="docLink" HREF="0131411551_ch07lev1sec2.html#ch07fig01">Figures 7.1</A> and <A class="docLink" HREF="0131411551_ch07lev1sec2.html#ch07fig02">7.2</A> are supported, and if so, print their default value. <A class="docLink" HREF="#ch07fig03">Figure 7.3</A> contains the declarations for our program.</P>
+<A NAME="ch07lev3sec1"></A>
+<H4 class="docSection2Title"> Declare <TT>union</TT> of possible values</H4>
+<p class="docText"><span class="docEmphasis"><TT>3–8</TT></span> Our <TT>union</TT> contains one member for each possible return value from <TT>getsockopt</TT>.</p>
+
+<A NAME="ch07lev3sec2"></A>
+<H4 class="docSection2Title"> Define function prototypes</H4>
+<p class="docText"><span class="docEmphasis"><TT>9–12</TT></span> We define function prototypes for four functions that are called to print the value for a given socket option.</p>
+
+<A NAME="ch07lev3sec3"></A>
+<H4 class="docSection2Title"> Define structure and initialize array</H4>
+<p class="docText"><span class="docEmphasis"><TT>13–52</TT></span> Our <TT>sock_opts</TT> structure contains all the information necessary to call <TT>getsockopt</TT> for each socket option and then print its current value. The final member, <TT>opt_val_str</TT>, is a pointer to one of our four functions that will print the option value. We allocate and initialize an array of these structures, one element for each socket option.</p>
+<BLOCKQUOTE><P><P class="docList">Not all implementations support all socket options. The way to determine if a given option is supported is to use an <TT>#ifdef</TT> or a <TT>#if defined</TT>, as we show for <TT>SO_REUSEPORT</TT>. For completeness, <span class="docEmphasis">every</span> element of the array should be compiled similarly to what we show for <TT>SO_REUSEPORT</TT>, but we omit these because the <TT>#ifdefs</TT> just lengthen the code that we show and add nothing to the discussion.</P></P></BLOCKQUOTE>
+
+<H5 class="docExampleTitle"><A NAME="ch07fig03"></A>Figure 7.3 Declarations for our program to check the socket options.</H5>
+<P class="docText"><span class="docEmphasis">sockopt/checkopts.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+ 2 #include    &lt;netinet/tcp.h&gt;       /* for TCP_xxx defines */
+ 3 union val {
+ 4   int               i_val;
+ 5   long              l_val;
+ 6   struct linger     linger_val;
+ 7   struct timeval    timeval_val;
+ 8 } val;
+ 9 static char *sock_str_flag(union val *, int);
+10 static char *sock_str_int(union val *, int);
+11 static char *sock_str_linger(union val *, int);
+12 static char *sock_str_timeval(union val *, int);
+13 struct sock_opts {
+14   const char       *opt_str;
+15   int       opt_level;
+16   int       opt_name;
+17   char   *(*opt_val_str) (union val *, int);
+18 } sock_opts[] = {
+19     { "SO_BROADCAST",        SOL_SOCKET, SO_BROADCAST,   sock_str_flag },
+20     { "SO_DEBUG",            SOL_SOCKET, SO_DEBUG,       sock_str_flag },
+21     { "SO_DONTROUTE",        SOL_SOCKET, SO_DONTROUTE,   sock_str_flag },
+22     { "SO_ERROR",            SOL_SOCKET, SO_ERROR,       sock_str_int },
+23     { "SO_KEEPALIVE",        SOL_SOCKET, SO_KEEPALIVE,   sock_str_flag },
+24     { "SO_LINGER",           SOL_SOCKET, SO_LINGER,      sock_str_linger },
+25     { "SO_OOBINLINE",        SOL_SOCKET, SO_OOBINLINE,   sock_str_flag },
+26     { "SO_RCVBUF",           SOL_SOCKET, SO_RCVBUF,      sock_str_int },
+27     { "SO_SNDBUF",           SOL_SOCKET, SO_SNDBUF,      sock_str_int },
+28     { "SO_RCVLOWAT",         SOL_SOCKET, SO_RCVLOWAT,    sock_str_int },
+29     { "SO_SNDLOWAT",         SOL_SOCKET, SO_SNDLOWAT,    sock_str_int },
+30     { "SO_RCVTIMEO",         SOL_SOCKET, SO_RCVTIMEO,    sock_str_timeval },
+31     { "SO_SNDTIMEO",         SOL_SOCKET, SO_SNDTIMEO,    sock_str_timeval },
+32     { "SO_REUSEADDR",        SOL_SOCKET, SO_REUSEADDR,   sock_str_flag },
+33 #ifdef SO_REUSEPORT
+34     { "SO_REUSEPORT",        SOL_SOCKET, SO_REUSEPORT,   sock_str_flag },
+35 #else
+36     { "SO_REUSEPORT",        0,          0,              NULL },
+37 #endif
+38     { "SO_TYPE",             SOL_SOCKET, SO_TYPE,        sock_str_int },
+39     { "SO_USELOOPBACK",      SOL_SOCKET, SO_USELOOPBACK, sock_str_flag },
+40     { "IP_TOS",              IPPROTO_IP, IP_TOS,         sock_str_int },
+41     { "IP_TTL",              IPPROTO_IP, IP_TTL,         sock_str_int },
+42     { "IPV6_DONTFRAG",       IPPROTO_IPV6,IPV6_DONTFRAG, sock_str_flag },
+43     { "IPV6_UNICAST_HOPS",   IPPROTO_IPV6,IPV6_UNICAST_HOPS,sock_str_int },
+44     { "IPV6_V6ONLY",         IPPROTO_IPV6,IPV6_V6ONLY,   sock_str_flag },
+45     { "TCP_MAXSEG",          IPPROTO_TCP,TCP_MAXSEG,     sock_str_int },
+46     { "TCP_NODELAY",         IPPROTO_TCP,TCP_NODELAY,    sock_str_flag },
+47     { "SCTP_AUTOCLOSE",      IPPROTO_SCTP,SCTP_AUTOCLOSE,sock_str_int },
+48     { "SCTP_MAXBURST",       IPPROTO_SCTP,SCTP_MAXBURST, sock_str_int },
+49     { "SCTP_MAXSEG",         IPPROTO_SCTP,SCTP_MAXSEG,   sock_str_int },
+50     { "SCTP_NODELAY",        IPPROTO_SCTP,SCTP_NODELAY,  sock_str_flag },
+51     { NULL,                  0,          0,              NULL }
+52 };
+</PRE>
+
+<P class="docText"><A class="docLink" HREF="#ch07fig04">Figure 7.4</A> shows our <TT>main</TT> function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch07fig04"></A>Figure 7.4 <TT>main</TT> function to check all socket options.</H5>
+<P class="docText"><span class="docEmphasis">sockopt/checkopts.c</span></P>
+
+<PRE>
+53 int
+54 main(int argc, char **argv)
+55 {
+56     int     fd;
+57     socklen_t len;
+58     struct sock_opts *ptr;
+
+59     for (ptr = sock_opts; ptr-&gt;opt_str != NULL; ptr++) {
+60         printf("%s: ", ptr-&gt;opt_str);
+61         if (ptr-&gt;opt_val_str == NULL)
+62             printf("(undefined)\n");
+63         else {
+64             switch (ptr-&gt;opt_level) {
+65             case SOL_SOCKET:
+66             case IPPROTO_IP:
+67             case IPPROTO_TCP:
+68                 fd = Socket(AF_INET, SOCK_STREAM, 0);
+69                 break;
+70 #ifdef  IPV6
+71             case IPPROTO_IPV6:
+72                 fd = Socket(AF_INET6, SOCK_STREAM, 0);
+73                 break;
+74 #endif
+75 #ifdef  IPPROTO_SCTP
+76             case IPPROTO_SCTP:
+77                 fd = Socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+78                 break;
+79 #endif
+80             default:
+81                 err_quit("Can't create fd for level %d\n", ptr-&gt;opt_level);
+82             }
+83             len = sizeof(val);
+84             if (getsockopt(fd, ptr-&gt;opt_level, ptr-&gt;opt_name,
+85                        &amp;val, &amp;len) == -1) {
+86                 err_ret("getsockopt error");
+87             } else {
+88                 printf("default = %s\n", (*ptr-&gt;opt_val_str)  (&amp;val, len));
+89             }
+90             close(fd);
+91         }
+92     }
+93     exit(0);
+94 }
+</PRE>
+
+
+<A NAME="ch07lev3sec4"></A>
+<H4 class="docSection2Title"> Go through all options</H4>
+<p class="docText"><span class="docEmphasis"><TT>59–63</TT></span> We go through all elements in our array. If the <TT>opt_val_str</TT> pointer is null, the option is not defined by the implementation (which we showed for <TT>SO_REUSEPORT</TT>).</p>
+
+<A NAME="ch07lev3sec5"></A>
+<H4 class="docSection2Title"> Create socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>63–82</TT></span> We create a socket on which to try the option. To try socket, IPv4, and TCP layer socket options, we use an IPv4 TCP socket. To try IPv6 layer socket options, we use an IPv6 TCP socket, and to try SCTP layer socket options, we use an IPv4 SCTP socket.</p>
+
+<A NAME="ch07lev3sec6"></A>
+<H4 class="docSection2Title"> Call <TT>getsockopt</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>83–87</TT></span> We call <TT>getsockopt</TT> but do not terminate if an error is returned. Many implementations define some of the socket option names even though they do not support the option. Unsupported options should elicit an error of <TT>ENOPROTOOPT</TT>.</p>
+
+<A NAME="ch07lev3sec7"></A>
+<H4 class="docSection2Title"> Print option's default value</H4>
+<p class="docText"><span class="docEmphasis"><TT>88–89</TT></span> If <TT>getsockopt</TT> returns success, we call our function to convert the option value to a string and print the string.</p>
+<P class="docText">In <A class="docLink" HREF="#ch07fig03">Figure 7.3</A>, we showed four function prototypes, one for each type of option value that is returned. <A class="docLink" HREF="#ch07fig05">Figure 7.5</A> shows one of these four functions, <TT>sock_str_flag</TT>, which prints the value of a flag option. The other three functions are similar.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch07fig05"></A>Figure 7.5 <TT>sock_str_flag</TT> function: convert flag option to a string.</H5>
+<P class="docText"><span class="docEmphasis">sockopt/checkopts.c</span></P>
+
+<PRE>
+ 95 static char strres[128];
+
+ 96 static char *
+ 97 sock_str_flag(union val *ptr, int len)
+ 98 {
+ 99     if (len != sizeof(int))
+100         snprintf(strres, sizeof(strres), "size (%d) not sizeof(int)", len);
+101     else
+102         snprintf(strres, sizeof(strres),
+103                  "%s", (ptr-&gt;i_val == 0) ? "off" : "on");
+104     return(strres);
+105 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>99–104</TT></span> Recall that the final argument to <TT>getsockopt</TT> is a value-result argument. The first check we make is that the size of the value returned by <TT>getsockopt</TT> is the expected size. The string returned is <TT>off</TT> or <TT>on</TT>, depending on whether the value of the flag option is zero or nonzero, respectively.</p>
+<P class="docText">Running this program under FreeBSD 4.8 with KAME SCTP patches gives the following output:</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">checkopts</span>
+SO_BROADCAST: default = off
+SO_DEBUG: default = off
+SO_DONTROUTE: default = off
+SO_ERROR: default = 0
+SO_KEEPALIVE: default = off
+SO_LINGER: default = l_onoff = 0, l_linger = 0
+SO_OOBINLINE: default = off
+SO_RCVBUF: default = 57344
+SO_SNDBUF: default = 32768
+SO_RCVLOWAT: default = 1
+SO_SNDLOWAT: default = 2048
+SO_RCVTIMEO: default = 0 sec, 0 usec
+SO_SNDTIMEO: default = 0 sec, 0 usec
+SO_REUSEADDR: default = off
+SO_REUSEPORT: default = off
+SO_TYPE: default = 1
+SO_USELOOPBACK: default = off
+IP_TOS: default = 0
+IP_TTL: default = 64
+IPV6_DONTFRAG: default = off
+IPV6_UNICAST_HOPS: default = -1
+IPV6_V6ONLY: default = off
+TCP_MAXSEG: default = 512
+TCP_NODELAY: default = off
+SCTP_AUTOCLOSE: default = 0
+SCTP_MAXBURST: default = 4
+SCTP_MAXSEG: default = 1408
+SCTP_NODELAY: default = off
+</pre><pre>
+</pre>
+<P class="docText">The value of 1 returned for the <TT>SO_TYPE</TT> option corresponds to <TT>SOCK_STREAM</TT> for this implementation.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch07lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch07lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

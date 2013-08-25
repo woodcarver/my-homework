@@ -1,0 +1,107 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="1.5 A Simple Daytime Server"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch01lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch01lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch01lev1sec5"></A>
+<H3 class="docSection1Title">1.5 A Simple Daytime Server</H3>
+<P class="docText">We can write a simple version of a TCP daytime server, which will work with the client from <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01lev1sec2">Section 1.2</A>. We use the wrapper functions that we described in the previous section and show this server in <A class="docLink" HREF="#ch01fig09">Figure 1.9</A>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch01fig09"></A>Figure 1.9 TCP daytime server.</H5>
+<P class="docText"><span class="docEmphasis">intro/daytimetcpsrv.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h".
+ 2 #include     &lt;time.h&gt;
+
+ 3 int
+ 4 main(int argc, char **argv)
+ 5 {
+ 6     int     listenfd, connfd;
+ 7     struct sockaddr_in servaddr;
+ 8     char    buff[MAXLINE];
+ 9     time_t ticks;
+
+10     listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+11     bzeros(&amp;servaddr, sizeof(servaddr));
+12     servaddr.sin_family = AF_INET;
+13     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+14     servaddr.sin_port = htons(13); /* daytime server */
+
+15     Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+16     Listen(listenfd, LISTENQ);
+
+17     for ( ; ; ) {
+18         connfd = Accept(listenfd, (SA *) NULL, NULL);
+
+19         ticks = time(NULL);
+20         snprintf(buff, sizeof(buff), "%.24s\r\n", ctime(&amp;ticks));
+21         Write(connfd, buff, strlen(buff));
+
+22         Close(connfd);
+23     }
+24 }
+</PRE>
+
+<A NAME="ch01lev3sec8"></A>
+<H4 class="docSection2Title"> Create a TCP socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>10</TT></span> The creation of the TCP socket is identical to the client code.</p>
+
+<A NAME="ch01lev3sec9"></A>
+<H4 class="docSection2Title"> Bind server's well-known port to socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>11–15</TT></span> The server's well-known port (13 for the daytime service) is bound to the socket by filling in an Internet socket address structure and calling <TT>bind</TT>. We specify the IP address as <TT>INADDR_ANY</TT>, which allows the server to accept a client connection on any interface, in case the server host has multiple interfaces. Later we will see how we can restrict the server to accepting a client connection on just a single interface.</p>
+
+<A NAME="ch01lev3sec10"></A>
+<H4 class="docSection2Title"> Convert socket to listening socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>16</TT></span> By calling <TT>listen</TT>, the socket is converted into a listening socket, on which incoming connections from clients will be accepted by the kernel. These three steps, <TT>socket</TT>, <TT>bind</TT>, and <TT>listen</TT>, are the normal steps for any TCP server to prepare what we call the <span class="docEmphasis">listening descriptor</span> (<TT>listenfd</TT> in this example).</p>
+<P class="docText">The constant <TT>LISTENQ</TT> is from our <TT>unp.h</TT> header. It specifies the maximum number of client connections that the kernel will queue for this listening descriptor. We say much more about this queueing in <A class="docLink" HREF="0131411551_ch04lev1sec5.html#ch04lev1sec5">Section 4.5</A>.</P>
+
+<A NAME="ch01lev3sec11"></A>
+<H4 class="docSection2Title"> Accept client connection, send reply</H4>
+<p class="docText"><span class="docEmphasis"><TT>17–21</TT></span> Normally, the server process is put to sleep in the call to <TT>accept</TT>, waiting for a client connection to arrive and be accepted. A TCP connection uses what is called a <span class="docEmphasis">three-way handshake</span> to establish a connection. When this handshake completes, <TT>accept</TT> returns, and the return value from the function is a new descriptor (<TT>connfd</TT>) that is called the <span class="docEmphasis">connected descriptor</span>. This new descriptor is used for communication with the new client. A new descriptor is returned by <TT>accept</TT> for each client that connects to our server.</p>
+<blockquote><p class="docText">The style used throughout the book for an infinite loop is</p>
+<pre>
+
+</pre><pre>
+for ( ; ; ) {
+    . . .
+}
+</pre><pre>
+</pre>
+</blockquote>
+<P class="docText">The current time and date are returned by the library function <TT>time</TT>, which returns the number of seconds since the Unix Epoch: 00:00:00 January 1, 1970, Coordinated Universal Time (UTC). The next library function, <TT>ctime</TT>, converts this integer value into a human-readable string such as</P>
+<pre>
+
+</pre><pre>
+Mon May 26 20:58:40 2003
+</pre><pre>
+</pre>
+<P class="docText">A carriage return and linefeed are appended to the string by <TT>snprintf</TT>, and the result is written to the client by <TT>write</TT>.</P>
+<BLOCKQUOTE><P><P class="docList">If you're not already in the habit of using <TT>snprintf</TT> instead of the older <TT>sprintf</TT>, now's the time to learn. Calls to <TT>sprintf</TT> cannot check for overflow of the destination buffer. <TT>snprintf</TT>, on the other hand, requires that the second argument be the size of the destination buffer, and this buffer will not overflow.</P></P><P><P class="docList"><TT>snprintf</TT> was a relatively late addition to the ANSI C standard, introduced in the version referred to as <span class="docEmphasis">ISO C99</span>. Virtually all vendors provide it as part of the standard C library, and many freely available versions are also available. We use <TT>snprintf</TT> throughout the text, and we recommend using it instead of <TT>sprintf</TT> in all your programs for reliability.</P></P><P><P class="docList">It is remarkable how many network break-ins have occurred by a hacker sending data to cause a server's call to <TT>sprintf</TT> to overflow its buffer. Other functions that we should be careful with are <TT>gets</TT>, <TT>strcat</TT>, and <TT>strcpy</TT>, normally calling <TT>fgets</TT>, <TT>strncat</TT>, and <TT>strncpy</TT> instead. Even better are the more recently available functions <TT>strlcat</TT> and <TT>strlcpy</TT>, which ensure the result is a properly terminated string. Additional tips on writing secure network programs are found in Chapter 23 of [Garfinkel, Schwartz, and Spafford 2003].</P></P></BLOCKQUOTE>
+
+<A NAME="ch01lev3sec12"></A>
+<H4 class="docSection2Title"> Terminate connection</H4>
+<p class="docText"><span class="docEmphasis"><TT>22</TT></span> The server closes its connection with the client by calling <TT>close</TT>. This initiates the normal TCP connection termination sequence: a FIN is sent in each direction and each FIN is acknowledged by the other end. We will say much more about TCP's three-way handshake and the four TCP packets used to terminate a TCP connection in <A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02lev1sec6">Section 2.6</A>.</p>
+<P class="docText">As with the client in the previous section, we have only examined this server briefly, saving all the details for later in the book. Note the following points:</P>
+<UL><LI><P class="docList">As with the client, the server is protocol-dependent on IPv4. We will show a protocol-independent version that uses the <TT>getaddrinfo</TT> function in <A class="docLink" HREF="0131411551_ch11lev1sec13.html#ch11fig13">Figure 11.13</A>.</P></LI><LI><P class="docList">Our server handles only one client at a time. If multiple client connections arrive at about the same time, the kernel queues them, up to some limit, and returns them to <TT>accept</TT> one at a time. This daytime server, which requires calling two library functions, <TT>time</TT> and <TT>ctime</TT>, is quite fast. But if the server took more time to service each client (say a few seconds or a minute), we would need some way to overlap the service of one client with another client.</P></LI><LI><P class="docList">The server that we show in <A class="docLink" HREF="#ch01fig09">Figure 1.9</A> is called an <span class="docEmphasis">iterative server</span> because it iterates through each client, one at a time. There are numerous techniques for writing a <span class="docEmphasis">concurrent server</span>, one that handles multiple clients at the same time. The simplest technique for a concurrent server is to call the Unix <TT>fork</TT> function (<A class="docLink" HREF="0131411551_ch04lev1sec7.html#ch04lev1sec7">Section 4.7</A>), creating one child process for each client. Other techniques are to use threads instead of <TT>fork</TT> (<A class="docLink" HREF="0131411551_ch26lev1sec4.html#ch26lev1sec4">Section 26.4</A>), or to pre-<TT>fork</TT> a fixed number of children when the server starts (<A class="docLink" HREF="0131411551_ch30lev1sec6.html#ch30lev1sec6">Section 30.6</A>).</P></LI><LI><P class="docList">If we start a server like this from a shell command line, we might want the server to run for a long time, since servers often run for as long as the system is up. This requires that we add code to the server to run correctly as a Unix <span class="docEmphasis">daemon</span>: a process that can run in the background, unattached to a terminal. We will cover this in <A class="docLink" HREF="0131411551_ch13lev1sec4.html#ch13lev1sec4">Section 13.4</A>.</P></LI></UL>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch01lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch01lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

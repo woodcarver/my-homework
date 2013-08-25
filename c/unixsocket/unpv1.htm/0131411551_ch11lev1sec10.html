@@ -1,0 +1,83 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.10 'getaddrinfo' Function: Examples"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec10"></A>
+<H3 class="docSection1Title">11.10 <TT>getaddrinfo</TT> Function: Examples</H3>
+<P class="docText">We will now show some examples of <TT>getaddrinfo</TT> using a test program that lets us enter all the parameters: the hostname, service name, address family, socket type, and <TT>AI_CANONNAME</TT> and <TT>AI_PASSIVE</TT> flags. (We do not show this test program, as it is about 350 lines of uninteresting code. It is provided with the source code for the book, as described in the Preface.) The test program outputs information on the variable number of <TT>addrinfo</TT> structures that are returned, showing the arguments for a call to <TT>socket</TT> and the address in each socket address structure.</P>
+<P class="docText">We first show the same example as in <A class="docLink" HREF="0131411551_ch11lev1sec6.html#ch11fig05">Figure 11.5</A>.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">testga -f inet -c -h freebsd4 -s domain</span>
+
+socket (AF_INET, SOCK_DGRAM, 17), ai_canonname = freebsd4.unpbook.com
+         address: 135.197.17.100:53
+socket (AF_INET, SOCK_DGRAM, 17)
+         address: 172.24.37.94:53
+socket (AF_INET, SOCK_STREAM, 6), ai_canonname = freebsd4.unpbook.com
+         address: 135.197.17.100:53
+socket (AF_INET, SOCK_STREAM, 6)
+         address: 172.24.37.94:53
+</pre><pre>
+</pre>
+<P class="docText">The <TT>-f inet</TT> option specifies the address family, <TT>-c</TT> says to return the canonical name, <TT>-h bsdi</TT> specifies the hostname, and <TT>-s domain</TT> specifies the service name.</P>
+<P class="docText">The common client scenario is to specify the address family, socket type (the <TT>-t</TT> option), hostname, and service name. The following example shows this for a multihomed host with three IPv4 addresses:</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">testga -f inet -t stream -h gateway.tuc.noao.edu -s daytime</span>
+
+socket (AF_INET, SOCK_STREAM, 6)
+         address: 140.252.108.1:13
+socket (AF_INET, SOCK_STREAM, 6)
+         address: 140.252.1.4:13
+socket (AF_INET, SOCK_STREAM, 6)
+         address: 140.252.104.1:13
+</pre><pre>
+</pre>
+<P class="docText">Next, we specify our host <TT>aix</TT>, which has both a AAAA record and an A record. We do not specify the address family, but we provide a service name of <TT>ftp</TT>, which is provided by TCP only.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">testga -h aix -s ftp -t stream</span>
+
+socket (AF_INET6, SOCK_STREAM, 6)
+         address: [3ffe:b80:1f8d:2:204:acff:fe17:bf38]:21
+socket (AF_INET, SOCK_STREAM, 6)
+         address: 192.168.42.2:21
+</pre><pre>
+</pre>
+<P class="docText">Since we didn't specify the address family, and since we ran this example on a host that supports both IPv4 and IPv6, two structures are returned: one for IPv4 and one for IPv6.</P>
+<P class="docText">Next, we specify the <TT>AI_PASSIVE</TT> flag (the <TT>-p</TT> option); we do not specify an address family or hostname (implying the wildcard address). We also specify a port number of 8888 and a stream socket.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">testga -p -s 8888 -t stream</span>
+
+socket (AF_INET6, SOCK_STREAM, 6)
+         address: [: :]: 8888
+socket (AF_INET, SOCK_STREAM, 6)
+         address: 0.0.0.0:8888
+</pre><pre>
+</pre>
+<P class="docText">Two structures are returned. Since we ran this on a host that supports IPv6 and IPv4 without specifying an address family, <TT>getaddrinfo</TT> returns the IPv6 wildcard address and the IPv4 wildcard address. The IPv6 structure is returned before the IPv4 structure, because we will see in <A class="docLink" HREF="0131411551_ch12.html#ch12">Chapter 12</A> that an IPv6 client or server on a dual-stack host can communicate with either IPv6 or IPv4 peers.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec9.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec11.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,61 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="30.8 TCP Preforked Server, Thread Locking Around 'accept'"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch30lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch30lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch30lev1sec8"></A>
+<H3 class="docSection1Title" id="225793-984">30.8 TCP Preforked Server, Thread Locking Around <TT>accept</TT></H3>
+<P class="docText">As we mentioned, there are various ways to implement locking between processes. The POSIX file locking in the previous section is portable to all POSIX-compliant systems, but it involves filesystem operations, which can take time. In this section, we will use thread locking, taking advantage of the fact that this can be used not only for locking between the threads within a given process, but also for locking between different processes.</P>
+<P class="docText">Our <TT>main</TT> function remains the same as in the previous section, as do our <TT>child_make</TT> and <TT>child_main</TT> functions. The only thing that changes is our three locking functions. To use thread locking between different processes requires that: (i) the mutex variable must be stored in memory that is shared between all the processes; and (ii) the thread library must be told that the mutex is shared among different processes.</P>
+<BLOCKQUOTE><P><P class="docList">Also, the thread library must support the <TT>PTHREAD_PROCESS_SHARED</TT> attribute.</P></P></BLOCKQUOTE>
+<P class="docText">There are various ways to share memory between different processes, as we described in the second volume of this series. In our example, we will use the <TT>mmap</TT> function with the <TT>/dev/zero</TT> device, which works under Solaris and other SVR4 kernels. <A class="docLink" HREF="#ch30fig18">Figure 30.18</A> shows our <TT>my_lock_init</TT> function.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch30fig18"></A>Figure 30.18 <TT>my_lock_init</TT> function using Pthread locking between processes.</H5>
+<P class="docText"><span class="docEmphasis">server/lock_pthread.c</span></P>
+
+<PRE>
+ 1 #include    "unpthread.h"
+ 2 #include    &lt;sys/mman.h&gt;
+
+ 3 static pthread_mutex_t *mptr;    /* actual mutex will be in shared memory */
+
+ 4 void
+ 5 my_lock_init(char *pathname)
+ 6 {
+ 7     int     fd;
+ 8     pthread_mutexattr_t mattr;
+
+ 9     fd = Open("/dev/zero", O_RDWR, 0);
+
+10     mptr = Mmap(0, sizeof(pthread_mutex_t), PROT_READ | PROT_WRITE,
+11                 MAP_SHARED, fd, 0);
+12     Close(fd);
+
+13     Pthread_mutexattr_init(&amp;mattr);
+14     Pthread_mutexattr_setpshared(&amp;mattr, PTHREAD_PROCESS_SHARED);
+15     Pthread_mutex_init(mptr, &amp;mattr);
+16 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>9–12</TT></span> We <TT>open/dev/zero</TT> and then call <TT>mmap</TT>. The number of bytes that are mapped is equal to the size of a <TT>pthread_mutex_t</TT> variable. The descriptor is then closed, which is fine, because the memory mapped to <TT>/dev/zero</TT> will remain mapped.</p>
+<p class="docText"><span class="docEmphasis"><TT>13–15</TT></span> In our previous Pthread mutex examples, we initialized the global or static mutex variable using the constant <TT>PTHREAD_MUTEX_INITIALIZER</TT> (e.g., <A class="docLink" HREF="0131411551_ch26lev1sec7.html#ch26fig18">Figure 26.18</A>). But with a mutex in shared memory, we must call some Pthread library functions to tell the library that the mutex is in shared memory and that it will be used for locking between different processes. We first initialize a <TT>pthread_mutexattr_t</TT> structure with the default attributes for a mutex and then set the <TT>PTHREAD_PROCESS_SHARED</TT> attribute. (The default for this attribute is <TT>PTHREAD_PROCESS_PRIVATE</TT>, allowing use only within a single process.) <TT>pthread_mutex_init</TT> then initializes the mutex with these attributes.</p>
+<P class="docText"><A class="docLink" HREF="0131411551_ch30lev1sec9.html#ch30fig19">Figure 30.19</A> shows our <TT>my_lock_wait</TT> and <TT>my_lock_release</TT> functions. Each is now just a call to a Pthread function to lock or unlock the mutex.</P>
+<P class="docText">Comparing rows 3 and 4 in <A class="docLink" HREF="0131411551_ch30lev1sec1.html#ch30fig01">Figure 30.1</A> for the Solaris server shows that thread mutex locking is faster than file locking.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch30lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch30lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

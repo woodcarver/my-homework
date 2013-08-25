@@ -1,0 +1,35 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="8.2 'recvfrom' and 'sendto' Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch08lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch08lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch08lev1sec2"></A>
+<H3 class="docSection1Title" id="225793-841">8.2 <TT>recvfrom</TT> and <TT>sendto</TT> Functions</H3>
+<P class="docText">These two functions are similar to the standard <TT>read</TT> and <TT>write</TT> functions, but three additional arguments are required.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t recvfrom(int</TT> <span class="docEmphasis">sockfd</span>, <TT>void *</TT><span class="docEmphasis">buff</span>, <TT>size_t</TT> <span class="docEmphasis">nbytes</span>, <TT>int</TT> <span class="docEmphasis">flags</span>, <TT>struct sockaddr *</TT><span class="docEmphasis">from</span>, <TT>socklen_t *</TT><span class="docEmphasis">addrlen</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t sendto(int</TT> <span class="docEmphasis">sockfd</span>, <TT>const void *</TT><span class="docEmphasis">buff</span>, <TT>size_t</TT> <span class="docEmphasis">nbytes</span>, <TT>int</TT> <span class="docEmphasis">flags</span>, <TT>const struct sockaddr *</TT><span class="docEmphasis">to</span>, <TT>socklen_t</TT> <span class="docEmphasis">addrlen</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: number of bytes read or written if OK, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The first three arguments, <span class="docEmphasis">sockfd, buff</span>, and <span class="docEmphasis">nbytes</span>, are identical to the first three arguments for <TT>read</TT> and <TT>write</TT>: descriptor, pointer to buffer to read into or write from, and number of bytes to read or write.</P>
+<P class="docText">We will describe the <span class="docEmphasis">flags</span> argument in <A class="docLink" HREF="0131411551_ch14.html#ch14">Chapter 14</A> when we discuss the <TT>recv</TT>, <TT>send</TT>, <TT>recvmsg</TT>, and <TT>sendmsg</TT> functions, since we do not need them with our simple UDP client/server example in this chapter. For now, we will always set the <span class="docEmphasis">flags</span> to 0.</P>
+<P class="docText">The <span class="docEmphasis">to</span> argument for <TT>sendto</TT> is a socket address structure containing the protocol address (e.g., IP address and port number) of where the data is to be sent. The size of this socket address structure is specified by <span class="docEmphasis">addrlen</span>. The <TT>recvfrom</TT> function fills in the socket address structure pointed to by <span class="docEmphasis">from</span> with the protocol address of who sent the datagram. The number of bytes stored in this socket address structure is also returned to the caller in the integer pointed to by <span class="docEmphasis">addrlen</span>. Note that the final argument to <TT>sendto</TT> is an integer value, while the final argument to <TT>recvfrom</TT> is a pointer to an integer value (a value-result argument).</P>
+<P class="docText">The final two arguments to <TT>recvfrom</TT> are similar to the final two arguments to <TT>accept</TT>: The contents of the socket address structure upon return tell us who sent the datagram (in the case of UDP) or who initiated the connection (in the case of TCP). The final two arguments to <TT>sendto</TT> are similar to the final two arguments to <TT>connect</TT>: We fill in the socket address structure with the protocol address of where to send the datagram (in the case of UDP) or with whom to establish a connection (in the case of TCP).</P>
+<P class="docText">Both functions return the length of the data that was read or written as the value of the function. In the typical use of <TT>recvfrom</TT>, with a datagram protocol, the return value is the amount of user data in the datagram received.</P>
+<P class="docText">Writing a datagram of length 0 is acceptable. In the case of UDP, this results in an IP datagram containing an IP header (normally 20 bytes for IPv4 and 40 bytes for IPv6), an 8-byte UDP header, and no data. This also means that a return value of 0 from <TT>recvfrom</TT> is acceptable for a datagram protocol: It does not mean that the peer has closed the connection, as does a return value of 0 from <TT>read</TT> on a TCP socket. Since UDP is connectionless, there is no such thing as closing a UDP connection.</P>
+<P class="docText">If the <span class="docEmphasis">from</span> argument to <TT>recvfrom</TT> is a null pointer, then the corresponding length argument (<span class="docEmphasis">addrlen</span>) must also be a null pointer, and this indicates that we are not interested in knowing the protocol address of who sent us data.</P>
+<P class="docText">Both <TT>recvfrom</TT> and <TT>sendto</TT> can be used with TCP, although there is normally no reason to do so.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch08lev1sec1.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch08lev1sec3.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

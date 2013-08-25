@@ -1,0 +1,28 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Exercises"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch03lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch04.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch03lev1sec11"></A>
+<H3 class="docSection1Title"> Exercises</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><A NAME="ch03q01"></A><B><A class="docLink" HREF="0131411551_app05lev1sec3.html#ch03a01">3.1</A></B></TD><TD><P class="docText">Why must value-result arguments such as the length of a socket address structure be passed by reference?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch03q02"></A><B><A class="docLink" HREF="0131411551_app05lev1sec3.html#ch03a02">3.2</A></B></TD><TD><P class="docText">Why do both the <TT>readn</TT> and <TT>writen</TT> functions copy the <TT>void*</TT> pointer into a <TT>char*</TT> pointer?</P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch03q03"></A><B>3.3</B></TD><TD><P class="docText">The <TT>inet_aton</TT> and <TT>inet_addr</TT> functions have traditionally been liberal in what they accept as a dotted-decimal IPv4 address string: allowing from one to four numbers separated by decimal points, and allowing a leading <TT>0x</TT> to specify a hexadecimal number, or a leading 0 to specify an octal number. (Try <TT>telnet 0xe</TT> to see this behavior.) <TT>inet_pton</TT> is much stricter with IPv4 address and requires exactly four numbers separated by three decimal points, with each number being a decimal number between 0 and 255. <TT>inet_pton</TT> does not allow a dotted-decimal number to be specified when the address family is <TT>AF_INET6</TT>, although one could argue that these should be allowed and the return value should be the IPv4-mapped IPv6 address for the dotted-decimal string (<A class="docLink" HREF="0131411551_app01lev1sec5.html#app01fig10">Figure A.10</A>).</P>
+<P class="docText">Write a new function named <TT>inet_pton_loose</TT> that handles these scenarios: If the address family is <TT>AF_INET</TT> and <TT>inet_pton</TT> returns 0, call <TT>inet_aton</TT> and see if it succeeds. Similarly, if the address family is <TT>AF_INET6</TT> and <TT>inet_pton</TT> returns 0, call <TT>inet_aton</TT> and if it succeeds, return the IPv4-mapped IPv6 address.</P></TD></TR></TABLE></P><br>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch03lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch04.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

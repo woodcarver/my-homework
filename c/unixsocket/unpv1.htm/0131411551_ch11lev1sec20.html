@@ -1,0 +1,46 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.20 Obsolete IPv6 Address Lookup Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec19.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec21.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec20"></A>
+<H3 class="docSection1Title" id="225793-826">11.20 Obsolete IPv6 Address Lookup Functions</H3>
+<P class="docText">While IPv6 was being developed, the API to request the lookup of an IPv6 address went through several iterations. The resulting API was complicated and not sufficiently flexible, so it was deprecated in RFC 2553 [Gilligan et al. 1999]. RFC 2553 introduced its own new functions, which were finally simply replaced by <TT>getaddrinfo</TT> and <TT>getnameinfo</TT> in RFC 3493 [Gilligan et al. 2003]. This section briefly describes some of the old API to assist in the conversion of programs using the old API.</P>
+<A NAME="ch11lev2sec11"></A>
+<H4 class="docSection2Title"> The <TT>RES_USE_INET6</TT> Constant</H4>
+<P class="docText">Since <TT>gethostbyname</TT> doesn't have an argument to specify what address family is of interest (like <TT>getaddrinfo's hints.ai_family</TT> struct entry), the first revision of the API used the <TT>RES_USE_INET6</TT> constant, which had to be added to the resolver flags using a private, internal interface. This API was not very portable since systems that used a different internal resolver interface had to mimic the BIND resolver interface to provide it.</P>
+<P class="docText">Enabling <TT>RES_USE_INET6</TT> caused <TT>gethostbyname</TT> to look up AAAA records first, and only look up A records if a name had no AAAA records. Since the <TT>hostent</TT> structure only has one address length field, <TT>gethostbyname</TT> could only return either IPv6 or IPv4 addresses, but not both.</P>
+<P class="docText">Enabling <TT>RES_USE_INET6</TT> also caused <TT>gethostbyname2</TT> to return IPv4 addresses as IPv4-mapped IPv6 addresses. We will describe <TT>gethostbyname2</TT> next.</P>
+
+<A NAME="ch11lev2sec12"></A>
+<H4 class="docSection2Title"> The <TT>gethostbyname2</TT> Function</H4>
+<P class="docText">The <TT>gethostbyname2</TT> function adds an address family argument to <TT>gethostbyname</TT>.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netdb.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct hostent *gethostbyname2 (const char</TT> *<span class="docEmphasis">name</span>, <TT>int</TT> <span class="docEmphasis">af</span>) ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-null pointer if OK, <TT>NULL</TT> on error with <TT>h_errno</TT> set</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">When the <TT>af</TT> argument is <TT>AF_INET</TT>, <TT>AF_INET</TT>, <TT>gethostbyname2</TT> behaves just like <TT>gethostbyname</TT>, looking up and returning IPv4 addresses. When the <TT>af</TT> argument is <TT>AF_INET6</TT>, <TT>AF_INET6</TT>, <TT>gethostbyname2</TT> looks up and returns only AAAA records for IPv6 addresses.</P>
+
+<A NAME="ch11lev2sec13"></A>
+<H4 class="docSection2Title"> The <TT>getipnodebyname</TT> Function</H4>
+<P class="docText">RFC 2553 [Gilligan et al. 1999] deprecated <TT>RES_USE_INET6</TT> and <TT>gethostbyname2</TT> because of the global nature of the <TT>RES_USE_INET6</TT> flag and the wish to provide more control over the returned information. It introduced the <TT>getipnodebyname</TT> function to solve some of these problems.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/socket.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netdb.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>struct hostent *getipnodebyname (const char</TT> *<span class="docEmphasis">name</span>, <TT>int</TT> <span class="docEmphasis">af</span>, <TT>int</TT> <span class="docEmphasis">flags</span>, <TT>int</TT> *<span class="docEmphasis">error_num</span>) ;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: non-null pointer if OK, <TT>NULL</TT> on error with <TT>error_num</TT> set</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">This function returns a pointer to the same <TT>hostent</TT> structure that we described with <TT>gethostbyname</TT>. The <TT>af</TT> and <TT>flags</TT> arguments map directly to <TT>getaddrinfo's hints.ai_family</TT> and <TT>hints.ai_flags</TT> arguments. For thread safety, the return value is dynamically allocated, so it must be freed with the <TT>freehostent</TT> function.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netdb.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>void freehostent (struct hostent</TT> <span class="docEmphasis">*ptr</span><TT>) ;</TT></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The <TT>getipnodebyname</TT> and its matching <TT>getipnodebyaddr</TT> functions are deprecated by RFC 3493 [Gilligan et al. 2003] in favor of <TT>getaddrinfo</TT> and <TT>getnameinfo</TT>.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec19.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec21.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

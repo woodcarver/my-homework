@@ -1,0 +1,59 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="5.12 Termination of Server Process"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch05lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch05lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch05lev1sec12"></A>
+<H3 class="docSection1Title">5.12 Termination of Server Process</H3>
+<P class="docText">We will now start our client/server and then kill the server child process. This simulates the crashing of the server process, so we can see what happens to the client. (We must be careful to distinguish between the crashing of the server <span class="docEmphasis">process</span>, which we are about to describe, and the crashing of the server <span class="docEmphasis">host</span>, which we will describe in <A class="docLink" HREF="0131411551_ch05lev1sec14.html#ch05lev1sec14">Section 5.14</A>.) The following steps take place:</P>
+<A NAME="ch05pro05"></A>
+
+
+
+
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">We start the server and client and type one line to the client to verify that all is okay. That line is echoed normally by the server child.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText">We find the process ID of the server child and <TT>kill</TT> it. As part of process termination, all open descriptors in the child are closed. This causes a FIN to be sent to the client, and the client TCP responds with an ACK. This is the first half of the TCP connection termination.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">The <TT>SIGCHLD</TT> signal is sent to the server parent and handled correctly (<A class="docLink" HREF="0131411551_ch05lev1sec10.html#ch05fig12">Figure 5.12</A>).</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docText">Nothing happens at the client. The client TCP receives the FIN from the server TCP and responds with an ACK, but the problem is that the client process is blocked in the call to <TT>fgets</TT> waiting for a line from the terminal.</P>
+</span></LI><LI><span style="font-weight:normal" value="5"><P class="docList">Running <TT>netstat</TT> at this point shows the state of the sockets.</P>
+<pre>
+
+</pre><pre>
+linux % <span class="docEmphStrong">netstat -a</span> | <span class="docEmphStrong">grep 9877</span>
+tcp        0      0 *:9877               *:*                 LISTEN
+tcp        0      0 localhost:9877       localhost:43604     FIN_WAIT2
+tcp        1      0 localhost:43604      localhost:9877      CLOSE_WAIT
+</pre><pre>
+</pre>
+<P class="docText">From <A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02fig04">Figure 2.4</A>, we see that half of the TCP connection termination sequence has taken place.</P>
+</span></LI><LI><span style="font-weight:normal" value="6"><P class="docList">We can still type a line of input to the client. Here is what happens at the client starting from Step 1:</P>
+<P><TABLE CELLSPACING="0" FRAME="void" RULES="none" CELLPADDING="5" WIDTH="90%"><COLGROUP align="left" span="2"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>linux %</TT> <span class="docEmphStrong"><TT>tcpcli01 127.0.0.1</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">start client</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphStrong"><TT>hello</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">the first line that we type</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>hello</TT></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">is echoed correctly here we kill the server child on the server host</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphStrong"><TT>another line</TT></span></P></TD><TD class="docTableCell" valign="top"><P class="docText"><span class="docEmphasis">we then type a second line to the client</span></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>str_cli</TT> : <TT>server terminated prematurely</TT></P></TD></TR></COLGROUP></TABLE></P>
+<P class="docList">When we type "another line," <TT>str_cli</TT> calls <TT>writen</TT> and the client TCP sends the data to the server. This is allowed by TCP because the receipt of the FIN by the client TCP only indicates that the server process has closed its end of the connection and will not be sending any more data. The receipt of the FIN does <span class="docEmphasis">not</span> tell the client TCP that the server process has terminated (which in this case, it has). We will cover this again in <A class="docLink" HREF="0131411551_ch06lev1sec6.html#ch06lev1sec6">Section 6.6</A> when we talk about TCP's half-close.</P>
+<P class="docText">When the server TCP receives the data from the client, it responds with an RST since the process that had that socket open has terminated. We can verify that the RST was sent by watching the packets with <TT>tcpdump</TT>.</P>
+</span></LI><LI><span style="font-weight:normal" value="7"><P class="docText">The client process will not see the RST because it calls <TT>readline</TT> immediately after the call to <TT>writen</TT> and <TT>readline</TT> returns 0 (EOF) immediately because of the FIN that was received in Step 2. Our client is not expecting to receive an EOF at this point (<A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A>) so it quits with the error message "server terminated prematurely."</P>
+</span></LI><LI><span style="font-weight:normal" value="8"><P class="docText">When the client terminates (by calling <TT>err_quit</TT> in <A class="docLink" HREF="0131411551_ch05lev1sec5.html#ch05fig05">Figure 5.5</A>), all its open descriptors are closed.</P>
+</span></LI></OL></span>
+<BLOCKQUOTE><P><P class="docList">What we have described also depends on the timing of the example. The client's call to <TT>readline</TT> may happen before the server's RST is received by the client, or it may happen after. If the <TT>readline</TT> happens before the RST is received, as we've shown in our example, the result is an unexpected EOF in the client. But if the RST arrives first, the result is an <TT>ECONNRESET</TT> ("Connection reset by peer") error return from <TT>readline</TT>.</P></P></BLOCKQUOTE>
+<P class="docText">The problem in this example is that the client is blocked in the call to <TT>fgets</TT> when the FIN arrives on the socket. The client is really working with two descriptors—the socket and the user input—and instead of blocking on input from only one of the two sources (as <TT>str_cli</TT> is currently coded), it should block on input from either source. Indeed, this is one purpose of the <TT>select</TT> and <TT>poll</TT> functions, which we will describe in <A class="docLink" HREF="0131411551_ch06.html#ch06">Chapter 6</A>. When we recode the <TT>str_cli</TT> function in <A class="docLink" HREF="0131411551_ch06lev1sec4.html#ch06lev1sec4">Section 6.4</A>, as soon as we <TT>kill</TT> the server child, the client is notified of the received FIN.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch05lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch05lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

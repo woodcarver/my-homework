@@ -1,0 +1,59 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="12.3 IPv6 Client, IPv4 Server"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch12lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch12lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch12lev1sec3"></A>
+<H3 class="docSection1Title">12.3 IPv6 Client, IPv4 Server</H3>
+<P class="docText">We now swap the protocols used by the client and server from the example in the previous section. First consider an IPv6 TCP client running on a dual-stack host.</P>
+<A NAME="ch12pro03"></A>
+
+
+
+
+<span style="font-weight:bold"><OL class="docList" START="1"><LI><span style="font-weight:normal" value="1"><P class="docText">An IPv4 server starts on an IPv4-only host and creates an IPv4 listening socket.</P>
+</span></LI><LI><span style="font-weight:normal" value="2"><P class="docText">The IPv6 client starts and calls <TT>getaddrinfo</TT> asking for only IPv6 addresses (it requests the <TT>AF_INET6</TT> address family and sets the <TT>AI_V4MAPPED</TT> flag in its <span class="docEmphasis">hints</span> structure). Since the IPv4-only server host has only A records, we see from <A class="docLink" HREF="0131411551_ch11lev1sec9.html#ch11fig08">Figure 11.8</A> that an IPV4-mapped IPv6 address is returned to the client.</P>
+</span></LI><LI><span style="font-weight:normal" value="3"><P class="docText">The IPv6 client calls <TT>connect</TT> with the IPv4-mapped IPv6 address in the IPv6 socket address structure. The kernel detects the mapped address and automatically sends an IPv4 SYN to the server.</P>
+</span></LI><LI><span style="font-weight:normal" value="4"><P class="docText">The server responds with an IPv4 SYN/ACK, and the connection is established using IPv4 datagrams.</P>
+</span></LI></OL></span>
+<P class="docText">We can summarize this scenario in <A class="docLink" HREF="#ch12fig04">Figure 12.4</A>.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch12fig04"></A>Figure 12.4. Processing of client requests, depending on address type and socket type.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="476" HEIGHT="438" src="FILES/12fig04.gif" ALT="graphics/12fig04.gif"></p>
+
+</CENTER>
+<UL><LI><P class="docList">If an IPv4 TCP client calls <TT>connect</TT> specifying an IPv4 address, or if an IPv4 UDP client calls <TT>sendto</TT> specifying an IPv4 address, nothing special is done. These are the two arrows labeled "IPv4" in the figure.</P></LI><LI><P class="docList">If an IPv6 TCP client calls <TT>connect</TT> specifying an IPv6 address, or if an IPv6 UDP client calls <TT>sendto</TT> specifying an IPv6 address, nothing special is done. These are the two arrows labeled "IPv6" in the figure.</P></LI><LI><P class="docList">If an IPv6 TCP client specifies an IPv4-mapped IPv6 address to <TT>connect</TT> or if an IPv6 UDP client specifies an IPv4-mapped IPv6 address to <TT>sendto</TT>, the kernel detects the mapped address and causes an IPv4 datagram to be sent instead of an IPv6 datagram. These are the two dashed arrows in the figure.</P></LI><LI><P class="docList">An IPv4 client cannot specify an IPv6 address to either <TT>connect</TT> or <TT>sendto</TT> because a 16-byte IPv6 address does not fit in the 4-byte <TT>in_addr</TT> structure within the IPv4 <TT>sockaddr_in</TT> structure. Therefore, there are no arrows from the IPv4 sockets to the IPv6 protocol box in the figure.</P></LI></UL>
+<P class="docText">In the previous section (an IPv4 datagram arriving for an IPv6 server socket), the conversion of the received address to the IPv4-mapped IPv6 address is done by the kernel and returned transparently to the application by <TT>accept</TT> or <TT>recvfrom</TT>. In this section (an IPv4 datagram needing to be sent on an IPv6 socket), the conversion of the IPv4 address to the IPv4-mapped IPv6 address is done by the resolver according to the rules in <A class="docLink" HREF="0131411551_ch11lev1sec9.html#ch11fig08">Figure 11.8</A>, and the mapped address is then passed transparently by the application to <TT>connect</TT> or <TT>sendto</TT>.</P>
+<A NAME="ch12lev2sec1"></A>
+<H4 class="docSection2Title"> Summary of Interoperability</H4>
+<P class="docText"><A class="docLink" HREF="#ch12fig05">Figure 12.5</A> summarizes this section and the previous section, plus the combinations of clients and servers.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch12fig05"></A>Figure 12.5. Summary of interoperability between IPv4 and IPv6 clients and servers.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="117" src="FILES/12fig05.gif" ALT="graphics/12fig05.gif"></p>
+
+</CENTER>
+<P class="docText">Each box contains "IPv4" or "IPv6" if the combination is okay, indicating which protocol is used, or "(no)" if the combination is invalid. The third column on the final row is marked with an asterisk because interoperability depends on the address chosen by the client. Choosing the AAAA record and sending an IPv6 datagram will not work. But choosing the A record, which is returned to the client as an IPv4-mapped IPv6 address, causes an IPv4 datagram to be sent, which will work. By looping through all adresses that <TT>getaddrinfo</TT> returns, as shown in <A class="docLink" HREF="0131411551_ch11lev1sec5.html#ch11fig04">Figure 11.4</A>, we can ensure that we will (perhaps after some timeouts) try the IPv4-mapped IPv6 address.</P>
+<P class="docText">Although it appears that five entries in the table will not interoperate, in the real world for the foreseeable future, most implementations of IPv6 will be on dual-stack hosts and will not be IPv6-only implementations. If we therefore remove the second row and the second column, all of the "(no)" entries disappear and the only problem is the entry with the asterisk.</P>
+
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch12lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch12lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

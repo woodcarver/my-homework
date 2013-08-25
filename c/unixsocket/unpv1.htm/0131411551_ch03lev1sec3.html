@@ -1,0 +1,63 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="3.3 Value-Result Arguments"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch03lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch03lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch03lev1sec3"></A>
+<H3 class="docSection1Title" id="225793-932">3.3 Value-Result Arguments</H3>
+<P class="docText">We mentioned that when a socket address structure is passed to any socket function, it is always passed by reference. That is, a pointer to the structure is passed. The length of the structure is also passed as an argument. But the way in which the length is passed depends on which direction the structure is being passed: from the process to the kernel, or vice versa.</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">Three functions, <TT>bind</TT>, <TT>connect</TT>, and <TT>sendto</TT>, pass a socket address structure from the process to the kernel. One argument to these three functions is the pointer to the socket address structure and another argument is the integer size of the structure, as in</P><pre>
+
+</pre><pre>
+struct sockaddr_in serv;
+
+/* fill in serv{} */
+connect (sockfd, (SA *) &amp;serv, sizeof(serv));
+</pre><pre>
+</pre><P class="docList">Since the kernel is passed both the pointer and the size of what the pointer points to, it knows exactly how much data to copy from the process into the kernel. <A class="docLink" HREF="#ch03fig07">Figure 3.7</A> shows this scenario.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch03fig07"></A>Figure 3.7. Socket address structure passed from process to kernel.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="252" HEIGHT="343" src="FILES/03fig07.gif" ALT="graphics/03fig07.gif"></p>
+
+</CENTER><P class="docList">We will see in the next chapter that the datatype for the size of a socket address structure is actually <TT>socklen_t</TT> and not <TT>int</TT>, but the POSIX specification recommends that <TT>socklen_t</TT> be defined as <TT>uint32_t</TT>.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Four functions, <TT>accept</TT>, <TT>recvfrom</TT>, <TT>getsockname</TT>, and <TT>getpeername</TT>, pass a socket address structure from the kernel to the process, the reverse direction from the previous scenario. Two of the arguments to these four functions are the pointer to the socket address structure along with a pointer to an integer containing the size of the structure, as in</P><pre>
+
+</pre><pre>
+struct sockaddr_un  cli;   /* Unix domain */
+socklen_t  len;
+
+len = sizeof(cli);         /* len is a value */
+getpeername(unixfd, (SA *) &amp;cli, &amp;len);
+/* len may have changed */
+</pre><pre>
+</pre><P class="docList">The reason that the size changes from an integer to be a pointer to an integer is because the size is both a <span class="docEmphasis">value</span> when the function is called (it tells the kernel the size of the structure so that the kernel does not write past the end of the structure when filling it in) and a <span class="docEmphasis">result</span> when the function returns (it tells the process how much information the kernel actually stored in the structure). This type of argument is called a <span class="docEmphasis">value-result</span> argument. <A class="docLink" HREF="#ch03fig08">Figure 3.8</A> shows this scenario.</P><CENTER>
+<H5 class="docFigureTitle"><A NAME="ch03fig08"></A>Figure 3.8. Socket address structure passed from kernel to process.</H5>
+
+<p class="docText">
+<IMG BORDER="0" id="129022115118" WIDTH="253" HEIGHT="344" src="FILES/03fig08.gif" ALT="graphics/03fig08.gif"></p>
+
+</CENTER></span></LI></OL></span>
+<P class="docText">We will see an example of value-result arguments in <A class="docLink" HREF="0131411551_ch04lev1sec6.html#ch04fig11">Figure 4.11</A>.</P>
+<BLOCKQUOTE><P><P class="docList">We have been talking about socket address structures being passed between the process and the kernel. For an implementation such as 4.4BSD, where all the socket functions are system calls within the kernel, this is correct. But in some implementations, notably System V, socket functions are just library functions that execute as part of a normal user process. How these functions interface with the protocol stack in the kernel is an implementation detail that normally does not affect us. Nevertheless, for simplicity, we will continue to talk about these structures as being passed between the process and the kernel by functions such as <TT>bind</TT> and <TT>connect</TT>. (We will see in <A class="docLink" HREF="0131411551_app03lev1sec1.html#app03lev1sec1">Section C.1</A> that System V implementations do indeed pass socket address structures between processes and the kernel, but as part of <TT>STREAMS</TT> messages.)</P></P></BLOCKQUOTE>
+<BLOCKQUOTE><P><P class="docList">Two other functions pass socket address structures: <TT>recvmsg</TT> and <TT>sendmsg</TT> (<A class="docLink" HREF="0131411551_ch14lev1sec5.html#ch14lev1sec5">Section 14.5</A>). But, we will see that the length field is not a function argument but a structure member.</P></P></BLOCKQUOTE>
+<P class="docText">When using value-result arguments for the length of socket address structures, if the socket address structure is fixed-length (<A class="docLink" HREF="0131411551_ch03lev1sec2.html#ch03fig06">Figure 3.6</A>), the value returned by the kernel will always be that fixed size: 16 for an IPv4 <TT>sockaddr_in</TT> and 28 for an IPv6 <TT>sockaddr_in6</TT>, for example. But with a variable-length socket address structure (e.g., a Unix domain <TT>sockaddr_un</TT>), the value returned can be less than the maximum size of the structure (as we will see with <A class="docLink" HREF="0131411551_ch15lev1sec2.html#ch15fig02">Figure 15.2</A>).</P>
+<P class="docText">With network programming, the most common example of a value-result argument is the length of a returned socket address structure. But, we will encounter other value-result arguments in this text:</P>
+<UL><LI><P class="docList">The middle three arguments for the <TT>select</TT> function (<A class="docLink" HREF="0131411551_ch06lev1sec3.html#ch06lev1sec3">Section 6.3</A>)</P></LI><LI><P class="docList">The length argument for the <TT>getsockopt</TT> function (<A class="docLink" HREF="0131411551_ch07lev1sec2.html#ch07lev1sec2">Section 7.2</A>)</P></LI><LI><P class="docList">The <TT>msg_namelen</TT> and <TT>msg_controllen</TT> members of the <TT>msghdr</TT> structure, when used with <TT>recvmsg</TT> (<A class="docLink" HREF="0131411551_ch14lev1sec5.html#ch14lev1sec5">Section 14.5</A>)</P></LI><LI><P class="docList">The <TT>ifc_len</TT> member of the <TT>ifconf</TT> structure (<A class="docLink" HREF="0131411551_ch17lev1sec5.html#ch17fig02">Figure 17.2</A>)</P></LI><LI><P class="docList">The first of the two length arguments for the <TT>sysctl</TT> function (<A class="docLink" HREF="0131411551_ch18lev1sec4.html#ch18lev1sec4">Section 18.4</A>)</P></LI></UL>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch03lev1sec2.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch03lev1sec4.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,170 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="11.12 'tcp_connect' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch11lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch11lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch11lev1sec12"></A>
+<H3 class="docSection1Title" id="162666-821">11.12 <TT>tcp_connect</TT> Function</H3>
+<P class="docText">We will now write two functions that use <TT>getaddrinfo</TT> to handle most scenarios for the TCP clients and servers that we write. The first function, <TT>tcp_connect</TT>, performs the normal client steps: create a TCP socket and connect to a server.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include "unp.h"</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int tcp_connect (const char *</TT><span class="docEmphasis">hostname</span>, <TT>const char *</TT><span class="docEmphasis">service</span>);</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: connected socket descriptor if OK, no return on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><A class="docLink" HREF="#ch11fig10">Figure 11.10</A> shows the source code.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch11fig10"></A>Figure 11.10 <TT>tcp_connect</TT> function: performs normal client steps.</H5>
+<P class="docText"><span class="docEmphasis">lib/tcp_connect.c</span></P>
+
+<PRE>
+ 1  #include     "unp.h"
+
+ 2  int
+ 3  tcp_connect (const char *host, const char *serv)
+ 4  {
+ 5    int     sockfd, n;
+ 6    struct addrinfo hints, *res, *ressave;
+
+ 7    bzero(&amp;hints, sizeof (struct addrinfo));
+ 8    hints.ai_family = AF_UNSPEC;
+ 9    hints.ai_socktype = SOCK_STREAM;
+
+10    if ( (n = getaddrinfo (host, serv, &amp;hints, &amp;res)) != 0)
+11        err_quit("tcp_connect error for %s, %s: %s",
+12                 host, serv, gai_strerror (n));
+13    ressave = res;
+
+14    do {
+15        sockfd = socket (res-&gt;ai_family, res-&gt;ai_socktype, res-&gt;ai_protocol);
+16        if (sockfd &lt; 0)
+17            continue;            /*ignore this one */
+
+18        if (connect (sockfd, res-&gt;ai_addr, res-&gt;ai_addrlen) == 0)
+19            break;               /* success */
+
+20        Close(sockfd);          /* ignore this one */
+21    } while ( (res = res-&gt;ai_next) != NULL);
+
+22    if (res == NULL)             /* errno set from final connect() */
+23        err_sys ("tcp_connect error for %s, %s", host, serv);
+
+24    freeaddrinfo (ressave);
+
+25    return (sockfd);
+26 }
+</PRE>
+
+<A NAME="ch11lev3sec6"></A>
+<H4 class="docSection2Title"> Call <TT>getaddrinfo</TT></H4>
+<p class="docText"><span class="docEmphasis"><TT>7–13</TT></span> <TT>getaddrinfo</TT> is called once and we specify the address family as <TT>AF_UNSPEC</TT> and the socket type as <TT>SOCK_STREAM.</TT></p>
+
+<A NAME="ch11lev3sec7"></A>
+<H4 class="docSection2Title"> Try each <TT>addrinfo</TT> structure until success or end of list</H4>
+<p class="docText"><span class="docEmphasis"><TT>14–25</TT></span> Each returned IP address is then tried. <TT>socket</TT> and <TT>connect</TT> are called. It is not a fatal error for <TT>socket</TT> to fail, as this could happen if an IPv6 address is returned but the host kernel does not support IPv6. If <TT>connect</TT> succeeds, a <TT>break</TT> is made out of the loop. Otherwise, when all the addresses have been tried, the loop also terminates. <TT>freeaddrinfo</TT> returns all the dynamic memory.</p>
+<P class="docText">This function (and our other functions that provide a simpler interface to <TT>getaddrinfo</TT> in the following sections) terminates if either <TT>getaddrinfo</TT> fails or no call to <TT>connect</TT> succeeds. The only return is upon success. It would be hard to return an error code (one of the <TT>EAI_</TT><span class="docEmphasis">xxx</span> constants) without adding another argument. This means that our wrapper function is trivial.</P>
+<pre>
+
+</pre><pre>
+int
+Tcp_connect (const char *host, const char *serv)
+{
+    return (tcp_connect (host, serv));
+}
+</pre><pre>
+</pre>
+<P class="docText">Nevertheless, we still call our wrapper function instead of <TT>tcp_connect</TT>, to maintain consistency with the remainder of the text.</P>
+<BLOCKQUOTE><P><P class="docList">The problem with the return value is that descriptors are non-negative, but we do not know whether the <TT>EAI_</TT><span class="docEmphasis">xxx</span> values are positive or negative. If these values were positive, we could return the negative of these values if <TT>getaddrinfo</TT> fails, but we also have to return some other negative value to indicate that all the structures were tried without success.</P></P></BLOCKQUOTE>
+
+<A NAME="ch11lev2sec6"></A>
+<H4 class="docSection2Title"> Example: Daytime Client</H4>
+<P class="docText"><A class="docLink" HREF="#ch11fig11">Figure 11.11</A> shows our daytime client from <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A> recoded to use <TT>tcp_connect</TT>.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch11fig11"></A>Figure 11.11 Daytime client recorded to use <TT>tcp_connect</TT>.</H5>
+<P class="docText"><span class="docEmphasis">names/daytimetcpcli.c</span></P>
+
+<PRE>
+ 1 #include     "unp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5    int     sockfd, n;
+ 6    char     recvline [MAXLINE + 1];
+ 7    socklen_t len;
+ 8    struct sockaddr_storage ss;
+
+ 9    if (argc != 3)
+10        err_quit
+11            ("usage: daytimetcpcli &lt;hostname/IPaddress&gt; &lt;service/port#&gt;");
+
+12    sockfd = Tcp_connect (argv[1], argv[2]);
+
+13    len = sizeof (ss);
+14    Getpeername (sockfd, (SA *) &amp;ss, &amp;len);
+15    printf ("connected to %s\n", Sock_ntop_host ((SA *) &amp;ss, len));
+
+16    while ( (n = Read (sockfd, recvline, MAXLINE)) &gt; 0) {
+17        recvline [n] = 0;          /* null terminate */
+18        Fputs (recvline, stdout);
+19    }
+20    exit (0);
+21 }
+</PRE>
+
+<A NAME="ch11lev3sec8"></A>
+<H5 class="docSection3Title"> Command-line arguments</H5>
+<p class="docText"><span class="docEmphasis"><TT>9–11</TT></span> We now require a second command-line argument to specify either the service name or the port number, which allows our program to connect to other ports.</p>
+
+<A NAME="ch11lev3sec9"></A>
+<H5 class="docSection3Title"> Connect to server</H5>
+<p class="docText"><span class="docEmphasis"><TT>12</TT></span> All the socket code for this client is now performed by <TT>tcp_connect</TT>.</p>
+
+<A NAME="ch11lev3sec10"></A>
+<H5 class="docSection3Title"> Print server's address</H5>
+<p class="docText"><span class="docEmphasis"><TT>13–15</TT></span> We call <TT>getpeername</TT> to fetch the server's protocol address and print it. We do this to verify the protocol being used in the examples we are about to show.</p>
+<P class="docText">Note that <TT>tcp_connect</TT> does not return the size of the socket address structure that was used for the <TT>connect</TT>. We could have added a pointer argument to return this value, but one design goal for this function was to reduce the number of arguments compared to <TT>getaddrinfo</TT>. What we do instead is use a <TT>sockaddr_storage</TT> socket address structure, which is large enough to hold and fulfills the alignment constraints of any socket address type the system supports.</P>
+<P class="docText">This version of our client works with both IPv4 and IPv6, while the version in <A class="docLink" HREF="0131411551_ch01lev1sec2.html#ch01fig05">Figure 1.5</A> worked only with IPv4 and the version in <A class="docLink" HREF="0131411551_ch01lev1sec3.html#ch01fig06">Figure 1.6</A> worked only with IPv6. You should also compare our new version with <A class="docLink" HREF="0131411551_app05lev1sec11.html#app05fig12">Figure E.12</A>, which we coded to use <TT>gethostbyname</TT> and <TT>getservbyname</TT> to support both IPv4 and IPv6.</P>
+<P class="docText">We first specify the name of a host that supports only IPv4.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimetcpcli linux daytime</span>
+connected to 206.168.112.96
+Sun Jul 27 23:06:24 2003
+</pre><pre>
+</pre>
+<P class="docText">Next, we specify the name of a host that supports both IPv4 and IPv6.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimetcpcli aix daytime</span>
+connected to 3ffe:b80:1f8d:2:204:acff:fe17:bf38
+Sun Jul 27 23:17:13 2003
+</pre><pre>
+</pre>
+<P class="docText">The IPv6 address is used because the host has both a AAAA record and an A record, and as noted in <A class="docLink" HREF="0131411551_ch11lev1sec9.html#ch11fig08">Figure 11.8</A>, since <TT>tcp_connect</TT> sets the address family to <TT>AF_UNSPEC</TT>, AAAA records are searched for first, and only if this fails is a search made for an A record.</P>
+<P class="docText">In the next example, we force the use of the IPv4 address by specifying the host-name with our <TT>-4</TT> suffix, which we noted in <A class="docLink" HREF="0131411551_ch11lev1sec2.html#ch11lev1sec2">Section 11.2</A> is our convention for the host-name with only A records.</P>
+<pre>
+
+</pre><pre>
+freebsd % <span class="docEmphStrong">daytimetcpcli aix-4 daytime</span>
+connected to 192.168.42.2
+Sun Jul 27 23:17:48 2003
+</pre><pre>
+</pre>
+
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch11lev1sec11.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch11lev1sec13.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

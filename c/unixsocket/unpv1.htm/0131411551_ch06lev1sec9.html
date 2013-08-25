@@ -1,0 +1,77 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="6.9 'pselect' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch06lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch06lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch06lev1sec9"></A>
+<H3 class="docSection1Title" id="162666-887">6.9 <TT>pselect</TT> Function</H3>
+<P class="docText">The <TT>pselect</TT> function was invented by POSIX and is now supported by many of the Unix variants.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/select.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;signal.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;time.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pselect (int</TT> <span class="docEmphasis">maxfdp1</span>, <TT>fd_set *</TT><span class="docEmphasis">readset</span>, <TT>fd_set *</TT><span class="docEmphasis">writeset</span>, <TT>fd_set *</TT><span class="docEmphasis">exceptset</span>, <TT>const struct timespec *</TT><span class="docEmphasis">timeout</span>, <TT>const sigset_t *</TT><span class="docEmphasis">sigmask</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: count of ready descriptors, 0 on timeout, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><TT>pselect</TT> contains two changes from the normal <TT>select</TT> function:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList"><TT>pselect</TT> uses the <TT>timespec</TT> structure, another POSIX invention, instead of the <TT>timeval</TT> structure.</P><pre>
+
+</pre><pre>
+struct timespec {
+  time_t tv_sec;       /* seconds */
+  long   tv_nsec;      /* nanoseconds */
+};
+</pre><pre>
+</pre><P class="docList">The difference in these two structures is with the second member: The <TT>tv_nsec</TT> member of the newer structure specifies nanoseconds, whereas the <TT>tv_usec</TT> member of the older structure specifies microseconds.</P></span></LI><LI><span style="font-weight:normal"><P class="docList"><TT>pselect</TT> adds a sixth argument: a pointer to a signal mask. This allows the program to disable the delivery of certain signals, test some global variables that are set by the handlers for these now-disabled signals, and then call <TT>pselect</TT>, telling it to reset the signal mask.</P></span></LI></OL></span>
+<P class="docText">With regard to the second point, consider the following example (discussed on pp. 308–309 of APUE). Our program's signal handler for <TT>SIGINT</TT> just sets the global <TT>intr_flag</TT> and returns. If our process is blocked in a call to <TT>select</TT>, the return from the signal handler causes the function to return with <TT>errno</TT> set to <TT>EINTR</TT>. But when <TT>select</TT> is called, the code looks like the following:</P>
+<pre>
+
+</pre><pre>
+if (intr_flag)
+    handle_intr();       /* handle the signal */
+if ( (nready = select( ... )) &lt; 0) {
+    if (errno == EINTR) {
+        if (intr_flag)
+            handle_intr();
+    }
+    ...
+}
+</pre><pre>
+</pre>
+<P class="docText">The problem is that between the test of <TT>intr_flag</TT> and the call to <TT>select</TT>, if the signal occurs, it will be lost if <TT>select</TT> blocks forever. With <TT>pselect</TT>, we can now code this example reliably as</P>
+<pre>
+
+</pre><pre>
+sigset_t newmask, oldmask, zeromask;
+
+sigemptyset(&amp;zeromask);
+sigemptyset(&amp;newmask);
+sigaddset(&amp;newmask, SIGINT);
+
+sigprocmask(SIG_BLOCK, &amp;newmask, &amp;oldmask); /* block SIGINT */
+if (intr_flag)
+    handle_intr();     /* handle the signal */
+if ( (nready = pselect ( ... , &amp;zeromask)) &lt; 0) {
+    if (errno == EINTR)  {
+        if (intr_flag)
+            handle_intr ();
+    }
+    ...
+}
+</pre><pre>
+</pre>
+<P class="docText">Before testing the <TT>intr_flag</TT> variable, we block <TT>SIGINT</TT>. When <TT>pselect</TT> is called, it replaces the signal mask of the process with an empty set (i.e., <TT>zeromask</TT>) and then checks the descriptors, possibly going to sleep. But when <TT>pselect</TT> returns, the signal mask of the process is reset to its value before <TT>pselect</TT> was called (i.e., <TT>SIGINT</TT> is blocked).</P>
+<P class="docText">We will say more about <TT>pselect</TT> and show an example of it in <A class="docLink" HREF="0131411551_ch20lev1sec5.html#ch20lev1sec5">Section 20.5</A>. We will use <TT>pselect</TT> in <A class="docLink" HREF="0131411551_ch20lev1sec5.html#ch20fig07">Figure 20.7</A> and show a simple, albeit incorrect, implementation of <TT>pselect</TT> in <A class="docLink" HREF="0131411551_ch20lev1sec5.html#ch20fig08">Figure 20.8</A>.</P>
+<BLOCKQUOTE><P><P class="docList">There is one other slight difference between the two <TT>select</TT> functions. The first member of the <TT>timeval</TT> structure is a signed long integer, while the first member of the <TT>timespec</TT> structure is a <TT>time_t</TT>. The signed long in the former should also be a <TT>time_t</TT>, but was not changed retroactively to avoid breaking existing code. The brand new function, however, could make this change.</P></P></BLOCKQUOTE>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch06lev1sec8.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch06lev1sec10.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

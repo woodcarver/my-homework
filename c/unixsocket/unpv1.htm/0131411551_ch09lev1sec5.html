@@ -1,0 +1,28 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="9.5 'sctp_getpaddrs' Function"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch09lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch09lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch09lev1sec5"></A>
+<H3 class="docSection1Title">9.5 <TT>sctp_getpaddrs</TT> Function</H3>
+<P class="docText">The <TT>getpeername</TT> function was not designed with the concept of a multihoming-aware transport protocol; when using SCTP, it only returns the primary address. When all the addresses are required, the <TT>sctp_getpaddrs</TT> function provides a mechanism for an application to retrieve all the addresses of a peer.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;netinet/sctp.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int sctp_getpaddrs(int</TT> <span class="docEmphasis">sockfd</span>, <TT>sctp_assoc_t</TT> <span class="docEmphasis">id</span>, <TT>struct sockaddr **</TT><span class="docEmphasis">addrs</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Returns: the number of peer addresses stored in <span class="docEmphasis">addrs</span>, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The <span class="docEmphasis">sockfd</span> parameter is the socket descriptor returned by the <TT>socket</TT> function. The <span class="docEmphasis">id</span> is the association identification for a one-to-many-style socket. If the socket is using the one-to-one style, the <span class="docEmphasis">id</span> field is ignored. <span class="docEmphasis">addrs</span> is the address of a pointer that <TT>sctp_getpaddrs</TT> will fill in with a locally allocated, packed list of addresses. See <A class="docLink" HREF="0131411551_ch09lev1sec4.html#ch09fig04">Figures 9.4</A> and <A class="docLink" HREF="0131411551_ch23lev1sec7.html#ch23fig12">23.12</A> for details on the structure of this return value. The caller should use <TT>sctp_freepaddrs</TT> to free resources allocated by <TT>sctp_getpaddrs</TT> when finished with them.</P>
+
+<a href="0131411551_22961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch09lev1sec4.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch09lev1sec6.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

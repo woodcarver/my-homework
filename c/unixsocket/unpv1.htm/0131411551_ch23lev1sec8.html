@@ -1,0 +1,60 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="23.8 Finding an Association ID Given an IP Address"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch23lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch23lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch23lev1sec8"></A>
+<H3 class="docSection1Title">23.8 Finding an Association ID Given an IP Address</H3>
+<P class="docText">In the recent changes we made to our client in <A class="docLink" HREF="0131411551_ch23lev1sec7.html#ch23lev1sec7">Section 23.7</A>, the client used the association notification to trigger retrieving the list of addresses. This notification was quite convenient since it held the association's identification in the <TT>sac_assoc_id</TT> field. But, if the application is not tracking association identifications and only has an address of a peer, how can it find an association's identification? In <A class="docLink" HREF="#ch23fig13">Figure 23.13</A>, we illustrate a simple function that translates a peer's address into an association ID. The server will use this function later in <A class="docLink" HREF="0131411551_ch23lev1sec10.html#ch23lev1sec10">Section 23.10</A>.</P>
+<A NAME="ch23lev3sec42"></A>
+<H4 class="docSection2Title"> Initialize</H4>
+<p class="docText"><span class="docEmphasis"><TT>7–8</TT></span> Our function first initializes its <TT>sctp_paddrparams</TT> structure.</p>
+
+<A NAME="ch23lev3sec43"></A>
+<H4 class="docSection2Title"> Copy address</H4>
+<p class="docText"><span class="docEmphasis"><TT>9</TT></span> We copy the address, using the passed length, into the <TT>sctp_paddrparams</TT> structure.</p>
+
+<A NAME="ch23lev3sec44"></A>
+<H4 class="docSection2Title"> Call socket option</H4>
+<p class="docText"><span class="docEmphasis"><TT>10</TT></span> The function now uses the <TT>SCTP_PEER_ADDR_PARAMS</TT> socket option to request peer address parameters. Note that we use <TT>sctp_opt_info</TT>, instead of <TT>getsockopt</TT>, since the <TT>SCTP_PEER_ADDR_PARAMS</TT> socket option requires copying arguments both into and out of the kernel. This call will return the current heartbeat interval, the maximum number of retransmissions before the SCTP implementation considers the peer address to have failed, and most importantly, the association ID. Note that we do not check the return value, since if the call fails, we want to return 0.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch23fig13"></A>Figure 23.13 Translate an address to an association ID.</H5>
+<P class="docText"><span class="docEmphasis">sctp/sctp_addr_to_associd.c</span></P>
+
+<PRE>
+ 1 #include    "unp.h"
+
+ 2 sctp_assoc_t
+ 3 sctp_address_to_associd(int sock_fd, struct sockaddr *sa, socklen_t salen)
+ 4 {
+ 5     struct sctp_paddrparams sp;
+ 6     int     siz;
+
+ 7     siz = sizeof(struct sctp_paddrparams);
+ 8     bzero(&amp;sp, siz);
+ 9     memcpy(&amp;sp.spp_address, sa, salen);
+10     sctp_opt_info(sock_fd, 0, SCTP_PEER_ADDR_PARAMS, &amp;sp, &amp;siz);
+11     return (sp.spp_assoc_id);
+12 }
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>11</TT></span> The function returns the association ID to the caller. Note that if the call fails, the earlier clearing of the structure will assure our caller of getting a 0 as the returned association ID. An association ID of 0 is not allowed and is used to indicate no association by the SCTP implementation as well.</p>
+
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch23lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch23lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

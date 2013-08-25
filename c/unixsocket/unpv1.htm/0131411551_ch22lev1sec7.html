@@ -1,0 +1,47 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="22.7 Concurrent UDP Servers"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch22lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch22lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch22lev1sec7"></A>
+<H3 class="docSection1Title">22.7 Concurrent UDP Servers</H3>
+<P class="docText">Most UDP servers are iterative: The server waits for a client request, reads the request, processes the request, sends back the reply, and then waits for the next client request. But when the processing of the client request takes a long time, some form of concurrency is desired.</P>
+<P class="docText">The definition of a "long time" is whatever is considered too much time for another client to wait while the current client is being serviced. For example, if two client requests arrive within 10 ms of each other, and it takes an average of 5 seconds of clock time to service a client, then the second client will have to wait about 10 seconds for its reply, instead of about 5 seconds if the request was handled as soon as it arrived.</P>
+<P class="docText">With TCP, it is simple to just <TT>fork</TT> a new child (or create a new thread, as we will see in <A class="docLink" HREF="0131411551_ch26.html#ch26">Chapter 26</A>) and let the child handle the new client. What simplifies this server concurrency when TCP is being used is that every client connection is unique: The TCP socket pair is unique for every connection. But with UDP, we must deal with two different types of servers:</P>
+<span style="font-weight:bold"><OL class="docList" TYPE="1"><LI><span style="font-weight:normal"><P class="docList">First is a simple UDP server that reads a client request, sends a reply, and is then finished with the client. In this scenario, the server that reads the client request can <TT>fork</TT> a child and let it handle the request. The "request," that is, the contents of the datagram and the socket address structure containing the client's protocol address, are passed to the child in its memory image from <TT>fork</TT>. The child then sends its reply directly to the client.</P></span></LI><LI><span style="font-weight:normal"><P class="docList">Second is a UDP server that exchanges multiple datagrams with the client. The problem is that the only port number the client knows for the server is its wellknown port. The client sends the first datagram of its request to that port, but how does the server distinguish between subsequent datagrams from that client and new requests? The typical solution to this problem is for the server to create a new socket for each client, <TT>bind</TT> an ephemeral port to that socket, and use that socket for all its replies. This requires that the client look at the port number of the server's first reply and send subsequent datagrams for this request to that port.</P></span></LI></OL></span>
+<P class="docText">An example of the second type of UDP server is TFTP. To transfer a file using TFTP normally requires many datagrams (hundreds or thousands, depending on the file size), because the protocol sends only 512 bytes per datagram. The client sends a datagram to the server's well-known port (69), specifying the file to send or receive. The server reads the request, but sends its reply from another socket that it creates and bind to an ephemeral port. All subsequent datagrams between the client and server for this file use the new socket. This allows the main TFTP server to continue to handle other client requests, which arrive at port 69, while this file transfer takes place (perhaps over seconds, or even minutes).</P>
+<P class="docText">If we assume a standalone TFTP server (i.e., not invoked by <TT>inetd</TT>), we have the scenario shown in <A class="docLink" HREF="#ch22fig19">Figure 22.19</A>. We assume that the ephemeral port bound by the child to its new socket is 2134.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch22fig19"></A>Figure 22.19. Processes involved in standalone concurrent UDP server.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="192" src="FILES/22fig19.gif" ALT="graphics/22fig19.gif"></p>
+
+</CENTER>
+<P class="docText">If <TT>inetd</TT> is used, the scenario involves one more step. Recall from <A class="docLink" HREF="0131411551_ch13lev1sec5.html#ch13fig06">Figure 13.6</A> that most UDP servers specify the <span class="docEmphasis">wait-flag</span> as <TT>wait</TT>. In our description following <A class="docLink" HREF="0131411551_ch13lev1sec5.html#ch13fig10">Figure 13.10</A>, we said that this causes <TT>inetd</TT> to stop selecting on the socket until its child terminates, allowing its child to read the datagram that has arrived on the socket. <A class="docLink" HREF="#ch22fig20">Figure 22.20</A> shows the steps involved.</P>
+<CENTER>
+<H5 class="docFigureTitle"><A NAME="ch22fig20"></A>Figure 22.20. UDP concurrent server invoked by <TT>inetd</TT>.</H5>
+
+<p class="docText">
+<IMG BORDER="0" WIDTH="500" HEIGHT="318" src="FILES/22fig20.gif" ALT="graphics/22fig20.gif"></p>
+
+</CENTER>
+<P class="docText">The TFTP server that is the child of <TT>inetd</TT> calls <TT>recvfrom</TT> and reads the client request. It then <TT>forks</TT> a child of its own, and that child will process the client request. The TFTP server then calls <TT>exit</TT>, sending <TT>SIGCHLD</TT> to <TT>inetd</TT>, which tells <TT>inetd</TT> to again <TT>select</TT> on the socket bound to UDP port 69.</P>
+
+<a href="0131411551_23961534.html"><img src="FILES/pixel.gif" width="1" height="1" border="0"></a><ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch22lev1sec6.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch22lev1sec8.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

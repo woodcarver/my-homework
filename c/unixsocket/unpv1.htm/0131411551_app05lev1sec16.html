@@ -1,0 +1,27 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="Chapter 16"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_app05lev1sec15.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_app05lev1sec17.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="app05lev1sec16"></A>
+<H3 class="docSection1Title" id="225793-864"> Chapter 16</H3>
+<P><TABLE BORDER="0" cellspacing="16" cellpadding="0"><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch16a01"></A><B><A class="docLink" HREF="0131411551_ch16lev1sec8.html#ch16q01">16.1</A></B></TD><TD><P class="docText">The descriptor is shared between the parent and child, so it has a reference count of 2. If the parent calls <TT>close</TT>, this just decrements the reference count from 2 to 1, and since it is still greater than 0, a FIN is not sent. This is another reason for the <TT>shutdown</TT> function: to force a FIN to be sent even if the descriptor's reference count is greater than 0.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch16a02"></A><B><A class="docLink" HREF="0131411551_ch16lev1sec8.html#ch16q02">16.2</A></B></TD><TD><P class="docText">The parent will keep writing to the socket that has received a FIN, and the first segment sent to the server will elicit an RST in response. The next <TT>write</TT> after this will send <TT>SIGPIPE</TT> to the parent as we discussed in <A class="docLink" HREF="0131411551_ch05lev1sec12.html#ch05lev1sec12">Section 5.12</A>.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch16a03"></A><B><A class="docLink" HREF="0131411551_ch16lev1sec8.html#ch16q03">16.3</A></B></TD><TD><P class="docText">When the child calls <TT>getppid</TT> to send <TT>SIGTERM</TT> to the parent, the returned PID will be 1, the <TT>init</TT> process, which inherits all children whose parents terminate while their children are still running. The child will try to send the signal to the <TT>init</TT> process, but will not have adequate permission. But if there is a chance that this client could run with superuser privileges, allowing it to send this signal to <TT>init</TT>, then the return value of <TT>getppid</TT> should be tested before sending the signal.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch16a04"></A><B><A class="docLink" HREF="0131411551_ch16lev1sec8.html#ch16q04">16.4</A></B></TD><TD><P class="docText">If these two lines are removed, <TT>select</TT> is called. But <TT>select</TT> will return immediately because with the connection established, the socket is writable. This test and <TT>goto</TT> are to avoid the unnecessary call to <TT>select</TT>.</P></TD></TR><TR valign="top"><TD align="right" class="docText"><B></B></TD><TD><P class="docText"></P></TD></TR><TR valign="top"><TD align="right" class="docText"><A NAME="ch16a05"></A><B><A class="docLink" HREF="0131411551_ch16lev1sec8.html#ch16q05">16.5</A></B></TD><TD><P class="docText">This can happen when the server immediately sends data when its <TT>accept</TT> returns, and when the client host is busy when the second packet of the three-way handshake arrives to complete the connection at the client end (<A class="docLink" HREF="0131411551_ch02lev1sec6.html#ch02fig05">Figure 2.5</A>). SMTP servers, for example, immediately write to a new connection before reading from it, to send a greeting message to the client.</P></TD></TR></TABLE></P><br>
+<P class="docText"></P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_app05lev1sec15.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_app05lev1sec17.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

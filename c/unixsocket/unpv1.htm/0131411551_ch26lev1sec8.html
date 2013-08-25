@@ -1,0 +1,170 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="26.8 Condition Variables"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch26lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch26lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch26lev1sec8"></A>
+<H3 class="docSection1Title" id="225793-873">26.8 Condition Variables</H3>
+<P class="docText">A mutex is fine to prevent simultaneous access to a shared variable, but we need something else to let us go to sleep waiting for some condition to occur. Let's demonstrate this with an example. We return to our Web client in <A class="docLink" HREF="0131411551_ch26lev1sec6.html#ch26lev1sec6">Section 26.6</A> and replace the Solaris <TT>thr_join</TT> with <TT>pthread_join</TT>. But, we cannot call the Pthread function until we know that a thread has terminated. We first declare a global variable that counts the number of terminated threads and protect it with a mutex.</P>
+<pre>
+
+</pre><pre>
+     int             ndone;        /* number of terminated threads */
+     pthread_mutex_t ndone_mutex = PTHREAD_MUTEX_INITIALIZER;
+</pre><pre>
+</pre>
+<P class="docText">We then require that each thread increment this counter when it terminates, being careful to use the associated mutex.</P>
+<pre>
+
+</pre><pre>
+     void *
+     do_get_read (void *vptr)
+     {
+         ...
+
+         Pthread_mutex_lock(&amp;ndone_mutex);
+         ndone++;
+         Pthread_mutex_unlock(&amp;ndone_mutex);
+
+         return(fptr);       /* terminate thread */
+     }
+</pre><pre>
+</pre>
+<P class="docText">This is fine, but how do we code the main loop? It needs to lock the mutex continually and check if any threads have terminated.</P>
+<pre>
+
+</pre><pre>
+          while (nlefttoread &gt; 0) {
+              while (nconn &lt; maxnconn &amp;&amp; nlefttoconn &gt; 0) {
+                      /* find a file to read */
+                  ...
+              }
+                  /* See if one of the threads is done */
+              Pthread_mutex_lock(&amp;ndone_mutex);
+              if (ndone &gt; 0) {
+                  for (i = 0; i &lt; nfiles; i++) {
+                      if (file[i].f_flags &amp; F_DONE) {
+                          Pthread_join(file[i].f_tid, (void **) &amp;fptr);
+
+                          /* update file[i] for terminated thread */
+                          ...
+                      }
+                  }
+              }
+              Pthread_mutex_unlock(&amp;ndone_mutex);
+          }
+</pre><pre>
+</pre>
+<P class="docText">While this is okay, it means the main loop <span class="docEmphasis">never</span> goes to sleep; it just loops, checking <TT>ndone</TT> every time around the loop. This is called <span class="docEmphasis">polling</span> and is considered a waste of CPU time.</P>
+<P class="docText">We want a method for the main loop to go to sleep until one of its threads notifies it that something is ready. A <span class="docEmphasis">condition variable</span>, in conjunction with a mutex, provides this facility. The mutex provides mutual exclusion and the condition variable provides a signaling mechanism.</P>
+<P class="docText">In terms of Pthreads, a condition variable is a variable of type <TT>pthread_cond_t</TT>. They are used with the following two functions:</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_cond_wait(pthread_cond_t</TT> *<span class="docEmphasis">cptr</span><TT>, pthread_mutex_t *</TT><span class="docEmphasis">mptr</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_cond_signal(pthread_cond_t</TT> *<span class="docEmphasis">cptr</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The term "signal" in the second function's name does not refer to a Unix <TT>SIG</TT><span class="docEmphasis">xxx</span> signal.</P>
+<P class="docText">An example is the easiest way to explain these functions. Returning to our Web client example, the counter <TT>ndone</TT> is now associated with both a condition variable and a mutex.</P>
+<pre>
+
+</pre><pre>
+     int             ndone;
+     pthread_mutex_t ndone_mutex = PTHREAD_MUTEX_INITIALIZER;
+     pthread_cond_t  ndone_cond  = PTHREAD_COND_INITIALIZER;
+</pre><pre>
+</pre>
+<P class="docText">A thread notifies the main loop that it is terminating by incrementing the counter while its mutex lock is held and by signaling the condition variable.</P>
+<pre>
+
+</pre><pre>
+          Pthread_mutex_lock(&amp;ndone_mutex);
+          ndone++;
+          Pthread_cond_signal(&amp;ndone_cond);
+          Pthread_mutex_unlock(&amp;ndone_mutex);
+</pre><pre>
+</pre>
+<P class="docText">The main loop then blocks in a call to <TT>pthread_cond_wait</TT>, waiting to be signaled by a terminating thread.</P>
+<pre>
+
+</pre><pre>
+          while (nlefttoread &gt; 0) {
+              while (nconn &lt; maxnconn &amp;&amp; nlefttoconn &gt; 0) {
+                      /* find file to read */
+                  ...
+              }
+
+                  /* Wait for thread to terminate */
+              Pthread_mutex_lock(&amp;ndone_mutex);
+              while (ndone == 0)
+                  Pthread_cond_wait (&amp;ndone_cond, &amp;ndone_mutex);
+
+              for (i = 0; i &lt; nfiles; i++) {
+                  if (file[i].f_flags &amp; F_DONE) {
+                      Pthread_join(file[i].f_tid, (void **) &amp;fptr);
+
+                      /* update file[i] for terminated thread */
+                      ...
+                  }
+               }
+               Pthread_mutex_unlock (&amp;ndone_mutex);
+          }
+</pre><pre>
+</pre>
+<P class="docText">Notice that the variable <TT>ndone</TT> is still checked only while the mutex is held. Then, if there is nothing to do, <TT>pthread_cond_wait</TT> is called. This puts the calling thread to sleep <span class="docEmphasis">and</span> releases the mutex lock it holds. Furthermore, when the thread returns from <TT>pthread_cond_wait</TT> (after some other thread has signaled it), the thread again holds the mutex.</P>
+<P class="docText">Why is a mutex always associated with a condition variable? The "condition" is normally the value of some variable that is shared between the threads. The mutex is required to allow this variable to be set and tested by the different threads. For example, if we did not have the mutex in the example code just shown, the main loop would test it as follows:</P>
+<pre>
+
+</pre><pre>
+              /* Wait for thread to terminate */
+          while (ndone == 0)
+              Pthread_cond_wait(&amp;ndone_cond, &amp;ndone_mutex);
+</pre><pre>
+</pre>
+<P class="docText">But, there is a possibility that the last of the threads increments <TT>ndone</TT> after the test of <TT>ndone == 0</TT>, but before the call to <TT>pthread_cond_wait</TT>. If this happens, this last "signal" is lost and the main loop would block forever, waiting for something that will never occur again.</P>
+<P class="docText">This is the same reason that <TT>pthread_cond_wait</TT> must be called with the associated mutex locked, and why this function unlocks the mutex and puts the calling thread to sleep as a single, atomic operation. If this function did not unlock the mutex and then lock it again when it returns, the thread would have to unlock and lock the mutex and the code would look like the following:</P>
+<pre>
+
+</pre><pre>
+              /* Wait for thread to terminate */
+          Pthread_mutex_lock(&amp;ndone_mutex);
+          while (ndone == 0) {
+              Pthread_mutex_unlock(&amp;ndone_mutex);
+              Pthread_cond_wait(&amp;ndone_cond, &amp;ndone_mutex);
+              Pthread_mutex_lock(&amp;ndone_mutex);
+          }
+</pre><pre>
+</pre>
+<P class="docText">But again, there is a possibility that the final thread could terminate and increment the value of <TT>ndone</TT> between the call to <TT>pthread_mutex_unlock</TT> and <TT>pthread_cond_wait</TT>.</P>
+<P class="docText">Normally, <TT>pthread_cond_signal</TT> awakens one thread that is waiting on the condition variable. There are instances when a thread knows that multiple threads should be awakened, in which case, <TT>pthread_cond_broadcast</TT> will wake up <span class="docEmphasis">all</span> threads that are blocked on the condition variable.</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;pthread.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_cond_broadcast (pthread_cond_t *</TT> <span class="docEmphasis">cptr</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>int pthread_cond_timedwait (pthread_cond_t *</TT> <span class="docEmphasis">cptr</span><TT>, pthread_mutex_t *</TT><span class="docEmphasis">mptr</span><TT>, const struct timespec *</TT><span class="docEmphasis">abstime</span><TT>);</TT></P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: 0 if OK, positive <TT>E</TT><span class="docEmphasis">xxx</span> value on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText"><TT>pthread_cond_timedwait</TT> lets a thread place a limit on how long it will block. <span class="docEmphasis">abstime</span> is a <TT>timespec</TT> structure (as we defined with the <TT>pselect</TT> function, <A class="docLink" HREF="0131411551_ch06lev1sec9.html#ch06lev1sec9">Section 6.9</A>) that specifies the system time when the function must return, even if the condition variable has not been signaled yet. If this timeout occurs, <TT>ETIME</TT> is returned.</P>
+<P class="docText">This time value is an <span class="docEmphasis">absolute time</span>; it is not a <span class="docEmphasis">time delta</span>. That is, <span class="docEmphasis">abstime</span> is the system time—the number of seconds and nanoseconds past January 1, 1970, UTC—when the function should return. This differs from both <TT>select</TT> and <TT>pselect</TT>, which specify the number of seconds and microseconds (nanoseconds for <TT>pselect</TT>) until some time in the future when the function should return. The normal procedure is to call <TT>gettimeofday</TT> to obtain the current time (as a <TT>timeval</TT> structure!), and copy this into a <TT>timespec</TT> structure, adding in the desired time limit. For example,</P>
+<pre>
+
+</pre><pre>
+     struct timeval tv;
+     struct timespec ts;
+     if (gettimeofday(&amp;tv, NULL) &lt; 0)
+         err_sys("gettimeofday error");
+     ts.tv_sec = tv.tv_sec + 5;     /* 5 seconds in future */
+     ts.tv_nsec = tv.tv_usec * 1000; /* microsec to nanosec */
+
+     pthread_cond_timedwait( ..., &amp;ts);
+</pre><pre>
+</pre>
+<P class="docText">The advantage in using an absolute time instead of a delta time is if the function prematurely returns (perhaps because of a caught signal), the function can be called again, without having to change the contents of the <TT>timespec</TT> structure. The disadvantage, however, is having to call <TT>gettimeofday</TT> before the function can be called the first time.</P>
+<BLOCKQUOTE><P><P class="docList">The POSIX specification defines a <TT>clock_gettime</TT> function that returns the current time as a <TT>timespec</TT> structure.</P></P></BLOCKQUOTE>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch26lev1sec7.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch26lev1sec9.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

@@ -1,0 +1,41 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="14.4 'readv' and 'writev' Functions"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch14lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch14lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch14lev1sec4"></A>
+<H3 class="docSection1Title" id="162666-900">14.4 <TT>readv</TT> and <TT>writev</TT> Functions</H3>
+<P class="docText">These two functions are similar to <TT>read</TT> and <TT>write</TT>, but <TT>readv</TT> and <TT>writev</TT> let us read into or write from one or more buffers with a single function call. These operations are called <span class="docEmphasis">scatter read</span> (since the input data is scattered into multiple application buffers) and <span class="docEmphasis">gather write</span> (since multiple buffers are gathered for a single output operation).</P>
+<P><TABLE CELLSPACING="0" BORDER="1" RULES="none" CELLPADDING="5" WIDTH="100%"><COLGROUP align="left" span="1"><THEAD></THEAD><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>#include &lt;sys/uio.h&gt;</TT></P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t readv(int</TT> <span class="docEmphasis">filedes</span>, <TT>const struct iovec *</TT><span class="docEmphasis">iov</span>, <TT>int</TT> <span class="docEmphasis">iovcnt</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" valign="top"><P class="docText"><TT>ssize_t writev(int</TT> <span class="docEmphasis">filedes</span>, <TT>const struct iovec *</TT><span class="docEmphasis">iov</span>, <TT>int</TT> <span class="docEmphasis">iovcnt</span><TT>)</TT>;</P></TD></TR><TR><TD class="docTableCell" align="right" valign="top"><P class="docText">Both return: number of bytes read or written, –1 on error</P></TD></TR></COLGROUP></TABLE></P>
+<P class="docText">The second argument to both functions is a pointer to an array of <TT>iovec</TT> structures, which is defined by including the <TT>&lt;sys/uio.h&gt;</TT> header.</P>
+<pre>
+
+</pre><pre>
+struct iovec {
+  void   *iov_base;   /* starting address of buffer */
+  size_t  iov_len;    /* size of buffer */
+};
+</pre><pre>
+</pre>
+<BLOCKQUOTE><P><P class="docList">The datatypes shown for the members of the <TT>iovec</TT> structure are those specified by POSIX. You may encounter implementations that define <TT>iov_base</TT> to be a <TT>char *</TT>, and <TT>iov_len</TT> to be an <TT>int</TT>.</P></P></BLOCKQUOTE>
+<P class="docText">There is some limit to the number of elements in the array of <TT>iovec</TT> structures that an implementation allows. Linux, for example, allows up to 1,024, while HP-UX has a limit of 2,100. POSIX requires that the constant <TT>IOV_MAX</TT> be defined by including the <TT>&lt;sys/uio.h&gt;</TT> header and that its value be at least 16.</P>
+<P class="docText">The <TT>readv</TT> and <TT>writev</TT> functions can be used with any descriptor, not just sockets. Also, <TT>writev</TT> is an atomic operation. For a record-based protocol such as UDP, one call to <TT>writev</TT> generates a single UDP datagram.</P>
+<P class="docText">We mentioned one use of <TT>writev</TT> with the <TT>TCP_NODELAY</TT> socket option in <A class="docLink" HREF="0131411551_ch07lev1sec9.html#ch07lev1sec9">Section 7.9</A>. We said that a <TT>write</TT> of 4 bytes followed by a <TT>write</TT> of 396 bytes could invoke the Nagle algorithm and a preferred solution is to call <TT>writev</TT> for the two buffers.</P>
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch14lev1sec3.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch14lev1sec5.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>

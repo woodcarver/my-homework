@@ -1,0 +1,220 @@
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!--SafClassName="docSection1Title"--><!--SafTocEntry="21.11 Simple Network Time Protocol (SNTP)"-->
+<link rel="STYLESHEET" type="text/css" href="FILES/style.css">
+<link rel="STYLESHEET" type="text/css" href="FILES/docsafari.css">
+<style type="text/css">	.tt1    {font-size: 10pt;}</style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+	<a href="0131411551_ch21lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+	<a href="0131411551_ch21lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><A NAME="ch21lev1sec11"></A>
+<H3 class="docSection1Title">21.11 Simple Network Time Protocol (SNTP)</H3>
+<P class="docText">NTP is a sophisticated protocol for synchronizing clocks across a WAN or a LAN, and can often achieve millisecond accuracy. RFC 1305 [Mills 1992] describes the protocol in detail and RFC 2030 [Mills 1996] describes SNTP, a simplified but protocol-compatible version intended for hosts that do not need the complexity of a complete NTP implementation. It is common for a few hosts on a LAN to synchronize their clocks across the Internet to other NTP hosts and then redistribute this time on the LAN using either broadcasting or multicasting.</P>
+<P class="docText">In this section, we will develop an SNTP client that listens for NTP broadcasts or multicasts on all attached networks and then prints the time difference between the NTP packet and the host's current time-of-day. We do not try to adjust the time-of-day, as that takes superuser privileges.</P>
+<P class="docText">The file <TT>ntp.h</TT>, shown in <A class="docLink" HREF="#ch21fig20">Figure 21.20</A>, contains some basic definitions of the NTP packet format.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch21fig20"></A>Figure 21.20 <TT>ntp.h</TT> header: NTP packet format and definitions.</H5>
+<P class="docText"><span class="docEmphasis">ssntp/ntp.h</span></P>
+
+<PRE>
+ 1 #define JAN_1970    2208988800UL     /* 1970 - 1900 in seconds */
+
+ 2 struct l_fixedpt {               /* 64-bit fixed-point */
+ 3     uint32_t int_part;
+ 4     uint32_t fraction;
+ 5 };
+
+ 6 struct s_fixedpt {               /* 32-bit fixed-point */
+ 7     uint16_t int_part;
+ 8     uint16_t fraction;
+ 9 };
+
+10 struct ntpdata {                 /* NTP header */
+11     u_char  status;
+12     u_char  stratum;
+13     u_char  ppoll;
+14     int     precision:8;
+15     struct s_fixedpt distance;
+16     struct s_fixedpt dispersion;
+17     uint32_t refid;
+18     struct l_fixedpt reftime;
+19     struct l_fixedpt org;
+20     struct l_fixedpt rec;
+21     struct l_fixedpt xmt;
+22 };
+
+23 #define VERSION_MASK    0x38
+24 #define MODE_MASK       0x07
+
+25 #define MODE_CLIENT     3
+26 #define MODE_SERVER     4
+27 #define MODE_BROADCAST  5
+</PRE>
+
+<p class="docText"><span class="docEmphasis"><TT>2–22</TT></span> <TT>1_fixedpt</TT> defines the 64-bit fixed-point values used by NTP for timestamps and <TT>s_fixedpt</TT> defines the 32-bit fixed-point values that are also used by NTP. The <TT>ntpdata</TT> structure is the 48-byte NTP packet format.</p>
+<P class="docText"><A class="docLink" HREF="#ch21fig21">Figure 21.21</A> shows the <TT>main</TT> function.</P>
+<A NAME="ch21lev3sec24"></A>
+<H4 class="docSection2Title"> Get multicast IP address</H4>
+<p class="docText"><span class="docEmphasis"><TT>12–14</TT></span> When the program is executed, the user must specify the multicast address to join as the command-line argument. With IPv4, this would be 224.0.1.1 or the name <TT>ntp.mcast.net</TT>. With IPv6, this would be <TT>ff05::101</TT> for the site-local scope NTP. Our <TT>udp_client</TT> function allocates space for a socket address structure of the correct type (either IPv4 or IPv6) and stores the multicast address and port in that structure. If this program is run on a host that does not support multicasting, any IP address can be specified, as only the address family and port are used from this structure. Note that our <TT>udp_client</TT> function does not <TT>bind</TT> the address to the socket; it just creates the socket and fills in the socket address structure.</p>
+
+<H5 class="docExampleTitle"><A NAME="ch21fig21"></A>Figure 21.21 <TT>main</TT> function.</H5>
+<P class="docText"><span class="docEmphasis">ssntp/main.c</span></P>
+
+<PRE>
+ 1 #include    "sntp.h"
+
+ 2 int
+ 3 main(int argc, char **argv)
+ 4 {
+ 5     int     sockfd;
+ 6     char    buf[MAXLINE];
+ 7     ssize_t n;
+ 8     socklen_t salen, len;
+ 9     struct ifi_info *ifi;
+10     struct sockaddr *mcastsa, *wild, *from;
+11     struct timeval now;
+
+12     if (argc != 2)
+13         err_quit("usage: ssntp &lt;IPaddress&gt;");
+
+14     sockfd = Udp_client(argv[1], "ntp", (void **) &amp;mcastsa, &amp;salen);
+
+15     wild = Malloc(salen);
+16     memcpy(wild, mcastsa, salen);   /* copy family and port */
+17     sock_set_wild(wild, salen);
+18     Bind(sockfd, wild, salen);  /* bind wildcard */
+
+19 #ifdef  MCAST
+20         /* obtain interface list and process each one */
+21     for (ifi = Get_ifi_info(mcastsa-&gt;sa_family, 1); ifi != NULL;
+22          ifi = ifi-&gt;ifi_next) {
+23         if (ifi-&gt;ifi_flags &amp; IFF_MULTICAST) {
+24             Mcast_join(sockfd, mcastsa, salen, ifi-&gt;ifi_name, 0);
+25             printf("joined %s on %s\n",
+26                    Sock_ntop(mcastsa, salen), ifi-&gt;ifi_name);
+27         }
+28     }
+29 #endif
+
+30     from = Malloc(salen);
+31     for ( ; ; ) {
+32         len = salen;
+33         n = Recvfrom(sockfd, buf, sizeof(buf), 0, from, &amp;len);
+34         Gettimeofday(&amp;now, NULL);
+35         sntp_proc(buf, n, &amp;now);
+36     }
+37 }
+</PRE>
+
+
+<A NAME="ch21lev3sec25"></A>
+<H4 class="docSection2Title"> Bind wildcard address to socket</H4>
+<p class="docText"><span class="docEmphasis"><TT>15–18</TT></span> We allocate space for another socket address structure and fill it in by copying the structure that was filled in by <TT>udp_client</TT>. This sets the address family and port. We call our <TT>sock_set_wild</TT> function to set the IP address to the wildcard and then call <TT>bind</TT>.</p>
+
+<A NAME="ch21lev3sec26"></A>
+<H4 class="docSection2Title"> Get interface list</H4>
+<p class="docText"><span class="docEmphasis"><TT>20–22</TT></span> Our <TT>get_ifi_info</TT> function returns information on all the interfaces and addresses. The address family that we ask for is taken from the socket address structure that was filled in by <TT>udp_client</TT> based on the command-line argument.</p>
+
+<A NAME="ch21lev3sec27"></A>
+<H4 class="docSection2Title"> Join multicast group</H4>
+<p class="docText"><span class="docEmphasis"><TT>23–27</TT></span> We call our <TT>mcast_join</TT> function to join the multicast group specified by the command-line argument for each multicast-capable interface. All these joins are done on the one socket that this program uses. As we said earlier, there is normally a limit of <TT>IP_MAX_MEMBERSHIPS</TT> (often 20) joins per socket, but few multihomed hosts have that many interfaces.</p>
+
+<A NAME="ch21lev3sec28"></A>
+<H4 class="docSection2Title"> Read and process all NTP packets</H4>
+<p class="docText"><span class="docEmphasis"><TT>30–36</TT></span> Another socket address structure is allocated to hold the address returned by <TT>recvfrom</TT> and the program enters an infinite loop, reading all the NTP packets that the host receives and calling our <TT>sntp_proc</TT> function (described next) to process the packet. Since the socket was bound to the wildcard address, and since the multicast group was joined on all multicast-capable interfaces, the socket should receive any unicast, broadcast, or multicast NTP packet that the host receives. Before calling <TT>sntp_proc</TT>, we call <TT>gettimeofday</TT> to fetch the current time, because <TT>sntp_proc</TT> calculates the difference between the time in the packet and the current time.</p>
+<P class="docText">Our <TT>sntp_proc</TT> function, shown in <A class="docLink" HREF="#ch21fig22">Figure 21.22</A>, processes the actual NTP packet.</P>
+
+<A NAME="ch21lev3sec29"></A>
+<H4 class="docSection2Title"> Validate packet</H4>
+<p class="docText"><span class="docEmphasis"><TT>10–21</TT></span> We first check the size of the packet and then print the version, mode, and server stratum. If the mode is <TT>MODE_CLIENT</TT>, the packet is a client request, not a server reply, and we ignore it.</p>
+
+<A NAME="ch21lev3sec30"></A>
+<H4 class="docSection2Title"> Obtain transmit time from NTP packet</H4>
+<p class="docText"><span class="docEmphasis"><TT>22–33</TT></span> The field in the NTP packet that we are interested in is <TT>xmt</TT>, the transmit timestamp, which is the 64-bit fixed-point time at which the packet was sent by the server. Since NTP timestamps count seconds beginning in 1900 and Unix timestamps count seconds beginning in 1970, we first subtract <TT>JAN_1970</TT> (the number of seconds in these 70 years) from the integer part.</p>
+<P class="docText">The fractional part is a 32-bit unsigned integer between 0 and 4,294,967,295, inclusive. This is copied from a 32-bit integer (<TT>useci</TT>) to a double-precision floating-point variable (<TT>usecf</TT>) and then divided by 4,294,967,296 (2<SUP>32</SUP>). The result is greater than or equal to 0.0 and less than 1.0. We multiply this by 1,000,000, the number of microseconds in a second, storing the result as a 32-bit unsigned integer in the variable <TT>useci</TT>. This is the number of microseconds and will be between 0 and 999,999 (see <A class="docLink" HREF="0131411551_ch21lev1sec13.html#ch21lev1sec13">Exercise 21.5</A>). We convert to microseconds because the Unix timestamp returned by <TT>gettimeofday</TT> is returned as two integers: the number of seconds since January 1, 1970, UTC, along with the number of microseconds. We then calculate and print the difference between the host's time-of-day and the NTP server's time-of-day, in microseconds.</P>
+
+<H5 class="docExampleTitle"><A NAME="ch21fig22"></A>Figure 21.22 <TT>sntp_proc</TT> function: processes the NTP packet.</H5>
+<P class="docText"><span class="docEmphasis">ssntp/sntp_proc.c</span></P>
+
+<PRE>
+ 1 #include    "sntp.h"
+
+ 2 void
+ 3 sntp_proc(char *buf, ssize_t n, struct timeval *nowptr)
+ 4 {
+ 5     int     version, mode;
+ 6     uint32_t nsec, useci;
+ 7     double  usecf;
+ 8     struct timeval diff;
+ 9     struct ntpdata *ntp;
+
+10     if (n &lt; (ssize_t) sizeof(struct ntpdata)) {
+11         printf("\npacket too small: %d bytes\n", n);
+12         return;
+13     }
+
+14     ntp = (struct ntpdata *) buf;
+15     version = (ntp-&gt;status &amp; VERSION_MASK) &gt;&gt; 3;
+16     mode = ntp-&gt;status &amp; MODE_MASK;
+17     printf("\nv%d, mode %d, strat %d, ", version, mode, ntp-&gt;stratum);
+18     if (mode == MODE_CLIENT) {
+19         printf("client\n");
+20         return;
+21     }
+
+22     nsec = ntohl(ntp-&gt;xmt.int_part) - JAN_1970;
+23     useci = ntohl(ntp-&gt;xmt.fraction);   /* 32-bit integer fraction */
+24     usecf = useci;              /* integer fraction -&gt; double */
+25     usecf /= 4294967296.0;      /* divide by 2**32 -&gt; [0, 1.0) */
+26     useci = usecf * 1000000.0;  /* fraction -&gt; parts per million */
+
+27     diff.tv_sec = nowptr-&gt;tv_sec - nsec;
+28     if ( (diff.tv_usec = nowptr-&gt;tv_usec - useci) &lt; 0) {
+29         diff.tv_usec += 1000000;
+30         diff.tv_sec--;
+31     }
+32     useci = (diff.tv_sec * 1000000) + diff.tv_usec; /* diff in microsec */
+33     printf("clock difference = %d usec\n", useci);
+34 }
+</PRE>
+
+<P class="docText">One thing that our program does not take into account is the network delay between the server and the client. But we assume that the NTP packets are normally received as a broadcast or multicast on a LAN, in which case, the network delay should be only a few milliseconds.</P>
+<P class="docText">If we run this program on our host <TT>macosx</TT> with an NTP server on our host <TT>freebsd4</TT>, which is multicasting NTP packets to the Ethernet every 64 seconds, we have the following output:</P>
+<pre>
+
+</pre><pre>
+macosx # <span class="docEmphStrong">ssntp 224.0.1.1</span>
+joined 224.0.1.1.123 on lo0
+joined 224.0.1.1.123 on en1
+
+v4, mode 5, strat 3, clock difference = 661 usec
+
+v4, mode 5, strat 3, clock difference = -1789 usec
+
+v4, mode 5, strat 3, clock difference = -2945 usec
+
+v4, mode 5, strat 3, clock difference = -3689 usec
+
+v4, mode 5, strat 3, clock difference = -5425 usec
+
+v4, mode 5, strat 3, clock difference = -6700 usec
+
+v4, mode 5, strat 3, clock difference = -8520 usec
+</pre><pre>
+</pre>
+<P class="docText">To run our program, we first terminated the normal NTP server running on this host, so when our program starts, the time is very close to the server's time. We see this host lost 9181 microseconds in the 384 seconds we ran the program, or about 2 seconds in 24 hours.</P>
+
+
+<ul></ul></td></tr></table>
+<td></td>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<td class="tt1"><a href="NFO/lib.html">[ Team LiB ]</a></td><td valign="top" class="tt1" align="right">
+          <a href="0131411551_ch21lev1sec10.html"><img src="FILES/btn_prev.gif" width="62" height="15" border="0" align="absmiddle" alt="Previous Section"></a>
+          <a href="0131411551_ch21lev1sec12.html"><img src="FILES/btn_next.gif" width="41" height="15" border="0" align="absmiddle" alt="Next Section"></a>
+</td></table>
+</body></html>
