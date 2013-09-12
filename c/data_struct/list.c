@@ -1,4 +1,6 @@
 #include<stdio.h>
+#include<stdlib.h>
+#include<malloc.h>
 #include "list.h"
 
 int is_empty(list l)
@@ -79,6 +81,43 @@ void print_list(list l)
 	printf("\n");
 }
 
+void list_delete_without_previous(list p)
+{
+	list q;
+	if(p==NULL){
+		printf("the given pointer is illegal!\n");
+		return;
+	}
+	q=p->next;
+	if(q==NULL){
+		free(p);
+		p=NULL;
+	}
+	else{
+		p->element=q->element;
+		p->next=q->next;
+		free(q);
+	}
+}
+void list_reverse(list l)
+{
+	list prev,p;
+	if(l==NULL){
+		printf("the given pointer is illegal!\n");
+		return;
+	}
+
+	prev=l->next;
+	p=prev->next;
+
+	for(;p!=NULL;p=prev->next){
+		/*soft delete p and excute front insert*/
+		prev->next=p->next;
+		p->next=l->next;
+		l->next=p;
+	}
+}
+
 int main()
 {
 	struct node header;
@@ -93,14 +132,27 @@ int main()
 	specific_node = find_p(l,'a');
 	insert_node(l,'c',specific_node);
 	insert_node(l,'d',specific_node);
+	insert_node(l,'e', l);
+	insert_node(l,'f',l);
 	print_list(l);
 
-	delete_node(l,'f');	
+/*	delete_node(l,'f');	
 	delete_node(l,'c');	
 //	insert_node(l,'d',NULL);
 	print_list(l);
 
 	delete_list(l);
 	print_list(l);
+*/
+	sleep(1);
+	specific_node = find_p(l,'a');
+	list_delete_without_previous(specific_node);
+	print_list(l);
+
+	sleep(1);
+	list_reverse(l);
+	print_list(l);
+
+	delete_list(l);
 	return 0;	
 }
