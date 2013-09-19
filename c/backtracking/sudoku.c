@@ -16,7 +16,7 @@ int find_avai_set(int (*map)[MAP_SIZE],int row,int col,int *avai_set)
 
 	for(i=0; i<MAP_SIZE; i++){
 		if(map[row][i]!=0){
-			*avai_set^=1<<(map[row][i]-1);
+			*avai_set^=1<<(map[row][i]-1);// or a&=~(1<<map[row][i]-1)
 			set_size--;
 		}
 	}

@@ -7,8 +7,8 @@ int **subset[N];
 int binomail(int n,int r)
 {
 	int i,per_n,per_r;
-	per_r=0;//need the production to keep the precision.
-	per_n=0;
+	per_r=1;//need the production to keep the precision.
+	per_n=1;
 	
 	if(n==0)
 		return 1;
