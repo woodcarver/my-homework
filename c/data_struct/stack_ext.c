@@ -18,6 +18,10 @@ int is_empty(stack *stck)
 		return 0;
 	return stck->top==NULL;
 }
+int stack_is_empty(stack *stck)
+{
+	return is_empty(stck);
+}
 void push(stack *stck,void *data)
 {
 	node *new_node;
@@ -78,7 +82,7 @@ void print_string_data(void *data,void *arg)
 	printf("%s,",p_string);
 }
 
-int main()
+/*int main()
 {
 	stack *stck;
 	char *p_string;
@@ -93,4 +97,4 @@ int main()
 	apply_stack(stck,print_string_data,(void *)0);
 	printf("\n");
 	return 0;
-}
+}*/

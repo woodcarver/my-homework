@@ -118,7 +118,7 @@ void list_reverse(list l)
 	}
 }
 
-int main()
+/*int main()
 {
 	struct node header;
 	ptr_to_node specific_node;
@@ -136,14 +136,14 @@ int main()
 	insert_node(l,'f',l);
 	print_list(l);
 
-/*	delete_node(l,'f');	
+	delete_node(l,'f');	
 	delete_node(l,'c');	
 //	insert_node(l,'d',NULL);
 	print_list(l);
 
 	delete_list(l);
 	print_list(l);
-*/
+
 	sleep(1);
 	specific_node = find_p(l,'a');
 	list_delete_without_previous(specific_node);
@@ -155,4 +155,4 @@ int main()
 
 	delete_list(l);
 	return 0;	
-}
+}*/

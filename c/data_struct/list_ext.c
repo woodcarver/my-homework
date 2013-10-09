@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<malloc.h>
-#include "list.h"
+#include "list_ext.h"
 
 int is_empty(list l)
 {
@@ -13,9 +13,8 @@ int is_last(list l, position p)
 	return p->next == NULL;
 }
 
-position find_p(list l, char x)
+node *find_p(list l, char x)
 {
-	l = l->next;
 	while(l != NULL && l->element != x)
 		l = l->next;
 	return l;
@@ -42,22 +41,21 @@ void delete_node(list l, char x)
         }
 }
 
-void insert_node(list l, char x,position p)
+void list_insert(node **l, char x)
 {
-	if(p == NULL){
-		printf("the position is null!\n");
+	if(l == NULL){
+		printf("the list is illege!\n");
 		return;
 	}
 	else{
-		ptr_to_node new_node =  malloc(sizeof(struct node));
+		node *new_node =  malloc(sizeof(struct node));
 		if(new_node == NULL){
 			printf("out of space!!");
 			return;
 		}
 		new_node->element = x;
-
-		new_node->next = p->next;
-		p->next = new_node;
+		new_node->next = *l;
+		*l = new_node;
 	}
 }
 
@@ -69,11 +67,14 @@ void delete_list(list l)
 		l->next = temp->next;
 		free(temp);
 	}
+	free(l);
 }
 
 void print_list(list l)
 {
-	l = l->next;
+	if(l==NULL)
+		printf("this is a empty list!\n");
+
 	while(l){
 		printf("%c ",l->element);
 		l = l->next;
@@ -118,7 +119,7 @@ void list_reverse(list l)
 	}
 }
 
-int main()
+/*int main()
 {
 	struct node header;
 	ptr_to_node specific_node;
@@ -136,14 +137,14 @@ int main()
 	insert_node(l,'f',l);
 	print_list(l);
 
-/*	delete_node(l,'f');	
+	delete_node(l,'f');	
 	delete_node(l,'c');	
 //	insert_node(l,'d',NULL);
 	print_list(l);
 
 	delete_list(l);
 	print_list(l);
-*/
+
 	sleep(1);
 	specific_node = find_p(l,'a');
 	list_delete_without_previous(specific_node);
@@ -155,4 +156,4 @@ int main()
 
 	delete_list(l);
 	return 0;	
-}
+}*/

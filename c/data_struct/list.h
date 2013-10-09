@@ -13,9 +13,8 @@ void delete_node(list l, char x);
 void insert_node(list l, char x, position p);
 void delete_list(list l);
 
-#endif
-
 struct node{
 	char element;
 	position next;
 };
+#endif
