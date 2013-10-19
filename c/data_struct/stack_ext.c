@@ -35,7 +35,7 @@ void push(stack *stck,void *data)
 		printf("out of memory space!\n");
 		return;
 	}
-	new_node->data=data;
+	new_node->element=data;
 	
 	new_node->next=stck->top;
 	stck->top=new_node;
@@ -54,7 +54,7 @@ void *pop(stack *stck)
 		return NULL;
 	}
 	else{
-		data=stck->top->data;
+		data=stck->top->element;
 		ntemp=stck->top;
 		stck->top=ntemp->next;
 		free(ntemp);
@@ -72,7 +72,7 @@ void apply_stack(stack *stck,void (*fn)(void *data,void *arg),void *arg)
         }
 
 	for(stck_node=stck->top; stck_node!=NULL; stck_node=stck_node->next)
-		(*fn)(stck_node->data,arg);
+		(*fn)(stck_node->element,arg);
 }
 
 void print_string_data(void *data,void *arg)

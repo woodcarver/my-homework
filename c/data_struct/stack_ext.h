@@ -1,13 +1,17 @@
-#ifndef __STACK_EXT__
+#ifndef _NODE_H
+#define _NODE_H
 typedef struct node node;
+struct node{
+        void *element;
+        struct node *next;
+};
+#endif
+
+#ifndef __STACK_EXT__
 typedef struct stack stack;
 
 struct stack{
 	node *top;
-};
-struct node{
-	void *data;
-	node *next;
 };
 stack *create_stack();
 int is_empty(stack *);

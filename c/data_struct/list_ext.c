@@ -3,27 +3,27 @@
 #include<malloc.h>
 #include "list_ext.h"
 
-int is_empty(list l)
+int list_is_empty(list *l)
 {
 	return l->next == NULL;
 }
 
-int is_last(list l, position p)
+int list_is_last(list *l, list_node *p)
 {
 	return p->next == NULL;
 }
 
-node *find_p(list l, char x)
+list_node *list_find(list *l, int x)
 {
 	while(l != NULL && l->element != x)
 		l = l->next;
 	return l;
 }
 
-void delete_node(list l, char x)
+void list_delete(list *l, int x)
 {
 	//position previous;
-	position temp;
+	list_node *temp;
 
 	while(l->next && l->next->element != x)
 		l = l->next;
@@ -41,27 +41,28 @@ void delete_node(list l, char x)
         }
 }
 
-void list_insert(node **l, char x)
+void list_insert(list **l, int x)
 {
 	if(l == NULL){
 		printf("the list is illege!\n");
 		return;
 	}
 	else{
-		node *new_node =  malloc(sizeof(struct node));
+		list_node *new_node =  malloc(sizeof(struct list_node));
 		if(new_node == NULL){
 			printf("out of space!!");
 			return;
 		}
+		printf("insert into list:%d\n",x);
 		new_node->element = x;
 		new_node->next = *l;
 		*l = new_node;
 	}
 }
 
-void delete_list(list l)
+void list_destory(list *l)
 {
-	ptr_to_node temp;
+	list *temp;
 	while(l->next){
 		temp = l->next;
 		l->next = temp->next;
@@ -70,21 +71,21 @@ void delete_list(list l)
 	free(l);
 }
 
-void print_list(list l)
+void print_list(list *l)
 {
 	if(l==NULL)
 		printf("this is a empty list!\n");
 
 	while(l){
-		printf("%c ",l->element);
+		printf("%d ",l->element);
 		l = l->next;
 	}
 	printf("\n");
 }
 
-void list_delete_without_previous(list p)
+void list_delete_without_previous(list *p)
 {
-	list q;
+	list *q;
 	if(p==NULL){
 		printf("the given pointer is illegal!\n");
 		return;
@@ -100,9 +101,9 @@ void list_delete_without_previous(list p)
 		free(q);
 	}
 }
-void list_reverse(list l)
+void list_reverse(list *l)
 {
-	list prev,p;
+	list *prev,*p;
 	if(l==NULL){
 		printf("the given pointer is illegal!\n");
 		return;

@@ -1,25 +1,30 @@
 #include<stdio.h>
-void shell_sort(int a[], int n)
+void shellsort(int v[],int n)
 {
-    int i,j,d,temp;
-    for(d=n/2; d>0; d/=2){
-        for(i=d; i<n; i++){
-            temp=a[i];
-            for(j=i-d; a[j]>temp&&j>=0; j-=d)
-                a[j+d]=a[j];
-            a[j+d]=temp;
-        }
-    }
+	int gap,i,j,temp;
+	for(gap = n/2; gap>0; gap /=2)
+		for(i=gap; i<n; ++i)
+			for(j=i-gap; j>=0 && v[j] >v[j+gap]; j-=gap)
+			{
+				temp = v[j];
+				v[j] = v[j+gap];
+				v[j+gap] = temp;
+			}
 }
 
-int main(void)
+void ccout(int s[],int n)
 {
-    int i;
-    int a[]={0,2,8,7,9,11,6,4,8};
-    shell_sort(a,9);
-    for(i=0; i<9; i++)
-        printf("%d ",a[i]);
-    printf("\n");
-    return 0;
+	int i;
+	for(i=0; i<n; ++i)
+		printf("%d\t",s[i]);
+	printf("\n");
+}
 
+int main()
+{
+	int s[5]={4,1,3,9,5};
+	ccout(s,5);
+	shellsort(s,5);
+	ccout(s,5);
+	return 0;
 }

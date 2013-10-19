@@ -1,24 +1,27 @@
+#ifndef _NODE_H
+#define _NODE_H
+typedef struct node node;
+struct node{
+	void *element;
+	struct node *next;
+};
+#endif
+
 #ifndef _QUEUE_H
-
 typedef struct queue *queue;
-typedef struct node *node;
-typedef struct node *q_list;
+//typedef struct node *q_list;
 
-int is_empty(queue q);
+int queue_is_empty(queue q);
 queue create_queue(void);
 int dispose_queue(queue q);
 int en_queue(queue q, void *x);
 void *de_queue(queue q);
 
-#endif
 
 struct queue{
-	node front;
-	node rear;
+	node *front;
+	node *rear;
 //	q_list list;	
 };
+#endif
 
-struct node{
-	void *element;
-	struct node *next;
-};

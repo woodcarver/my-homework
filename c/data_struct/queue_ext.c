@@ -2,7 +2,7 @@
 #include<malloc.h>
 #include "queue_ext.h"
 
-int is_empty(queue q)
+int queue_is_empty(queue q)
 {
 	return q->front->next == NULL;
 }
@@ -40,7 +40,7 @@ int dispose_queue(queue q)
 
 int en_queue(queue q, void *element)
 {
-	node new_node = malloc(sizeof(struct node));
+	node *new_node = malloc(sizeof(struct node));
 	new_node->element = element;
 	new_node->next = NULL;
 	
@@ -56,7 +56,7 @@ void *de_queue(queue q)
 		printf("the queue is empty!\n");
 		return NULL;
 	}
-	node temp_node;
+	node *temp_node;
 	void *element;
 
 	temp_node = q->front->next;
@@ -75,7 +75,7 @@ void *de_queue(queue q)
 
 void apply_queue(queue q,void (*fn)(void *,void *),void *arg)
 {
-	node listp;
+	node *listp;
 	for(listp=q->front->next; listp!=NULL; listp=listp->next)
 		(*fn)(listp->element,arg);
 }

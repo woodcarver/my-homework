@@ -157,6 +157,20 @@ tree_node *find_min(tree_node *t)
 		t = t->left;
 	return t;
 }
+
+tree_node *find_node_tree(tree_node *t,int x)
+{
+	if(t == NULL){
+		printf("the tree is empty!\n");
+		return NULL;
+	}
+	if(t->element == x)
+		return t;
+	else if(t->element > x)
+		return find_node_tree(t->left,x);
+	else if(t->element < x)
+		return find_node_tree(t->right,x);
+}
 void dispose_tree(tree *t)
 {
 	if(t == NULL)
@@ -170,9 +184,10 @@ void dispose_tree(tree *t)
 }
 void print_tree(tree *t, char * descript)
 {
-	if(t == NULL)
+	if(t == NULL){
 		//printf("\n%s:end the subtree!\n",descript);
 		return;
+	}
 	else{
 		//printf("(%s,%d) ",descript,t->element);
 		printf("(");
