@@ -79,4 +79,64 @@
 ---------------------------
 这种模型是在单进程模型的基础上，对每个请求派生一个专属的进程。由于是多进程或者线程，这种模型是可以同时处理多个请求。但是这种模型存在派生进程过多，导致服务器崩溃的危险情况。同时由于大量的进程或者线程的生成和销毁，会耗费大量的cpu资源。而其他高级模型就是解决这种情况而演变出来的。其编程的核心是在单进程模型上利用fork函数。
 
+    服务端代码示例：
+
+	#include<stdio.h>
+	#include<stdlib.h>
+	#include<string.h>
+	#include<netinet/in.h>
+
+	#define MAXLINE 100
+	#define SERVER_PORT 12345
+	#define QUEUE_SIZE 1
+
+	void fatal(char *msg)
+	{
+		printf("%s\n",msg);
+		exit(1);
+	}
+	int main(int argc,char **argv)
+	{
+		int sockfd,bin,connfd,lisfd;
+		char buff[MAXLINE];
+		struct sockaddr_in sevr_addr;
+		time_t ticks;
+		pid_t pid;
+
+		memset(&sevr_addr,0,sizeof(sevr_addr));
+		sevr_addr.sin_family=AF_INET;
+		sevr_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+		sevr_addr.sin_port=htons(SERVER_PORT);
+
+		sockfd=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+		if(sockfd<0)
+			fatal("socket failed");
+		bin=bind(sockfd,(struct sockaddr *)&sevr_addr,sizeof(sevr_addr));
+		if(bin<0)
+			fatal("bind failed");
+
+		lisfd=listen(sockfd,QUEUE_SIZE);
+		if(lisfd<0)
+			fatal("listen failed");
+
+		while(1){
+			connfd=accept(sockfd,NULL,NULL);
+			if((pid=fork())==0){
+				close(lisfd);/*why?*/
+
+				ticks=time(NULL);
+				printf("send time:%d\n",ticks);
+				snprintf(buff,sizeof(buff),"%.24s\r\n",ctime(&ticks));
+				write(connfd,buff,strlen(buff));
+
+				printf("sleep for 10 seconds...\n");
+				sleep(10);
+				printf("the connect is over.\n");
+				
+				close(connfd);
+				exit(0);
+			}
+			close(connfd);
+		}
+	}
 
