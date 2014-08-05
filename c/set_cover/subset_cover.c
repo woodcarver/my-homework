@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
-#define N 10
+#define N 8
 #define NBIG 5
 #define NSMALL 3
 int set[N];
@@ -119,7 +119,6 @@ void cover(int **set_big,int count_big,int ele_count_big,int **set_small,int cou
             print_array(is_covered,count_small);
             return;
         }
-
         else
             is_over=1;
 
