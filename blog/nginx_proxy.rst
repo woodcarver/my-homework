@@ -20,11 +20,13 @@ client ---(send request)---> clinet proxy --(send request)---> server
 clinet --(send request)--> server proxy --(send request)-->other
 server
 
-先让我们看看一个简单示例
+先让我们看看一个示例
 -----------------
 ```
 #① part start
+#运行nginx进程的账户
 user www;
+#
 worker_process 1;
 error_log /var/log/nginx/error.log
 pid /var/run/nginx.pid;
@@ -143,25 +145,27 @@ http{
 ---------------
 为什么要反向代理？作用服务端的代理，自然就是一台服务器处理不过来了，需要转发、分散请求给其他服务器做。下面罗列些适用场景：
 
-- 负载均衡（例子）
+- 负载均衡
+上面例子中的web1和web2使用了nginx的负载均衡技术，把请求转向一组服务器。具体转发到哪个服务器，nginx提供了多种负载策略，例子中使用的是加权重的方式，web1 upstream是2个请求中，1个请求给111服务器，1个给222服务器。关于跟多的负载均衡的策略，请参看[nginx官方文档-负载均衡](http://nginx.org/en/docs/http/load_balancing.html)
+
 - 一个域名，多个网站。在这里反向代理倒不是为了负责存在，而是为了域名和服务的统一部署。例如一个公司的内部网站需要搭建很多服务——代码管理服、wiki服务、oa……，但是只要一个域名。这时候就可以用反向代理把不同的子域名转发到不同的服务上。下面是一个例子：
 
-当然反向代理的另一大用处就是隐藏后面的实际服务，以此来达到一定的安全性。
+- 当然反向代理的另一大用处就是隐藏后面的实际服务，以此来达到一定的安全性。
 
 
 仔细讲解每个模块
 -------------
-- user
-user 设置nginx是以什么用户来运行的，这个非常重要，确保运行nginx的用户能有权限访问读写网站的文件。
+### user
 
-- events
-- upstream
+user 设置nginx是以什么用户来运行的，这个非常重要，**确保运行nginx的用户能有权限访问读写网站的文件**,否则会报404 not found等错误。
+
+### events
+### [nginx upstream](http://nginx.org/cn/docs/http/ngx_http_upstream_module.html)
 upstream 直接翻译就是上游，即上游服务，其封装一组服务器列表，这些服务器可以别proxy_pass,fastcgi_pass,uwsgi_pass,scgi_pass和 memcached_pass引用，把接到的请求转发给这些服务器组。
 引用方法就是加行http://[upstream module name]
 
-```
-The ngx_http_upstream_module module is used to define groups of servers that can be referenced by the proxy_pass, fastcgi_pass, uwsgi_pass, scgi_pass, and memcached_pass directives.
-```
+	> The ngx_http_upstream_module module is used to define groups of servers that can be referenced by the proxy_pass, fastcgi_pass, uwsgi_pass, scgi_pass, and memcached_pass directives.
+
 例子：
 
 ```
@@ -183,12 +187,20 @@ server {
 ```
 注意有①，和②行的写法。要引用**backend**模块，只需把它制定成**http://backend**就行。
 
-- http 意义和配置
-- service 配置和匹配规则
-- location 配置和匹配规则
+### http 意义和配置
+http就是指配置关于http服务的地方，server等都是http的子模块
 
+### server 配置和匹配规则
+一个http服务可以有多个server，而对server的路径匹配，反向代理都是在这里配置的。
+
+在server中最重要的一项配置：server_name的配置。server_name决定了来了一个url，到底是哪个server处理该请求。nginx会依次找和url配置的第一次出现的server。server_name可以使用通配符，也可以使用正则表达式。而且一个server的server_name可以多个，以空格分隔。更详细的关于server_name匹配规则，[参看这里](http://nginx.org/en/docs/http/server_names.html)
+	
+### location 配置和匹配规则
+server_name是定义域名级别的规则，而location则是url中文件部分的规则的。适应例如会对图片等静态资源做单独处理等需求。
 参考资料
 -------
 - [nginx upstream模块介绍文档1](http://nginx.org/cn/docs/http/ngx_http_upstream_module.html)
 - [nginx upstream模块介绍文档2](http://tengine.taobao.org/book/chapter_05.html)
 - [nginx配置例子](http://www.cnblogs.com/xiaogangqq123/archive/2011/03/02/1969006.html)
+- [nginx load balancer](http://nginx.org/en/docs/http/load_balancing.html)
+- [Enhanced Load Balancing,High Availability, and Monitoring Features](http://nginx.com/blog/nginx-plus-r6-released/?_ga=1.99990941.241485225.1426074750)
