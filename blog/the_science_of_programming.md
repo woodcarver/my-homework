@@ -1,0 +1,4 @@
+# The science of programming
+## abstract
+#### Chapter 1. proposition
+Above, I mentioned that programs could be free of errors and ,in a way, I implied that debugging would be unneccessary. This point needs some clarification. Even though we can become more proficient in programming. We will still make errors, even if only of a syntactic nature. We are only human. Hence, some testing cases will always be neccessary. But it will not be called debugging, for the words implies the existence of bugs, which are terribly to eliminate. No many how much files we swat, there will be more. A disciplined method of programming should give me more confidence than that! We should run test cases not to look for bugs, but to increase our confidence in a program we are quite sure is correct. Finding an error should be the exception rather than the rule.
