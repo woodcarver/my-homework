@@ -51,4 +51,5 @@
 - [9个offer，12家公司，35场面试，从微软到谷歌，应届计算机毕业生的2012求职之路](http://blog.jobbole.com/32240/)
 - [face面试](http://blog.jobbole.com/86364/#comment-152531)
 - [to be a real programmer](http://blog.jobbole.com/87644/)
+- [我最喜欢的十个面试问题](http://blog.jobbole.com/79388/)
 - [我的大学](http://www.cppblog.com/deercoder/articles/101653.html?opt=admin)

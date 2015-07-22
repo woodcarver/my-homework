@@ -65,29 +65,31 @@ double findMedianSortedArrays(int* nums1, int nums1Size, int* nums2, int nums2Si
             rights=middles;//for special
         }
     }
-    //longArr is empty
-    if( !median && (leftl>rightl) && (lefts<=rights)){
-        printf("shortArr:lefts:%d,middlel:%d,middles:%d\n",lefts,middlel,middles);
-        pos=middlel+middles+1;
-        median=shortArr[lefts+(median_pos-pos)-1];
-    }
     //shortArr is empty
     if((leftl<=rightl) && (lefts>rights)){
         printf("longArr:leftl:%d,middlel:%d,middles:%d\n",lefts,middlel,middles);
         median=longArr[median_pos];
     }
+    med1=middlel-1;
+    med2=middles;
+    //longArr is empty
+    if( !median && (leftl>rightl) && (lefts<=rights)){
+        printf("shortArr:lefts:%d,middlel:%d,middles:%d\n",lefts,middlel,middles);
+        pos=middlel+middles+1;
+        median=shortArr[lefts+(median_pos-pos)-1];
+
+        med1=middlel;
+        med2=middles-1;
+    }
     printf("bigger_median:%f\n",median);
 
     //even total length of those two nums
     if((nums1Size+nums2Size)/2 != (nums1Size+nums2Size-1)/2){
-        med1=binary_search(nums1,0,nums1Size-1,median);
-        med2=binary_search(nums2,0,nums2Size-1,median);
-        printf("med1:%d,med2:%d\n",med1,med2);
-        
         if((med2==-1) || nums1[med1]>nums2[med2])
             median=(median+nums1[med1])/2.0;
         else
             median=(median+nums2[med2])/2.0;
+
     }
 
     return median;

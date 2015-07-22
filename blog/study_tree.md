@@ -4,6 +4,7 @@
 - 产品导向的公司一律过滤
 - 排除游戏公司
 - 排除纯广告公司
+- 必须是做系统的，甩掉那些查数据等乱起八糟的杂货
 
 ### 复习知识点
 - 面向对象编程——多继承，虚拟方法，对象构建与析构顺序，异常处理。
@@ -22,6 +23,7 @@
 - 阅读Writing Solid Code、Elements of Programming、Practice of programming
 - 阅读Science of Programming，做到可以证明自己的程序的正确性（前条件+后条件+不变式） `NO.1`
 - 阅读《计算机程式构造于解析》
+- 阅读《代码大全》，了解代码构建过程的整个过程，特别注意其中的代码风格的约束 `No.4`
 
 #### 算法
 - 阅读《算法导论》，最仔细的阅读，weight=50%
@@ -46,6 +48,14 @@
 - 阅读《高性能mysql》
 - 阅读 @校长的实时流统计的代码
 - 弄清楚数据流上的各个基础设施的用法：hadoop，hive，kafka，spark，logtailer，strom，zookepper
+- 阅读《七周七并发》
+- 阅读《redis设计与实现》
+- 了解现今市场上所有的数据储存软件：Nosql：redis，memcached；Relation DB:Infobright,Mysql
+
+#### 编程语言
+- 阅读《Effective Java》
+- 阅读《Java core》
+- 阅读《Python基础教程》
 
 #### 项目总结
 - 重温之前自己做过的靠谱项目，并总结里面的关键难题和解决思路
@@ -56,3 +66,18 @@
 - 离职原因
 - 选择公司原因
 - 薪资谈判
+- 软件工程上的知识
+
+
+#### 资料参考
+- [白板编程浅谈——Why, What, How](http://lucida.me/blog/whiteboard-coding-demystified/)
+- [从武侠小说到程序员面试](http://lucida.me/blog/from-wuxia-to-programmer-interview/)
+- [精益技术简历之道](http://lucida.me/blog/lean-technical-resume/)
+
+
+
+#### 职位收集
+-----------
+#####大数据部_大数据处理高级软件工程师#####工作职责：- 从事“面向分析的大规模并行数据库”的开发工作，解决大数据下的OLAP和Reporting需求#####职位要求：- 熟悉Linux/Unix平台上的C/C++编程- 熟悉常用算法和数据结构，熟悉网络编程、多线程编程技术- 善于学习新的知识，动手能力强，有进取心- 优秀的分析问题和解决问题的能力，对解决具有挑战性问题充满激情- 具有以下条件者优先：（1）熟悉分布式系统概念、架构（2） 有数据库开发相关背景（2）熟悉 Impala / Hive / Hbase / Spark等开源技术（3）了解Netezza / Greenplum / ParAccel / Vertica 等产品
+
+------------
