@@ -1,4 +1,7 @@
 # leetcode日志
+## step to solution
+1. Goal-Oriented Activity, 首先进行目标分析——make refine and precise pre- and posconditions. 现在还是没有能力写好前置，后置条件。
+2. 
 
 #### 2：Add Two Numbers
 
@@ -81,4 +84,27 @@
     	out=out*10+(str[i]-'0');
 	else
     	return sign>0?INT_MAX:INT_MIN;//not zero in c is true, include -1!!
+    	
 	```
+	
+#### 11:Container With Most Water
+- 一直在用联机的方法去解体，但是发现一直解出来。只找到了一个哦O(n^2)的方法。而且发现就是没办法更加优化。
+- 后来看答案，发现使用了离线的方法去解题，反而轻轻松松。
+- **问题**：到底什么时候用在线，什么时候去离线？怎么识别？
+
+	> 优先在线，发现在联机基础假设基础上不能扩展，即不能使用假设。开始尝试用离线方法。
+	
+- 在线解法的起步：参考算法引论，做好假设和证明
+- 离线的解法的起步：例举小例子
+
+#### 13:Longest Common Prefix
+- 如何判断一个二维数组是空的情况，如下：
+	> char *strs[]={}
+	
+#### 14: 3Sum
+- 如果证明跑遍了整个备选集合？如果是找特定的元素。怎么整么完备性？如果你证明不了，凭什么说你的方法是对的，可靠的？
+
+#### 20: Valid Parentheses
+- 当你写出一个了比较复杂的控制流逻辑，先尝试也出来，然后进行优化，一开始就优化很容易导致错误的逻辑。
+
+

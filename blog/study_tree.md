@@ -20,10 +20,11 @@
 	+ 算法：c语言实现
 	+ Redis源码的实现版本 + Redis设计与实现
 - 阅读CARM（A Reference Manual）和TCPL (The C programming language)，确保不会遗漏C语言的每个细节
-- 阅读Writing Solid Code、Elements of Programming、Practice of programming
-- 阅读Science of Programming，做到可以证明自己的程序的正确性（前条件+后条件+不变式） `NO.1`
+- 阅读Writing Solid Code、Elements of Programming、Practice of programming `No 5`
+- 阅读Science of Programming，做到可以证明自己的程序的正确性（前条件+后条件+不变式） `NO.1`——**有点读不下去啊,放置每天在公司小读一点**
 - 阅读《计算机程式构造于解析》
 - 阅读《代码大全》，了解代码构建过程的整个过程，特别注意其中的代码风格的约束 `No.4`
+- Programming Language Pragmatics（程序设计语言）
 
 #### 算法
 - 阅读《算法导论》，最仔细的阅读，weight=50%
@@ -37,10 +38,10 @@
 #### 操作系统
 - 重读《Modren Operating System》`No.3`
 - 阅读《Computer System a Programmer's Perspective》 `No.2`
+- 阅读《Unix环境编程》
 
 #### 计算机网络
 - 阅读《计算机网络》
-- 阅读《Unix环境编程》
 - 阅读并实践《Unix网络编程》
 
 #### 数据处理、数据挖掘

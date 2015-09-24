@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
-#define N 8
+#define N 12
 #define NBIG 5
 #define NSMALL 3
 int set[N];
