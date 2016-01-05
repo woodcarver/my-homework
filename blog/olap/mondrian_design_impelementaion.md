@@ -170,3 +170,6 @@ List<Member> lookupMembers(String keyword) throws OlapException;
             constraint = columnString + " like " + value;//add by xiedandan,for constructing like constraint, change = to like
 ```
 ### saiku
+saiku作为一个界面提供层，对mondrian进行了封装，大大降低了mondrian的使用难度，只要稍加培训就能操作数据。（但是效率我只能呵呵了，当然这不saiku的错，大部分都是mondrian的错。读了其代码，直面广观感就是臃肿！大面积的为了兼容多个底层设备，设计的转化的sql部分，导致性能很是地下。）
+
+## 一个获取限制条数单个维度metadata整体实现

@@ -107,4 +107,46 @@
 #### 20: Valid Parentheses
 - 当你写出一个了比较复杂的控制流逻辑，先尝试也出来，然后进行优化，一开始就优化很容易导致错误的逻辑。
 
+#### 22: Generate Parentheses
+- 一定要注意递归中的参数变化，压栈和出栈（restore）的印象
+``` cpp
+void generator(vector<string>& result, int left, int right, string s){
+    if (left==0 && right==0){
+        result.push_back(s);
+        return;
+    }
+    if (left>0){
+        generator(result, left-1, right, s+'(');
+    }
+    if (right>0 && right>left){
+        generator(result, left, right-1, s+')');
+    }
+}
+```
+一定要注意s+'('和s+')'，这里并没有改变s，而是只传递给了下层递归。所以当调用完左子树后，会过来再调用右子树时，s从来没有被改变，所以不会出现重复添加(的情况。
+c的写法
+``` c
+void generator2(char **result,int n,int left,int right,int level,char *tmp,int *returnSize){
+    printf("left:%d,right:%d,level:%d\n",left,right,level);
+    if(level==2*n){
+        result[*returnSize]=tmp;
+        printf("%s\n",tmp);
 
+        tmp=malloc(2*n*sizeof(char)+1);
+        strcpy(tmp,result[*returnSize]);
+        tmp[2*n*sizeof(char)+1]='\0';
+        (*returnSize)++;
+    }
+
+    if(left>0){
+        tmp[level]='(';
+        generator2(result,n,left-1,right,level+1,tmp,returnSize);
+    }
+    if(right>0 && right>left){
+        tmp[level]=')';
+        generator2(result,n,left,right-1,level+1,tmp,returnSize);
+    }
+}
+```
+注意其中level返回的时候从来都没有改变过。
+上面已有个bug，就是重新分配tmp，而不是result。因为每次递归的话tmp很容易就被恢复成了原来的值，所result的所以元素都想指向同一个tmp。
