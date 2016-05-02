@@ -36,9 +36,9 @@ public class BinaryTreeMaximumPathSum {
         }
         ReturnType retLeft = maxPathSumHelper(root.left);
         ReturnType retRight = maxPathSumHelper(root.right);
-        System.out.println("left--" + retLeft);
-        System.out.println("right--" + retRight);
-        
+//        System.out.println("left--" + retLeft);
+//        System.out.println("right--" + retRight);
+        //算出当前的any2any
         ret.any2any.sum = root.val;//一定要初始化这里，因为默认是MIN
         if (retLeft.root2any.sum > 0) {
             ret.any2any.path.addAll(retLeft.root2any.path);
@@ -49,7 +49,7 @@ public class BinaryTreeMaximumPathSum {
             ret.any2any.path.addAll(retRight.root2any.path);
             ret.any2any.sum += retRight.root2any.sum;
         }
-        
+        // 更新root2any
         ret.root2any.path.add(root.val);
         ret.root2any.sum = root.val;
         ReturnType biggerRet = retLeft;
@@ -60,7 +60,7 @@ public class BinaryTreeMaximumPathSum {
             ret.root2any.path.addAll(biggerRet.root2any.path);
             ret.root2any.sum += biggerRet.root2any.sum;
         }
-        System.out.println("cur--" + ret);
+        // 更新any2any
         biggerRet = retLeft;
         if (retLeft.any2any.sum < retRight.any2any.sum) {
             biggerRet = retRight;
@@ -69,25 +69,25 @@ public class BinaryTreeMaximumPathSum {
             biggerRet = ret;
         }
         ret.any2any = biggerRet.any2any;
-        System.out.println("curFinal--" + ret);
+//        System.out.println("curFinal--" + ret);
         return ret;
     }
-}
-class SumPath {
-    ArrayList<Integer> path = new ArrayList<Integer>();
-    int sum = Integer.MIN_VALUE;
-    public String toString() {
-        return sum + "," + path.toString();
+    class SumPath {
+        ArrayList<Integer> path = new ArrayList<Integer>();
+        int sum = Integer.MIN_VALUE;
+        public String toString() {
+            return sum + "," + path.toString();
+        }
     }
-}
-class ReturnType {
-    SumPath root2any = new SumPath();
-    SumPath any2any = new SumPath();
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("root2any:" + root2any);
-        sb.append("  ");
-        sb.append("any2any:" + any2any);
-        return sb.toString();
+    class ReturnType {
+        SumPath root2any = new SumPath();
+        SumPath any2any = new SumPath();
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("root2any:" + root2any);
+            sb.append("  ");
+            sb.append("any2any:" + any2any);
+            return sb.toString();
+        }
     }
 }

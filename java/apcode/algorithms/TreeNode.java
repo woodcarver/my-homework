@@ -9,7 +9,7 @@ public class TreeNode {
   public TreeNode left;
   public TreeNode right;
   public static int terminalMark=8888;
-  TreeNode(int x) { val = x; }
+  public TreeNode(int x) { val = x; }
   public static TreeNode buildTreeByArray(int[] array){
   	if(array==null || array.length==0){
   		return null;

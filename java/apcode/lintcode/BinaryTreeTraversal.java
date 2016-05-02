@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Stack;
 
 public class BinaryTreeTraversal {
-    public static ArrayList<Integer> preorderTraversalR(TreeNode root) {
+    public static ArrayList<Integer> preorderTraversal(TreeNode root) {
         ArrayList<Integer> result = new ArrayList<Integer>();
         preorderTraversalHelper(result, root);
         return result;
@@ -21,7 +21,7 @@ public class BinaryTreeTraversal {
         preorderTraversalHelper(result, root.left);
         preorderTraversalHelper(result, root.right);
     }
-	public static ArrayList<Integer> preorderTraversal(TreeNode root) {
+	public static ArrayList<Integer> preorderTraversalNR(TreeNode root) {
         ArrayList<Integer> result = new ArrayList<Integer>();
         if (root == null) {
         	return result;
@@ -74,6 +74,43 @@ public class BinaryTreeTraversal {
         
         return preorder;
     }
+    //######## inorder #########
+    // 注意在询问面试官，当root == null时候，改定义怎样的返回值。这是一个，定义一些边界值，异常的改怎么处理
+    public ArrayList<Integer> inorderTraversal(TreeNode root) {
+        ArrayList<Integer> result = new ArrayList<Integer>();
+        if (root == null) {
+            return result;
+        }
+        inorderTraversalHelper(root, result);
+        return result;
+    }
+    private void inorderTraversalHelper(TreeNode root, ArrayList<Integer> result) {
+        if (root == null) {
+            return;
+        }
+        inorderTraversalHelper(root.left, result);
+        result.add(root.val);
+        inorderTraversalHelper(root.right, result);
+    }
+    public ArrayList<Integer> inorderTraversalNR(TreeNode root) {
+        ArrayList<Integer> inorder = new ArrayList<Integer>();
+        if (root == null) {
+            return inorder;
+        }
+        return inorder;
+    }
+    //######## postorder #########
+    public ArrayList<Integer> postorderTraversal(TreeNode root) {
+        // 分冶算法
+        ArrayList<Integer> postorder = new ArrayList<Integer>();
+        if (root == null) {
+            return postorder;
+        }
+        postorder.addAll(postorderTraversal(root.left));
+        postorder.addAll(postorderTraversal(root.right));
+        postorder.add(root.val);
+        return postorder;
+    }
 	public static void main(String[] args) {
 	    int[][] arrays = {
 			null,
@@ -84,7 +121,7 @@ public class BinaryTreeTraversal {
 	   	for(int[] array:arrays){
 	    	TreeNode root=TreeNode.buildTreeByArray(array);
 	    	System.out.println("##### result:" + BinaryTreeTraversal.preorderTraversal(root));
-	    	System.out.println("##### result:" + BinaryTreeTraversal.preorderTraversalR(root));
+	    	System.out.println("##### result:" + BinaryTreeTraversal.preorderTraversalNR(root));
     	}
 	}
 }
