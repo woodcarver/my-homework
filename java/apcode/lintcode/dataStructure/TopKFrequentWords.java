@@ -1,9 +1,27 @@
 package lintcode.dataStructure;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
+import java.util.Comparator;
 
 public class TopKFrequentWords {
+	private Comparator<Entry<String, Integer>> compara = new Comparator<Entry<String, Integer>>(){
+        public int compare(Entry<String, Integer> a,
+            Entry<String, Integer> b) {
+                if (a == null) {
+                    return -1;
+                }
+                if (b == null) {
+                    return 1;
+                }
+                if (a.getValue() == b.getValue()) {
+                    return a.getKey().compareTo(b.getKey()); //逻辑错误
+                } else {
+                    return b.getValue() - a.getValue();
+                }
+           }
+	};
     public String[] topKFrequentWords(String[] words, int k) {
         // 思路： 1. 用hashtable记数，但是要找到TopK，还需要一遍遍历后，再排序。
         //           Time complexity：O(n+n+nlogk)
@@ -26,24 +44,7 @@ public class TopKFrequentWords {
             }
         }
         
-        PriorityQueue<java.util.Map.Entry<String, Integer>> priQueue = new PriorityQueue<java.util.Map.Entry<String, Integer>>
-        	(counter.size(), 
-            new Comparator<java.util.Map.Entry<String, Integer>>(){
-                public int compare(java.util.Map.Entry<String, Integer> a,
-                    java.util.Map.Entry<String, Integer> b) {
-                        if (a == null) {
-                            return -1;
-                        }
-                        if (b == null) {
-                            return 1;
-                        }
-                        if (a.getValue() == b.getValue()) {
-                            return a.getKey().compareTo(b.getKey()); //逻辑错误
-                        } else {
-                            return b.getValue() - a.getValue();
-                        }
-                }
-        });
+        PriorityQueue<Entry<String, Integer>> priQueue = new PriorityQueue<Entry<String, Integer>>(counter.size(), compara);
         
         for (java.util.Map.Entry<String, Integer> item : counter.entrySet()) {
             if (item.getKey() == null) {
