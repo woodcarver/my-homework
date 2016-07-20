@@ -1,11 +1,17 @@
 #include<unistd.h>
 #include<fcntl.h>
+#include<errno.h>
 #include<sys/types.h>
-void echo()
+#include "./io.h"
+void echo1()
 {
-    char c;
-    while(read(STDIN_FILENO,&c,1)!=0)
-        write(STDOUT_FILENO,&c,1);
+    char c[3];//try using different size of buffer
+    int ss=3;
+    int nread;
+    /*while(read(STDIN_FILENO,&c,ss)!=0)
+        write(STDOUT_FILENO,&c,ss);*/
+    while((nread=read(STDIN_FILENO,&c,ss))!=0)
+        write(STDOUT_FILENO,&c,nread);
 }
 ssize_t rio_readn(int fd,void *usrbuf,size_t n)
 {
@@ -53,7 +59,8 @@ void rio_readinitb(rio_t *rp,int fd)
 
 int main()
 {
-    //echo();
+    echo1();
     int n;
 
+    return 0;
 }

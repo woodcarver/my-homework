@@ -1,6 +1,6 @@
 ### woodcarvercello@gmail.com   电子科技大学  信息管理与信息系统
 
-##  项目经历 
+##  项目经历
 ### 2013.11-now        多盟无限科技有限公司     系统研发工程师
 #### 多盟olap系统（2013.07 - now）
 * 多盟多维度大数据报表系统，借助与成熟的开源软件saiku+mondrian+infobright+hive+数据etl脚本实现。

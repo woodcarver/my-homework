@@ -46,6 +46,24 @@ $companies=array(
         'place'=>4,
         'dailyTime'=>10,
     ),
+    'Douban'=>array(
+        'position'=>10,
+        'scale'=>4,
+        'industry'=>10,
+        'salary'=>0,
+        'team'=>10,
+        'place'=>4,
+        'dailyTime'=>10,
+    ),
+    'Amazon'=>array(
+        'position'=>10,
+        'scale'=>10,
+        'industry'=>10,
+        'salary'=>0,
+        'team'=>10,
+        'place'=>4,
+        'dailyTime'=>10,
+    ),
 );
 
 function print_array($arr)
