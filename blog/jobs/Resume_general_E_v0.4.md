@@ -35,8 +35,10 @@
 * Designed transit suggestion service. Using Dijstra algorithm to calculate all the shortest paths and restored the 9,000,000 recodes into MySQL by implementing horizontal distributed data tables.
 
 # Education
-University of Science and Technology of China(UESTC)
-2006.9-2010.7   Bachelor     Management Information Systems
+
+## University of Science and Technology of China(UESTC)
+
+* 2006.9-2010.7   Bachelor     Management Information Systems
 
 # Programming Languages and Softwares
 
