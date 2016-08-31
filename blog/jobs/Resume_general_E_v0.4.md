@@ -1,4 +1,4 @@
-# Object
+# Job Intention 
 
 ### Data Engineer
 
@@ -10,7 +10,7 @@
 
 * Built high performance ETL data pipelines for advertisement user's tracking streams on **Storm Realtime Computation Framework**(in **Java**) which processed 3T-per-day data and the latency is only 3s.
 * Took **Redis** as verification hub to build data anti and information completing services. The verification rate was up to 98%.
-* Designed Domob data warehouse which is base on **Hive** by receiving streams from **Kafka** and translating it to **Rcfile**. Solved the tough time window problem.
+* Designed Domob data warehouse which is based on **Hive** by receiving streams from **Kafka** and translating it to **Rcfile**. Solved the tough time window problem.
 * Developed raw-data-backup service in **Python**, copyed nignx access logs scattered on machines to HDFS and designed retry-when-failed feature using task queue.
 
 ### Domob OLAP Platform (2014/5 - now)
