@@ -1,4 +1,4 @@
-# Job Intention 
+# Job Intention
 
 ### Data Engineer
 
@@ -26,14 +26,14 @@
 * Using producer-consumer model and Python to build a high performance remote notification system with over 1400 requests per second which uses Kafka as the task queue. And it's monitor module is based on Redis.
 * Optimized message task queuing policy, significantly reducing latency under lots of unusual circumstances. Added monitor in Python thread pool to prevent thread leak.
 
-## 2011/6-2013/7     Chu Kong tech of Beijing,inc      Software Engineer
+## 2011/12-2013/7     Chu Kong tech of Beijing,inc      Software Engineer
 
 ### Real-time Gamer Data Statistic System
 
 * Parsed, stored and manipulated 3G raw data per day in the most run-time and memory efficient manner using **PHP**.
 * Used Redis as the calculating cache and made the final result persistent in MySQL.
 
-### Train Ticket app(火车票™) (2011/6 – 2013/1)
+### Train Ticket app(火车票™) (2011/12 – 2013/1)
 
 * It provides tickets information searching and booking. Data cache was designed by Redis to support 2.3 million users and 10+ requests per second on single machine.
 * Designed transit suggestion service. Using Dijstra algorithm to calculate all the shortest paths and restored the 9,000,000 recodes into MySQL by implementing horizontal distributed data tables.
