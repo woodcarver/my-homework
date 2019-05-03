@@ -1,7 +1,3 @@
-# Job Intention
-
-### Data Engineer
-
 # Employment
 
 ## 2013.11-now        Domob inc             Software Engineer
